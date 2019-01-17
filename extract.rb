@@ -17,8 +17,15 @@ def extract_pixels(file)
   pixels
 end
 
+# for now we assume we work with 4bpp, 16 colors
 def extract_palette(pixels)
-  pixels.uniq
+  palette = pixels.uniq
+  # fill palette with black if not 16 colors
+  if palette.count < 16
+    palette += ["0000"] * (16 - palette.count)
+  end
+
+  palette
 end
 
 def extract_pixel_idx_map(pixels, palette)
