@@ -39,6 +39,7 @@ end
 
 def write_to_hex_file(str, file)
   File.open(file, 'w+b') do |file|
+    p str
     file.write([str].pack('H*'))
   end
 end
