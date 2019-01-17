@@ -6,6 +6,14 @@ def to5bits(c)
   c >> 3
 end
 
+def tobgr(r, g, b)
+  r5 = to5bits(r)
+  g5 = to5bits(g)
+  b5 = to5bits(b)
+
+  r5 | (g5 << 5) | (b5 << 10)
+end
+
 def hex2bgr(c)
   r = (c >> 16) & 0xff
   g = (c >> 8) & 0xff
