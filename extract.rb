@@ -22,6 +22,11 @@ p uniq_colors.index("7810")
 p pixels.count
 pixel_color_map = pixels.each_slice(16).to_a
 
-p pixel_color_map
+pixel_idx_map = pixel_color_map.map { |a| a.map { |c| '%04b' % uniq_colors.index(c) } }
 
-pixel_idx_map = pixel_color_map.map { |a| a.map { |c| uniq_colors.index(c) } }
+pixel_bitplanes = []
+(0..3).each do |i|
+  pixel_bitplane = pixel_idx_map.map { |a| a.map { |c| c[i] } }
+  p pixel_bitplane
+  pixel_bitplanes.append(pixel_bitplane)
+end
