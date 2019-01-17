@@ -27,11 +27,6 @@ ASM files courtesy of [https://georgjz.github.io/snesaa04/](https://georgjz.gith
 
 # Tools
 
-on macOS :
-
 ```
-brew install imagemagick@6
-export PATH="/usr/local/opt/imagemagick@6/bin:$PATH"
-brew link --force imagemagick@6
-gem install rmagick
+gem install chunky_png
 ```

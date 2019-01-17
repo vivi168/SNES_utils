@@ -1,18 +1,18 @@
-require 'RMagick'
+require 'chunky_png'
 require 'matrix'
 require './snes_utils'
 
-include Magick
-
 def extract_pixels(file)
-  image = ImageList.new(file)
+  image = ChunkyPNG::Image.from_file(file)
+
+  px = image.pixels.map { |c| ChunkyPNG::Color.to_hex(c, false) }
+  px = px.map { |c| c[1..-1].scan(/.{2}/).map { |b| b.to_i(16) } }
 
   pixels = []
 
-  image.each_pixel do |pixel, c, r|
-    rgb = [pixel.red, pixel.green, pixel.blue].map { |c| c / 257 }
+  px.each do |rgb|
     bgr = tobgr(*rgb)
-    pixels.append(to_little_endian(bgr))
+    pixels.push(to_little_endian(bgr))
   end
 
   pixels
@@ -39,7 +39,7 @@ def extract_bit_planes(idx_map, bpp)
   pixel_bitplanes = []
   (0..bpp-1).each do |i|
     pixel_bitplane = idx_map.map { |a| a.map { |c| c[i] } }
-    pixel_bitplanes.append(pixel_bitplane)
+    pixel_bitplanes.push(pixel_bitplane)
   end
 
   pixel_bitplanes.reverse
@@ -48,7 +48,7 @@ end
 def bitplane_hex(pixel_idx_map, sprite_size)
   m = Matrix[*pixel_idx_map]
   # for now assume idx_map is 4x 8x8 sprites
-  # quick and dirty, need proof of work
+  # quick and dirty, needed proof of work
   # TODO add loop/automate everything
   s1 = m.minor(0..7, 0..7).to_a
   s2 = m.minor(0..7, 8..15).to_a
@@ -83,6 +83,7 @@ def bitplane_to_data(bitplane)
   output
 end
 
+# TODO ask for file name
 pixels = extract_pixels('link.png')
 palette = extract_palette(pixels)
 pixel_idx_map = extract_pixel_idx_map(pixels, palette)
