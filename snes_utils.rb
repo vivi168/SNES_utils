@@ -1,16 +1,16 @@
-def hex2rgb(c)
-  r = c[0,2].to_i(16)
-  g = c[2,2].to_i(16)
-  b = c[4,2].to_i(16)
-
-  [r, g, b]
+def to_little_endian(c)
+  ('%04x' % c).scan(/.{2}/).reverse.join('')
 end
 
 def to5bits(c)
   c >> 3
 end
 
-def tobgr(r, g, b)
+def hex2bgr(c)
+  r = (c >> 16) & 0xff
+  g = (c >> 8) & 0xff
+  b = c & 0xff
+
   r5 = to5bits(r)
   g5 = to5bits(g)
   b5 = to5bits(b)
@@ -18,10 +18,23 @@ def tobgr(r, g, b)
   r5 | (g5 << 5) | (b5 << 10)
 end
 
+def palette_to_hex_str(file)
+  hex_str = ""
+  palette = File.open(file)
+  palette.each_line do |line|
+    bgr = hex2bgr(line.to_i(16))
+    hex_str += to_little_endian(bgr)
+  end
 
-palette = File.open('palette.txt')
-palette.each_line do |line|
-  rgb = hex2rgb(line)
-  bgr = tobgr(*rgb)
-  p bgr.to_s(16)
+  hex_str
 end
+
+def write_to_hex_file(str, file)
+  File.open(file, 'w+b') do |file|
+    file.write([str].pack('H*'))
+  end
+end
+
+s = palette_to_hex_str('palette.txt')
+p s
+write_to_hex_file(s, 'out.bin')
