@@ -3,30 +3,43 @@ require './snes_utils'
 
 include Magick
 
-file = 'link.png'
-image = ImageList.new(file)
+def extract_pixels(file)
+  image = ImageList.new(file)
 
-pixels = []
+  pixels = []
 
-image.each_pixel do |pixel, c, r|
-  rgb = [pixel.red, pixel.green, pixel.blue].map { |c| c / 257 }
-  bgr = tobgr(*rgb)
-  pixels.append(to_little_endian(bgr))
+  image.each_pixel do |pixel, c, r|
+    rgb = [pixel.red, pixel.green, pixel.blue].map { |c| c / 257 }
+    bgr = tobgr(*rgb)
+    pixels.append(to_little_endian(bgr))
+  end
+
+  pixels
 end
 
-uniq_colors = pixels.uniq
-pp uniq_colors
-p uniq_colors.count
-p uniq_colors.index("7810")
-
-p pixels.count
-pixel_color_map = pixels.each_slice(16).to_a
-
-pixel_idx_map = pixel_color_map.map { |a| a.map { |c| '%04b' % uniq_colors.index(c) } }
-
-pixel_bitplanes = []
-(0..3).each do |i|
-  pixel_bitplane = pixel_idx_map.map { |a| a.map { |c| c[i] } }
-  p pixel_bitplane
-  pixel_bitplanes.append(pixel_bitplane)
+def extract_palette(pixels)
+  pixels.uniq
 end
+
+def extract_pixel_idx_map(pixels, palette)
+  pixel_color_map = pixels.each_slice(16).to_a
+
+  pixel_idx_map = pixel_color_map.map { |a| a.map { |c| '%04b' % palette.index(c) } }
+end
+
+def extract_bit_planes(idx_map, bpp)
+  pixel_bitplanes = []
+  (0..bpp-1).each do |i|
+    pixel_bitplane = idx_map.map { |a| a.map { |c| c[i] } }
+    pixel_bitplanes.append(pixel_bitplane)
+  end
+
+  pixel_bitplanes
+end
+
+pixels = extract_pixels('link.png')
+palette = extract_palette(pixels)
+pixel_idx_map = extract_pixel_idx_map(pixels, palette)
+bitplanes = extract_bit_planes(pixel_idx_map, 4)
+
+p bitplanes
