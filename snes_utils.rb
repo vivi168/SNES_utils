@@ -43,6 +43,8 @@ def write_to_hex_file(str, file)
   end
 end
 
-s = palette_to_hex_str('palette.txt')
-p s
-write_to_hex_file(s, 'out.bin')
+def extract_palette(file, out)
+  s = palette_to_hex_str(file)
+  p s
+  write_to_hex_file(s, out)
+end
