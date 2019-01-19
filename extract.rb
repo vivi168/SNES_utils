@@ -19,6 +19,8 @@ def extract_pixels(file)
 end
 
 # for now we assume we work with 4bpp, 16 colors
+# and that the first pixel (0,0) holds the transparent color
+# TODO choose manualy the transparent color
 def extract_palette(pixels)
   palette = pixels.uniq
   # fill palette with black if not 16 colors
