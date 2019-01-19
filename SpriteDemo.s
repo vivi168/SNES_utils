@@ -15,6 +15,10 @@ CGDATA      = $2122     ; data for CGRAM write
 TM          = $212c     ; main screen designation
 NMITIMEN    = $4200     ; enable flaog for v-blank
 RDNMI       = $4210     ; read the NMI flag status
+
+SPRITE_X = $0000
+update_x = $0001
+
 ;-------------------------------------------------------------------------------
 
 ;----- Assembler Directives ----------------------------------------------------
@@ -69,13 +73,16 @@ CGRAMLoop:
         cpx #$20                ; check whether 32/$20 bytes were transfered
         bcc CGRAMLoop           ; if not, continue loop
 
-        .byte $42, $00          ; debugger breakpoint
-
         ; set up OAM data
         stz OAMADDL             ; set the OAM address to ...
         stz OAMADDH             ; ...at $0000
+
+        lda #00
+        sta SPRITE_X
+        stz update_x
+
         ; OAM data for first sprite
-        lda # (256/2 - 8)       ; horizontal position of first sprite
+        lda SPRITE_X       ; horizontal position of first sprite
         sta OAMDATA
         lda # (224/2 - 8)       ; vertical position of first sprite
         sta OAMDATA
@@ -132,9 +139,6 @@ CGRAMLoop:
 .proc   GameLoop
         wai                     ; wait for NMI / V-Blank
 
-        ; here we would place all of the game logic
-        ; and loop forever
-
         jmp GameLoop
 .endproc
 ;-------------------------------------------------------------------------------
@@ -146,6 +150,25 @@ CGRAMLoop:
         lda RDNMI               ; read NMI status, acknowledge NMI
 
         ; this is where we would do graphics update
+        ; OAM data for first sprite
+        lda update_x
+        ina
+        sta update_x
+        cmp #32
+        bne noupdate
+
+update:
+        stz update_x
+
+        lda SPRITE_X
+        ina
+        sta SPRITE_X
+
+        sta OAMDATA
+        lda # (224/2 - 8)       ; vertical position of first sprite
+        sta OAMDATA
+
+noupdate:
 
         rti
 .endproc
