@@ -17,7 +17,7 @@ NMITIMEN    = $4200     ; enable flaog for v-blank
 RDNMI       = $4210     ; read the NMI flag status
 
 SPRITE_X = $0000
-update_x = $0001
+UPDATE_X = $0001
 
 ;-------------------------------------------------------------------------------
 
@@ -79,7 +79,7 @@ CGRAMLoop:
 
         lda #00
         sta SPRITE_X
-        stz update_x
+        stz UPDATE_X
 
         ; OAM data for first sprite
         lda SPRITE_X       ; horizontal position of first sprite
@@ -150,20 +150,21 @@ CGRAMLoop:
         lda RDNMI               ; read NMI status, acknowledge NMI
 
         ; this is where we would do graphics update
-        ; OAM data for first sprite
-        lda update_x
+
+        lda UPDATE_X
         ina
-        sta update_x
-        cmp #32
+        sta UPDATE_X
+        cmp #32 ; update only every 32 count
         bne noupdate
 
 update:
-        stz update_x
+        stz UPDATE_X ; reset count
 
         lda SPRITE_X
-        ina
+        adc #4
         sta SPRITE_X
 
+        ; OAM data for first sprite
         sta OAMDATA
         lda # (224/2 - 8)       ; vertical position of first sprite
         sta OAMDATA
