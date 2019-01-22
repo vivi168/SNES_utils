@@ -57,20 +57,39 @@ class Png2Snes
     pix_idx_bin.map { |i| i.reverse }
   end
 
-  def extract_bitplanes
+  def extract_sprites
     pixel_idx = pixel_indices
+
+    sprite_per_row = @image.width / @sprite_size
+    sprite_per_col = @image.height / @sprite_size
+    sprite_per_sheet =  sprite_per_row * sprite_per_col
+
+    sprites = []
+    (0..sprite_per_sheet-1).each do |s|
+      sprite = []
+      (0..@sprite_size-1).each do |r|
+        offset = (s/sprite_per_row)*sprite_per_row * @sprite_size**2 + s % sprite_per_row * @sprite_size
+        sprite += pixel_idx[offset + r*sprite_per_row*@sprite_size, @sprite_size]
+      end
+      sprites.push(sprite)
+    end
+
+    sprites
+  end
+
+  def extract_bitplanes sprite
     bitplanes = []
     (0..@bpp-1).each do |plane|
-      bitplanes.push pixel_idx.map { |p| p[plane] }
+      bitplanes.push sprite.map { |p| p[plane] }
     end
 
     bitplanes
   end
 
   def write_image
-    pixel_idx = pixel_indices
-    bitplanes = extract_bitplanes
-    p bitplanes
+    sprites = extract_sprites
+
+    p sprites
   end
 
 end
