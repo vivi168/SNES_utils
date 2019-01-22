@@ -3,18 +3,10 @@ require 'matrix'
 require 'optparse'
 
 class Png2Snes
-  attr_accessor :pixels, :palette
-
   def initialize(file_name, sprite_size:8, bpp:4, alpha:nil)
     @file_name = file_name
-    image = ChunkyPNG::Image.from_file(@file_name)
-    @pixels = image.pixels.map do |c|
-      r = ((c >> 24) & 0xff) >> 3
-      g = ((c >> 16) & 0xff) >> 3
-      b = ((c >>  8) & 0xff) >> 3
-
-      r | (g << 5) | (b << 10)
-    end
+    @image = ChunkyPNG::Image.from_file(@file_name)
+    @pixels = pixels_to_bgr5
 
     @palette = @pixels.uniq
 
@@ -24,10 +16,20 @@ class Png2Snes
     raise ArgumentError, 'BPP must be 2, 4, or 8' unless [2, 4, 8].include? bpp
     @bpp = bpp
 
-    raise ArgumentError, 'Image width and height must be a multiple of sprite size' if (image.width % sprite_size != 0) or (image.height % sprite_size != 0)
+    raise ArgumentError, 'Image width and height must be a multiple of sprite size' if (@image.width % sprite_size != 0) or (@image.height % sprite_size != 0)
 
     alpha_first if alpha
     fill_palette
+  end
+
+  def pixels_to_bgr5
+    @image.pixels.map do |c|
+      r = ((c >> 24) & 0xff) >> 3
+      g = ((c >> 16) & 0xff) >> 3
+      b = ((c >>  8) & 0xff) >> 3
+
+      r | (g << 5) | (b << 10)
+    end
   end
 
   def alpha_first
@@ -35,7 +37,7 @@ class Png2Snes
 
   def fill_palette
     target_size = 2**@bpp
-    missing_colors = target_size - palette.count
+    missing_colors = target_size - @palette.count
     raise ArgumentError, 'Palette size to large for target BPP' if missing_colors < 0
 
     @palette += [0] * missing_colors
@@ -52,7 +54,7 @@ class Png2Snes
   def pixel_indices
     pix_idx = @pixels.map { |p| @palette.index(p) }
     pix_idx_bin = pix_idx.map { |i| "%0#{@bpp}b" % i }
-    pix_idx_bin_lsb = pix_idx_bin.map { |i| i.reverse }
+    pix_idx_bin.map { |i| i.reverse }
   end
 
   def extract_bitplanes
