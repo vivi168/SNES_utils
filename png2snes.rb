@@ -43,12 +43,15 @@ class Png2Snes
     @palette += [0] * missing_colors
   end
 
+  def write hex, file_name
+    File.open(file_name, 'w+b') do |file|
+      file.write([hex.join].pack('H*'))
+    end
+  end
+
   def write_palette
     palette_hex = @palette.map { |c| ('%04x' % c).scan(/.{2}/).reverse.join }
-
-    File.open("#{@file_name}.pal", 'w+b') do |file|
-      file.write([palette_hex.join].pack('H*'))
-    end
+    write palette_hex, "#{@file_name}.pal"
   end
 
   def pixel_indices
@@ -87,9 +90,27 @@ class Png2Snes
   end
 
   def write_image
+    sprite_per_row = @image.width / @sprite_size
     sprites = extract_sprites
+    sprites_bitplanes = sprites.map { |s| extract_bitplanes s }
 
-    p sprites
+    image_bits = ""
+    sprites_bitplanes.each do |sprite_bitplanes|
+      sprite_bitplane_pairs = sprite_bitplanes.each_slice(2).to_a
+
+      bitplane_bits = ""
+      sprite_bitplane_pairs.each do |bitplane|
+        (0..@sprite_size-1).each do |r|
+          offset = r*@sprite_size
+          bitplane_bits += bitplane[0][offset, @sprite_size].join + bitplane[1][offset, @sprite_size].join
+        end
+      end
+      image_bits += bitplane_bits
+
+    end
+
+    image_hex = image_bits.scan(/.{8}/).map { |b| "%02x" % b.to_i(2) }
+    write image_hex, "#{@file_name}.vra"
   end
 
 end
