@@ -115,6 +115,13 @@ class Png2Snes
 
 end
 
-c = Png2Snes.new 'link.png'
+options = {}
+OptionParser.new do |opts|
+  opts.on('-f', '--file FILENAME', 'PNG source file') { |o| options[:filename] = o }
+end.parse!
+
+raise OptionParser::MissingArgument, 'Must specify PNG source file' if options[:filename].nil?
+
+c = Png2Snes.new options[:filename]
 c.write_palette
 c.write_image
