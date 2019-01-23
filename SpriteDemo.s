@@ -27,8 +27,8 @@ UPDATE_X = $0001
 
 ;----- Includes ----------------------------------------------------------------
 .segment "SPRITEDATA"
-SpriteData: .incbin "Sprites.vra"
-ColorData:  .incbin "SpriteColors.pal"
+SpriteData: .incbin "assets/test.png.vra"
+ColorData:  .incbin "assets/test.png.pal"
 ;-------------------------------------------------------------------------------
 
 .segment "CODE"
@@ -43,6 +43,7 @@ ColorData:  .incbin "SpriteColors.pal"
         sta INIDISP
         stz NMITIMEN            ; disable NMI
 
+        ; TODO: change VRAM loop to load larger spritesheet
         ; transfer VRAM data
         stz VMADDL              ; set the VRAM address to $0000
         stz VMADDH
