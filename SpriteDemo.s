@@ -16,8 +16,9 @@ TM          = $212c     ; main screen designation
 NMITIMEN    = $4200     ; enable flaog for v-blank
 RDNMI       = $4210     ; read the NMI flag status
 
-SPRITE_X = $0000
-UPDATE_X = $0001
+SPRITE_X  = $0000
+UPDATE_X  = $0001
+DIRECTION = $0002
 
 ;-------------------------------------------------------------------------------
 
@@ -27,8 +28,8 @@ UPDATE_X = $0001
 
 ;----- Includes ----------------------------------------------------------------
 .segment "SPRITEDATA"
-SpriteData: .incbin "assets/test.png.vra"
-ColorData:  .incbin "assets/test.png.pal"
+SpriteData: .incbin "assets/test2.png.vra"
+ColorData:  .incbin "assets/test2.png.pal"
 ;-------------------------------------------------------------------------------
 
 .segment "CODE"
@@ -44,6 +45,7 @@ ColorData:  .incbin "assets/test.png.pal"
         stz NMITIMEN            ; disable NMI
 
         ; TODO: change VRAM loop to load larger spritesheet
+        ; use a proc
         ; transfer VRAM data
         stz VMADDL              ; set the VRAM address to $0000
         stz VMADDH
@@ -78,45 +80,51 @@ CGRAMLoop:
         stz OAMADDL             ; set the OAM address to ...
         stz OAMADDH             ; ...at $0000
 
-        lda #00
-        sta SPRITE_X
+        ; reset custom memory locations
+        stz SPRITE_X
         stz UPDATE_X
+        stz DIRECTION
 
+        lda SPRITE_X
         ; OAM data for first sprite
-        lda SPRITE_X       ; horizontal position of first sprite
         sta OAMDATA
-        lda # (224/2 - 8)       ; vertical position of first sprite
+        lda #$10       ; vertical position of first sprite
         sta OAMDATA
-        lda #$00                ; name of first sprite
+        lda #$00       ; name of first sprite
         sta OAMDATA
-        lda #$00                ; no flip, prio 0, palette 0
+        lda #$00       ; no flip, prio 0, palette 0
         sta OAMDATA
+
+        lda SPRITE_X
+        adc #$08
         ; OAM data for second sprite
-        lda # (256/2)           ; horizontal position of second sprite
         sta OAMDATA
-        lda # (224/2 - 8)       ; vertical position of second sprite
+        lda #$10       ; vertical position of first sprite
         sta OAMDATA
-        lda #$01                ; name of second sprite
+        lda #$01       ; name of first sprite
         sta OAMDATA
-        lda #$00                ; no flip, prio 0, palette 0
+        lda #$00       ; no flip, prio 0, palette 0
         sta OAMDATA
+
+        lda SPRITE_X
         ; OAM data for third sprite
-        lda # (256/2 - 8)       ; horizontal position of third sprite
         sta OAMDATA
-        lda # (224/2)           ; vertical position of third sprite
+        lda #$18       ; vertical position of first sprite
         sta OAMDATA
-        lda #$02                ; name of third sprite
+        lda #$02       ; name of first sprite
         sta OAMDATA
-        lda #$00                ; no flip, prio 0, palette 0
+        lda #$00       ; no flip, prio 0, palette 0
         sta OAMDATA
+
+        lda SPRITE_X
+        adc #$08
         ; OAM data for fourth sprite
-        lda # (256/2)           ; horizontal position of fourth sprite
         sta OAMDATA
-        lda # (224/2)           ; vertical position of fourth sprite
+        lda #$18       ; vertical position of first sprite
         sta OAMDATA
-        lda #$03                ; name of fourth sprite
+        lda #$03       ; name of first sprite
         sta OAMDATA
-        lda #$00                ; no flip, prio 0, palette 0
+        lda #$00       ; no flip, prio 0, palette 0
         sta OAMDATA
 
         ; make Objects visible
@@ -150,28 +158,79 @@ CGRAMLoop:
 .proc   NMIHandler
         lda RDNMI               ; read NMI status, acknowledge NMI
 
-        ; this is where we would do graphics update
-
         lda UPDATE_X
-        ina
+        inc
         sta UPDATE_X
-        cmp #32 ; update only every 32 count
-        bne noupdate
-
-update:
-        stz UPDATE_X ; reset count
+        cmp #$10
+        bcc noupdate ; skip moving
+        stz UPDATE_X
 
         lda SPRITE_X
-        adc #4
+        ldx DIRECTION
+
+        cpx #$01
+        beq goright
+
+goleft:
+        adc #$10
+        cmp #$f0
+        bcc display ; if A is less than 255, continue drawing
+        lda #$f0
+        inx
+        bra display
+goright:
+        sbc #$10
+        cmp #$01
+        bcs display ; i A is more than 0, continue
+        dex
+        lda #$01
+
+display:
         sta SPRITE_X
+        stx DIRECTION
+        clc
 
         ; OAM data for first sprite
         sta OAMDATA
-        lda # (224/2 - 8)       ; vertical position of first sprite
+        lda #$10       ; vertical position of first sprite
+        sta OAMDATA
+        lda #$00       ; name of first sprite
+        sta OAMDATA
+        lda #$00       ; no flip, prio 0, palette 0
         sta OAMDATA
 
-noupdate:
+        lda SPRITE_X
+        adc #$08
+        ; OAM data for second sprite
+        sta OAMDATA
+        lda #$10       ; vertical position of first sprite
+        sta OAMDATA
+        lda #$01       ; name of first sprite
+        sta OAMDATA
+        lda #$00       ; no flip, prio 0, palette 0
+        sta OAMDATA
 
+        lda SPRITE_X
+        ; OAM data for third sprite
+        sta OAMDATA
+        lda #$18       ; vertical position of first sprite
+        sta OAMDATA
+        lda #$02       ; name of first sprite
+        sta OAMDATA
+        lda #$00       ; no flip, prio 0, palette 0
+        sta OAMDATA
+
+        lda SPRITE_X
+        adc #$08
+        ; OAM data for fourth sprite
+        sta OAMDATA
+        lda #$18       ; vertical position of first sprite
+        sta OAMDATA
+        lda #$03       ; name of first sprite
+        sta OAMDATA
+        lda #$00       ; no flip, prio 0, palette 0
+        sta OAMDATA
+noupdate:
         rti
 .endproc
 ;-------------------------------------------------------------------------------
