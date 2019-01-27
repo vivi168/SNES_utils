@@ -85,47 +85,7 @@ CGRAMLoop:
         stz UPDATE_X
         stz DIRECTION
 
-        lda SPRITE_X
-        ; OAM data for first sprite
-        sta OAMDATA
-        lda #$10       ; vertical position of first sprite
-        sta OAMDATA
-        lda #$00       ; name of first sprite
-        sta OAMDATA
-        lda #$00       ; no flip, prio 0, palette 0
-        sta OAMDATA
-
-        lda SPRITE_X
-        adc #$08
-        ; OAM data for second sprite
-        sta OAMDATA
-        lda #$10       ; vertical position of first sprite
-        sta OAMDATA
-        lda #$01       ; name of first sprite
-        sta OAMDATA
-        lda #$00       ; no flip, prio 0, palette 0
-        sta OAMDATA
-
-        lda SPRITE_X
-        ; OAM data for third sprite
-        sta OAMDATA
-        lda #$18       ; vertical position of first sprite
-        sta OAMDATA
-        lda #$02       ; name of first sprite
-        sta OAMDATA
-        lda #$00       ; no flip, prio 0, palette 0
-        sta OAMDATA
-
-        lda SPRITE_X
-        adc #$08
-        ; OAM data for fourth sprite
-        sta OAMDATA
-        lda #$18       ; vertical position of first sprite
-        sta OAMDATA
-        lda #$03       ; name of first sprite
-        sta OAMDATA
-        lda #$00       ; no flip, prio 0, palette 0
-        sta OAMDATA
+        jsr draw_sprite
 
         ; make Objects visible
         lda #$10
@@ -188,52 +148,68 @@ goright:
 display:
         sta SPRITE_X
         stx DIRECTION
-        clc
 
-        ; OAM data for first sprite
-        sta OAMDATA
-        lda #$10       ; vertical position of first sprite
-        sta OAMDATA
-        lda #$00       ; name of first sprite
-        sta OAMDATA
-        lda #$00       ; no flip, prio 0, palette 0
-        sta OAMDATA
+        jsr draw_sprite
 
-        lda SPRITE_X
-        adc #$08
-        ; OAM data for second sprite
-        sta OAMDATA
-        lda #$10       ; vertical position of first sprite
-        sta OAMDATA
-        lda #$01       ; name of first sprite
-        sta OAMDATA
-        lda #$00       ; no flip, prio 0, palette 0
-        sta OAMDATA
-
-        lda SPRITE_X
-        ; OAM data for third sprite
-        sta OAMDATA
-        lda #$18       ; vertical position of first sprite
-        sta OAMDATA
-        lda #$02       ; name of first sprite
-        sta OAMDATA
-        lda #$00       ; no flip, prio 0, palette 0
-        sta OAMDATA
-
-        lda SPRITE_X
-        adc #$08
-        ; OAM data for fourth sprite
-        sta OAMDATA
-        lda #$18       ; vertical position of first sprite
-        sta OAMDATA
-        lda #$03       ; name of first sprite
-        sta OAMDATA
-        lda #$00       ; no flip, prio 0, palette 0
-        sta OAMDATA
 noupdate:
         rti
 .endproc
 ;-------------------------------------------------------------------------------
+
+;-----
+; X = sprite x
+; Y = sprite y
+; A = sprite #
+;-----
+.proc set_sprite_data
+        pha
+        phx
+        phy
+
+        stx OAMDATA    ; horizontal position
+        sty OAMDATA    ; vertical position
+        sta OAMDATA    ; name of sprite
+        lda #$00       ; no flip, prio 0, palette 0
+        sta OAMDATA
+
+        ply
+        plx
+        pla
+        rts
+.endproc
+
+.proc draw_sprite
+        pha
+        phx
+        phy
+
+        clc
+
+        ldx SPRITE_X
+        ldy #$10
+        lda #$00
+        jsr set_sprite_data
+
+        ldy #$18
+        lda #$02
+        jsr set_sprite_data
+
+        txa
+        adc #$08
+        tax
+        ldy #$10
+        lda #$01
+        jsr set_sprite_data
+
+        ldy #$18
+        lda #$03
+        jsr set_sprite_data
+
+        ply
+        plx
+        pla
+        rts
+.endproc
 
 ;-------------------------------------------------------------------------------
 ;   Is not used in this program
