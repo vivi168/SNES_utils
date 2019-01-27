@@ -122,7 +122,7 @@ CGRAMLoop:
         inc
         sta UPDATE_X
         cmp #$10
-        bcc noupdate ; skip moving
+        bne noupdate ; skip moving
         stz UPDATE_X
 
         lda SPRITE_X
@@ -134,16 +134,16 @@ CGRAMLoop:
 goleft:
         adc #$10
         cmp #$f0
-        bcc display ; if A is less than 255, continue drawing
+        bne display ; when A == 240, switch direction
         lda #$f0
         inx
         bra display
 goright:
         sbc #$10
-        cmp #$01
-        bcs display ; i A is more than 0, continue
+        cmp #$00
+        bne display ; when A == 0, switch direction
         dex
-        lda #$01
+        lda #$00
 
 display:
         sta SPRITE_X
