@@ -108,21 +108,11 @@ CGRAMLoop:
 .proc   GameLoop
         wai                     ; wait for NMI / V-Blank
 
-        jmp GameLoop
-.endproc
-;-------------------------------------------------------------------------------
-
-;-------------------------------------------------------------------------------
-;   Will be called during V-Blank
-;-------------------------------------------------------------------------------
-.proc   NMIHandler
-        lda RDNMI               ; read NMI status, acknowledge NMI
-
         lda UPDATE_X
         inc
         sta UPDATE_X
         cmp #$10
-        bne noupdate ; skip moving
+        bne noupdate_position ; skip moving
         stz UPDATE_X
 
         lda SPRITE_X
@@ -134,24 +124,36 @@ CGRAMLoop:
 goleft:
         adc #$10
         cmp #$f0
-        bne display ; when A == 240, switch direction
+        bne update_position ; when A == 240, switch direction
         lda #$f0
         inx
-        bra display
+        bra update_position
 goright:
         sbc #$10
         cmp #$00
-        bne display ; when A == 0, switch direction
+        bne update_position ; when A == 0, switch direction
         dex
         lda #$00
 
-display:
+update_position:
         sta SPRITE_X
         stx DIRECTION
 
+
+noupdate_position:
+
+        jmp GameLoop
+.endproc
+;-------------------------------------------------------------------------------
+
+;-------------------------------------------------------------------------------
+;   Will be called during V-Blank
+;-------------------------------------------------------------------------------
+.proc   NMIHandler
+        lda RDNMI               ; read NMI status, acknowledge NMI
+
         jsr draw_sprite
 
-noupdate:
         rti
 .endproc
 ;-------------------------------------------------------------------------------
