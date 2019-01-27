@@ -119,16 +119,16 @@ CGRAMLoop:
         ldx DIRECTION
 
         cpx #$01
-        beq goright
+        beq go_left
 
-goleft:
+go_right:
         adc #$10
         cmp #$f0
         bne update_position ; when A == 240, switch direction
         lda #$f0
         inx
         bra update_position
-goright:
+go_left:
         sbc #$10
         cmp #$00
         bne update_position ; when A == 0, switch direction
