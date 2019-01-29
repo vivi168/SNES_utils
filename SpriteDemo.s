@@ -5,6 +5,13 @@ OBJSEL      = $2101     ; object size $ object data area designation
 OAMADDL     = $2102     ; address for accessing OAM
 OAMADDH     = $2103
 OAMDATA     = $2104     ; data for OAM write
+BGMODE      = $2105     ; BG MODE and Tile size setting; abcdefff abcd = BG tile size (4321): 0 = 8x8 1 = 16x16, e = BG 3 High Priority, f = BG Mode
+BG1SC       = $2107
+BG2SC       = $2108
+BG3SC       = $2109
+BG4SC       = $210a
+BG12NBA     = $210b     ; BG 1&2 Tile Data Designation
+BG34NBA     = $210c     ; BG 3&4 Tile Data Designation
 VMAINC      = $2115     ; VRAM address increment value designation
 VMADDL      = $2116     ; address for VRAM read and write
 VMADDH      = $2117
@@ -12,9 +19,12 @@ VMDATAL     = $2118     ; data for VRAM write
 VMDATAH     = $2119     ; data for VRAM write
 CGADD       = $2121     ; address for CGRAM read and write
 CGDATA      = $2122     ; data for CGRAM write
-TM          = $212c     ; main screen designation
+TM          = $212c     ; main screen designation 000abcde, 000abcde a = Object b = BG 4 c = BG 3 d = BG 2 e = BG 1
 NMITIMEN    = $4200     ; enable flaog for v-blank
 RDNMI       = $4210     ; read the NMI flag status
+
+JOY1L       = $4218     ; abcd0000 a = Button A b = X c = L d = R
+JOY1H       = $4219     ; abcdefgh a = B b = Y c = Select d = Start efgh = Up/Dn/Lt/Rt
 
 SPRITE_X  = $0000
 UPDATE_X  = $0001
@@ -28,8 +38,8 @@ DIRECTION = $0002
 
 ;----- Includes ----------------------------------------------------------------
 .segment "SPRITEDATA"
-SpriteData: .incbin "assets/test2.png.vra"
-ColorData:  .incbin "assets/test2.png.pal"
+SpriteData: .incbin "assets/link_full.png.vra"
+ColorData:  .incbin "assets/link_full.png.pal"
 ;-------------------------------------------------------------------------------
 
 .segment "CODE"
@@ -44,23 +54,30 @@ ColorData:  .incbin "assets/test2.png.pal"
         sta INIDISP
         stz NMITIMEN            ; disable NMI
 
-        ; TODO: change VRAM loop to load larger spritesheet
-        ; use a proc
-        ; transfer VRAM data
-        stz VMADDL              ; set the VRAM address to $0000
-        stz VMADDH
         lda #$80
         sta VMAINC              ; increment VRAM address by 1 when writing to VMDATAH
-        ldx #$00                ; set register X to zero, we will use X as a loop counter and offset
+
+        rep #$30
+.a16
+.i16
+        ; TODO use a proc
+        ; transfer VRAM data
+        lda #$0000 ; start address in VRAM
+        ldx #$0000 ; start address in incbin
+        ldy #$0060 ; size of asset in word
+
+        sta VMADDL
 VRAMLoop:
-        lda SpriteData, X       ; get bitplane 0/2 byte from the sprite data
-        sta VMDATAL             ; write the byte in A to VRAM
-        inx                     ; increment counter/offset
-        lda SpriteData, X       ; get bitplane 1/3 byte from the sprite data
-        sta VMDATAH             ; write the byte in A to VRAM
-        inx                     ; increment counter/offset
-        cpx #$80                ; check whether we have written $04 * $20 = $80 bytes to VRAM (four sprites)
-        bcc VRAMLoop            ; if X is smaller than $80, continue the loop
+        lda SpriteData, x
+        sta VMDATAL
+        inx
+        inx
+        dey
+        bne VRAMLoop
+
+        sep #$30
+.a8
+.i8
 
         ; transfer CGRAM data
         lda #$80
@@ -181,6 +198,7 @@ noupdate_position:
 .endproc
 
 .proc draw_sprite
+; TODO optimize this mess
         pha
         phx
         phy
@@ -196,6 +214,10 @@ noupdate_position:
         lda #$02
         jsr set_sprite_data
 
+        ldy #$20
+        lda #04
+        jsr set_sprite_data
+
         txa
         adc #$08
         tax
@@ -205,6 +227,10 @@ noupdate_position:
 
         ldy #$18
         lda #$03
+        jsr set_sprite_data
+
+        ldy #$20
+        lda #$05
         jsr set_sprite_data
 
         ply

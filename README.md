@@ -7,9 +7,8 @@ As of now : we assume the palette is 4BPP, and a sprite is 8x8 pixels, the sourc
 ## Test
 
 ```
-$ ruby extract.rb
-$ ca65 --cpu 65816 -s -o SpriteDemo.o SpriteDemo.s
-$ ld65 -C MemoryMap.cfg -o FirstSprite.smc SpriteDemo.o
+$ ruby png2snes.rb -f assets/link_full.png
+$ sh make.sh
 ```
 
 Run with Snes9x or bsnes+.
