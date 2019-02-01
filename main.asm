@@ -33,23 +33,35 @@ DIRECTION = $0002
         stz UPDATE_X
         stz DIRECTION
 
-        rep #$30
-.a16
+        rep #$10
+        sep #$20
+.a8
 .i16
-        ; TODO use a proc
-        ; transfer VRAM data
-        lda #$0000 ; start address in VRAM
-        ldx #$0000 ; start address in incbin
-        ldy #$0060 ; size of asset in word
+        ; VRAM insert start address
+        ldx #$0000
+        stx $2116
 
-        sta VMADDL
-VRAMLoop:
-        lda SpriteData, x
-        sta VMDATAL
-        inx
-        inx
-        dey
-        bne VRAMLoop
+        ; via VRAM write register 21`18` (B bus address)
+        lda #$18
+        sta $4301
+
+        ; from rom address (A bus address)
+        lda #$00
+        sta $4304
+        ldx #$8400
+        stx $4302
+
+        ; total number of bytes to transfer
+        ldx #$00c0
+        stx $4305
+
+        ; DMA params : A to B, increment, 2 bytes to 2 registers
+        lda #%00000001
+        sta $4300
+
+        ; initiate DMA via channel 0 (LSB = channel 0, MSB channel 7)
+        lda #%00000001
+        sta $420b
 
         sep #$30
 .a8
