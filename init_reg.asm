@@ -1,8 +1,9 @@
-.p816
 .include "include/reg.inc"
 .export init_reg
 
-.segment "STARTUP"
+.p816
+
+.segment "CODE"
 
 .proc init_reg
     sep #$20

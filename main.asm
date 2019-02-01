@@ -1,10 +1,10 @@
+.include "include/header.inc"
 .include "include/reg.inc"
+.import init_reg
 
 SPRITE_X  = $0000
 UPDATE_X  = $0001
 DIRECTION = $0002
-
-;-------------------------------------------------------------------------------
 
 ;----- Assembler Directives ----------------------------------------------------
 .p816                           ; tell the assembler this is 65816 code
@@ -26,12 +26,12 @@ DIRECTION = $0002
         sei                     ; disable interrupts
         clc                     ; clear the carry flag
         xce                     ; switch the 65816 to native (16-bit mode)
-        lda #$8f                ; force v-blanking
-        sta INIDISP
-        stz NMITIMEN            ; disable NMI
+        jsr init_reg
 
-        lda #$80
-        sta VMAINC              ; increment VRAM address by 1 when writing to VMDATAH
+        ; reset custom memory locations
+        stz SPRITE_X
+        stz UPDATE_X
+        stz DIRECTION
 
         rep #$30
 .a16
@@ -69,18 +69,10 @@ CGRAMLoop:
         cpx #$20                ; check whether 32/$20 bytes were transfered
         bcc CGRAMLoop           ; if not, continue loop
 
-        ; set up OAM data
-        stz OAMADDL             ; set the OAM address to ...
-        stz OAMADDH             ; ...at $0000
-
-        ; reset custom memory locations
-        stz SPRITE_X
-        stz UPDATE_X
-        stz DIRECTION
-
-        jsr draw_sprite
 
         ; make Objects visible
+        jsr draw_sprite
+
         lda #$10
         sta TM
         ; release forced blanking, set screen to full brightness
@@ -215,6 +207,7 @@ noupdate_position:
         rts
 .endproc
 
+
 ;-------------------------------------------------------------------------------
 ;   Is not used in this program
 ;-------------------------------------------------------------------------------
@@ -223,41 +216,3 @@ noupdate_position:
         rti
 .endproc
 ;-------------------------------------------------------------------------------
-
-;-------------------------------------------------------------------------------
-;   Interrupt and Reset vectors for the 65816 CPU
-;-------------------------------------------------------------------------------
-
-.segment "HEADER" ; start @ FFC0. See manual page 1-2-16
-    ;     "abcdefghijklmnopqrstu"
-    .byte "SNES PRIMER          " ; ROM Name (21 bits)
-
-.segment "ROMINFO" ; starts @ FFD5 (HEADER + 21 bits)
-    .byte $30 ; ROM makeup byte
-    .byte $00 ; ROM type
-    .byte $09 ; ROM Size
-    .byte $00 ; SRAM Size
-    .byte $00 ; Locale
-    .byte $33 ; License ID
-    .byte $00 ; Version #
-    .word $AAAA ; complement (bitwise NOT) value of the checksum
-    .word $0000 ; checksum (The sum of all bytes in the ROM after a bitwise AND with the value 0xFFFF)
-
-.segment "VECTOR"
-    ; Native mode
-   .word $0000, $0000
-   .word $0000      ; COP
-   .word $0000      ; BRK
-   .word $0000      ; ABT
-   .word NMIHandler ; NMI
-   .word $0000      ; RST
-   .word IRQHandler ; IRQ
-
-   ; Emulation mode
-   .word $0000, $0000
-   .word $0000        ; COP
-   .word $0000        ; BRK
-   .word $0000        ; ABT
-   .word $0000        ; NMI
-   .word ResetHandler ; RST
-   .word IRQHandler   ; IRQ
