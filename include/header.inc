@@ -27,7 +27,7 @@
    .word $0000      ; ABT
    .word NMIHandler ; NMI
    .word $0000      ; RST
-   .word IRQHandler ; IRQ
+   .word $0000      ; IRQ
 
    ; Emulation mode
    .word $0000, $0000
@@ -36,6 +36,12 @@
    .word $0000        ; ABT
    .word $0000        ; NMI
    .word ResetHandler ; RST
-   .word IRQHandler   ; IRQ
+   .word $0000        ; IRQ
 
 .endif
+
+.segment "STARTUP"
+NMIStub:
+    jml NMIHandler
+ResetStub:
+    jml ResetHandler
