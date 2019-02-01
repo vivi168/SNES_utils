@@ -1,30 +1,4 @@
-;----- Aliases/Labels ----------------------------------------------------------
-; these are aliases for the Memory Mapped Registers we will use
-INIDISP     = $2100     ; inital settings for screen
-OBJSEL      = $2101     ; object size $ object data area designation
-OAMADDL     = $2102     ; address for accessing OAM
-OAMADDH     = $2103
-OAMDATA     = $2104     ; data for OAM write
-BGMODE      = $2105     ; BG MODE and Tile size setting; abcdefff abcd = BG tile size (4321): 0 = 8x8 1 = 16x16, e = BG 3 High Priority, f = BG Mode
-BG1SC       = $2107
-BG2SC       = $2108
-BG3SC       = $2109
-BG4SC       = $210a
-BG12NBA     = $210b     ; BG 1&2 Tile Data Designation
-BG34NBA     = $210c     ; BG 3&4 Tile Data Designation
-VMAINC      = $2115     ; VRAM address increment value designation
-VMADDL      = $2116     ; address for VRAM read and write
-VMADDH      = $2117
-VMDATAL     = $2118     ; data for VRAM write
-VMDATAH     = $2119     ; data for VRAM write
-CGADD       = $2121     ; address for CGRAM read and write
-CGDATA      = $2122     ; data for CGRAM write
-TM          = $212c     ; main screen designation 000abcde, 000abcde a = Object b = BG 4 c = BG 3 d = BG 2 e = BG 1
-NMITIMEN    = $4200     ; enable flaog for v-blank
-RDNMI       = $4210     ; read the NMI flag status
-
-JOY1L       = $4218     ; abcd0000 a = Button A b = X c = L d = R
-JOY1H       = $4219     ; abcdefgh a = B b = Y c = Select d = Start efgh = Up/Dn/Lt/Rt
+.include "include/reg.inc"
 
 SPRITE_X  = $0000
 UPDATE_X  = $0001
@@ -37,9 +11,11 @@ DIRECTION = $0002
 ;-------------------------------------------------------------------------------
 
 ;----- Includes ----------------------------------------------------------------
-.segment "SPRITEDATA"
-SpriteData: .incbin "assets/link_full.png.vra"
-ColorData:  .incbin "assets/link_full.png.pal"
+.segment "DATA"
+    SpriteData:
+        .incbin "assets/link_full.png.vra"
+    ColorData:
+        .incbin "assets/link_full.png.pal"
 ;-------------------------------------------------------------------------------
 
 .segment "CODE"
@@ -251,15 +227,37 @@ noupdate_position:
 ;-------------------------------------------------------------------------------
 ;   Interrupt and Reset vectors for the 65816 CPU
 ;-------------------------------------------------------------------------------
+
+.segment "HEADER" ; start @ FFC0. See manual page 1-2-16
+    ;     "abcdefghijklmnopqrstu"
+    .byte "SNES PRIMER          " ; ROM Name (21 bits)
+
+.segment "ROMINFO" ; starts @ FFD5 (HEADER + 21 bits)
+    .byte $30 ; ROM makeup byte
+    .byte $00 ; ROM type
+    .byte $09 ; ROM Size
+    .byte $00 ; SRAM Size
+    .byte $00 ; Locale
+    .byte $33 ; License ID
+    .byte $00 ; Version #
+    .word $AAAA ; complement (bitwise NOT) value of the checksum
+    .word $0000 ; checksum (The sum of all bytes in the ROM after a bitwise AND with the value 0xFFFF)
+
 .segment "VECTOR"
-; native mode   COP,        BRK,        ABT,
-.addr           $0000,      $0000,      $0000
-;               NMI,        RST,        IRQ
-.addr           NMIHandler, $0000,      $0000
+    ; Native mode
+   .word $0000, $0000
+   .word $0000      ; COP
+   .word $0000      ; BRK
+   .word $0000      ; ABT
+   .word NMIHandler ; NMI
+   .word $0000      ; RST
+   .word IRQHandler ; IRQ
 
-.word           $0000, $0000    ; four unused bytes
-
-; emulation m.  COP,        BRK,        ABT,
-.addr           $0000,      $0000,      $0000
-;               NMI,        RST,        IRQ
-.addr           $0000,      ResetHandler, $0000
+   ; Emulation mode
+   .word $0000, $0000
+   .word $0000        ; COP
+   .word $0000        ; BRK
+   .word $0000        ; ABT
+   .word $0000        ; NMI
+   .word ResetHandler ; RST
+   .word IRQHandler   ; IRQ

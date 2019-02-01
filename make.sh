@@ -1,2 +1,3 @@
-ca65 --cpu 65816 -s -o SpriteDemo.o SpriteDemo.s
-ld65 -C MemoryMap.cfg -o FirstSprite.smc SpriteDemo.o
+ca65 --cpu 65816 -s -o obj/main.o main.asm
+# ca65 --cpu 65816 -s -o obj/init_reg.o init_reg.asm
+ld65 -C memory.cfg -o rpg.smc obj/main.o
