@@ -13,9 +13,9 @@ DIRECTION = $0002
 ;----- Includes ----------------------------------------------------------------
 .segment "DATA"
     SpriteData:
-        .incbin "assets/link_full.png.vra"
+        .incbin "assets/link_full.png.vra" ; $C0 bytes
     ColorData:
-        .incbin "assets/link_full.png.pal"
+        .incbin "assets/link_full.png.pal" ; $20 bytes
 ;-------------------------------------------------------------------------------
 
 .segment "CODE"
@@ -37,6 +37,9 @@ DIRECTION = $0002
         sep #$20
 .a8
 .i16
+        ; -------------
+        ; VRAM DMA TRANSFER
+        ; -------------
         ; VRAM insert start address
         ldx #$0000
         stx VMADDL
@@ -46,9 +49,9 @@ DIRECTION = $0002
         sta BBAD0
 
         ; from rom address (A bus address)
-        lda #$00
+        lda #$02
         sta A1T0B
-        ldx #$8400
+        ldx #$8000
         stx A1T0L
 
         ; total number of bytes to transfer
@@ -63,24 +66,28 @@ DIRECTION = $0002
         lda #%00000001
         sta MDMAEN
 
+        ; -------------
+        ; CGRAM DMA TRANSFER
+        ; -------------
+        lda #$80
+        sta CGADD
+        lda #$22
+        sta BBAD0
+        lda #$02
+        sta A1T0B
+        ldx #$80c0
+        stx A1T0L
+        ldx #$0020
+        stx DAS0L
+        lda #$00
+        sta DMAP0
+        lda #$01
+        sta MDMAEN
+
+
         sep #$30
 .a8
 .i8
-
-        ; transfer CGRAM data
-        lda #$80
-        sta CGADD               ; set CGRAM address to $80
-        ldx #$00                ; set X to zero, use it as loop counter and offset
-CGRAMLoop:
-        lda ColorData, X        ; get the color low byte
-        sta CGDATA              ; store it in CGRAM
-        inx                     ; increase counter/offset
-        lda ColorData, X        ; get the color high byte
-        sta CGDATA              ; store it in CGRAM
-        inx                     ; increase counter/offset
-        cpx #$20                ; check whether 32/$20 bytes were transfered
-        bcc CGRAMLoop           ; if not, continue loop
-
 
         ; make Objects visible
         jsr draw_sprite
