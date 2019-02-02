@@ -39,29 +39,29 @@ DIRECTION = $0002
 .i16
         ; VRAM insert start address
         ldx #$0000
-        stx $2116
+        stx VMADDL
 
         ; via VRAM write register 21`18` (B bus address)
         lda #$18
-        sta $4301
+        sta BBAD0
 
         ; from rom address (A bus address)
         lda #$00
-        sta $4304
+        sta A1T0B
         ldx #$8400
-        stx $4302
+        stx A1T0L
 
         ; total number of bytes to transfer
         ldx #$00c0
-        stx $4305
+        stx DAS0L
 
         ; DMA params : A to B, increment, 2 bytes to 2 registers
         lda #%00000001
-        sta $4300
+        sta DMAP0
 
         ; initiate DMA via channel 0 (LSB = channel 0, MSB channel 7)
         lda #%00000001
-        sta $420b
+        sta MDMAEN
 
         sep #$30
 .a8
