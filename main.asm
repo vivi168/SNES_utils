@@ -205,7 +205,15 @@ continue_gameloop:
         stx OAMDATA    ; horizontal position
         sty OAMDATA    ; vertical position
         sta OAMDATA    ; name of sprite
-        lda #$00       ; no flip, prio 0, palette 0
+
+        lda DIRECTION
+        cmp #$01
+        bne noflip
+        lda #$40       ; no flip, prio 0, palette 0
+        bra return
+noflip:
+        lda #$00
+return:
         sta OAMDATA
 
         ply
