@@ -5,6 +5,8 @@
 SPRITE_X  = $0000
 UPDATE_X  = $0001
 DIRECTION = $0002
+TORSO     = $0003
+LEGS      = $0004
 
 ;----- Assembler Directives ----------------------------------------------------
 .p816                           ; tell the assembler this is 65816 code
@@ -14,7 +16,7 @@ DIRECTION = $0002
 .segment "DATA"
     SpriteData:
         .incbin "assets/background.png.vra" ; $a80 bytes
-        .incbin "assets/mario.png.vra" ; $400 bytes
+        .incbin "assets/mario.png.vra" ; $800 bytes
     ColorData:
         .incbin "assets/background.png.pal" ; $20 bytes
         .incbin "assets/mario.png.pal" ; $20 bytes
@@ -40,6 +42,9 @@ ResetStub:
         stz SPRITE_X
         stz UPDATE_X
         stz DIRECTION
+        stz TORSO
+        lda #$20
+        sta LEGS
 
         rep #$10
         sep #$20
@@ -120,7 +125,7 @@ ResetStub:
         inc
         sta UPDATE_X
         cmp #$10
-        bne noupdate_position ; skip moving
+        bne continue_gameloop ; skip moving
         stz UPDATE_X
 
         lda SPRITE_X
@@ -147,8 +152,29 @@ update_position:
         sta SPRITE_X
         stx DIRECTION
 
+        lda TORSO
+        ina
+        ina
+        sta TORSO
+        cmp #$07
+        bcc update_legs
+        lda #$02
+        sta TORSO
 
-noupdate_position:
+update_legs:
+        lda LEGS
+        ina
+        ina
+        sta LEGS
+        cmp #$27
+        bcc continue_gameloop
+        lda #$22
+        sta LEGS
+
+
+
+
+continue_gameloop:
 
         jmp GameLoop
 .endproc
@@ -197,12 +223,12 @@ noupdate_position:
         clc
 
         ldx SPRITE_X
-        ldy #$20
-        lda #$00
+        ldy #$20 ; Y coord
+        lda TORSO ; char #
         jsr set_sprite_data
 
-        ldy #$30
-        lda #$20
+        ldy #$30 ; Y coord
+        lda LEGS ; char #
         jsr set_sprite_data
 
         ply
