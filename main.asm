@@ -13,9 +13,17 @@ DIRECTION = $0002
 ;----- Includes ----------------------------------------------------------------
 .segment "DATA"
     SpriteData:
-        .incbin "assets/link_full.png.vra" ; $C0 bytes
+        .incbin "assets/background.png.vra" ; $a80 bytes
+        .incbin "assets/mario.png.vra" ; $400 bytes
     ColorData:
-        .incbin "assets/link_full.png.pal" ; $20 bytes
+        .incbin "assets/background.png.pal" ; $20 bytes
+        .incbin "assets/mario.png.pal" ; $20 bytes
+
+.segment "STARTUP"
+NMIStub:
+    jml NMIHandler
+ResetStub:
+    jml ResetHandler
 ;-------------------------------------------------------------------------------
 
 .segment "CODE"
@@ -51,11 +59,11 @@ DIRECTION = $0002
         ; from rom address (A bus address)
         lda #$02
         sta A1T0B
-        ldx #$8000
+        ldx #$8a80 ; starts @ $8000, + bg = $8a80
         stx A1T0L
 
         ; total number of bytes to transfer
-        ldx #$00c0
+        ldx #$0400
         stx DAS0L
 
         ; DMA params : A to B, increment, 2 bytes to 2 registers
@@ -72,18 +80,17 @@ DIRECTION = $0002
         lda #$80
         sta CGADD
         lda #$22
-        sta BBAD0
+        sta BBAD1
         lda #$02
-        sta A1T0B
-        ldx #$80c0
-        stx A1T0L
+        sta A1T1B
+        ldx #$8ea0 ; starts @ $8000, + bg + mario + bg pal = $8ea0
+        stx A1T1L
         ldx #$0020
-        stx DAS0L
+        stx DAS1L
         lda #$00
-        sta DMAP0
-        lda #$01
+        sta DMAP1
+        lda #$02
         sta MDMAEN
-
 
         sep #$30
 .a8
@@ -198,11 +205,15 @@ noupdate_position:
         jsr set_sprite_data
 
         ldy #$18
-        lda #$02
+        lda #$08
         jsr set_sprite_data
 
         ldy #$20
-        lda #04
+        lda #$10
+        jsr set_sprite_data
+
+        ldy #$28
+        lda #$18
         jsr set_sprite_data
 
         txa
@@ -213,11 +224,15 @@ noupdate_position:
         jsr set_sprite_data
 
         ldy #$18
-        lda #$03
+        lda #$09
         jsr set_sprite_data
 
         ldy #$20
-        lda #$05
+        lda #$11
+        jsr set_sprite_data
+
+        ldy #$28
+        lda #$19
         jsr set_sprite_data
 
         ply

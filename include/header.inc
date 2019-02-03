@@ -39,9 +39,3 @@
    .word $0000        ; IRQ
 
 .endif
-
-.segment "STARTUP"
-NMIStub:
-    jml NMIHandler
-ResetStub:
-    jml ResetHandler
