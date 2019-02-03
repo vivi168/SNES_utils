@@ -49,27 +49,22 @@ ResetStub:
         ; VRAM DMA TRANSFER
         ; -------------
         ; VRAM insert start address
-        ldx #$0000
+        ldx #$2000
         stx VMADDL
-
         ; via VRAM write register 21`18` (B bus address)
         lda #$18
         sta BBAD0
-
         ; from rom address (A bus address)
         lda #$02
         sta A1T0B
         ldx #$8a80 ; starts @ $8000, + bg = $8a80
         stx A1T0L
-
         ; total number of bytes to transfer
-        ldx #$0400
+        ldx #$0800
         stx DAS0L
-
         ; DMA params : A to B, increment, 2 bytes to 2 registers
         lda #%00000001
         sta DMAP0
-
         ; initiate DMA via channel 0 (LSB = channel 0, MSB channel 7)
         lda #%00000001
         sta MDMAEN
@@ -83,7 +78,7 @@ ResetStub:
         sta BBAD1
         lda #$02
         sta A1T1B
-        ldx #$8ea0 ; starts @ $8000, + bg + mario + bg pal = $8ea0
+        ldx #$92a0 ; starts @ $8000, + bg + mario + bg pal = $8ea0
         stx A1T1L
         ldx #$0020
         stx DAS1L
@@ -95,6 +90,8 @@ ResetStub:
         sep #$30
 .a8
 .i8
+        lda #$61 ; 16/32, start @ $2000
+        sta OBJSEL
 
         ; make Objects visible
         jsr draw_sprite
@@ -200,39 +197,12 @@ noupdate_position:
         clc
 
         ldx SPRITE_X
-        ldy #$10
+        ldy #$20
         lda #$00
         jsr set_sprite_data
 
-        ldy #$18
-        lda #$08
-        jsr set_sprite_data
-
-        ldy #$20
-        lda #$10
-        jsr set_sprite_data
-
-        ldy #$28
-        lda #$18
-        jsr set_sprite_data
-
-        txa
-        adc #$08
-        tax
-        ldy #$10
-        lda #$01
-        jsr set_sprite_data
-
-        ldy #$18
-        lda #$09
-        jsr set_sprite_data
-
-        ldy #$20
-        lda #$11
-        jsr set_sprite_data
-
-        ldy #$28
-        lda #$19
+        ldy #$30
+        lda #$20
         jsr set_sprite_data
 
         ply
