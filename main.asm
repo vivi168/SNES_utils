@@ -7,6 +7,7 @@ UPDATE_X  = $0001
 DIRECTION = $0002
 TORSO     = $0003
 LEGS      = $0004
+DUMMY     = $0005
 
 ;----- Assembler Directives ----------------------------------------------------
 .p816                           ; tell the assembler this is 65816 code
@@ -50,6 +51,32 @@ ResetStub:
         sep #$20
 .a8
 .i16
+        ; -------------
+        ; OAM CLEAR VIA DMA
+        ; -------------
+        stz OAMADDL
+        stz OAMADDH
+
+        lda #$04 ; OAMDATA $21`04`
+        sta BBAD0
+        ; load $ff to WRAM:$0005
+        lda #$ff
+        sta DUMMY
+        ; from WRAM address $00 (A bus address)
+        lda #$00
+        sta A1T0B
+        ldx #$0005 ; DUMMY address
+        stx A1T0L
+        ; total number of bytes to transfer (OAM is $220 bytes)
+        ldx #$0220
+        stx DAS0L
+        ; DMA params : A to B, don't increment (keep reading wram:$00
+        lda #$0a
+        sta DMAP0
+        ; initiate DMA via channel 0 (LSB = channel 0, MSB channel 7)
+        lda #%00000001
+        sta MDMAEN
+
         ; -------------
         ; VRAM DMA TRANSFER
         ; -------------
@@ -97,6 +124,17 @@ ResetStub:
 .i8
         lda #$61 ; 16/32, start @ $2000
         sta OBJSEL
+
+        ; set OAM address to $100
+        stz OAMADDL
+        lda #$01
+        sta OAMADDH
+        ; reset sx bits for first 4 objs
+        lda #$00
+        sta OAMDATA
+        ; set OAM address to $000
+        stz OAMADDL
+        stz OAMADDH
 
         ; make Objects visible
         jsr draw_sprite
