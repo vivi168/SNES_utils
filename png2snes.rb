@@ -3,20 +3,18 @@ require 'matrix'
 require 'optparse'
 
 class Png2Snes
-  def initialize(file_name, sprite_size:8, bpp:4, alpha:nil)
+  def initialize(file_name, bpp:4, alpha:nil)
     @file_name = file_name
     @image = ChunkyPNG::Image.from_file(@file_name)
     @pixels = pixels_to_bgr5
 
     @palette = @pixels.uniq
-
-    raise ArgumentError, 'Sprite must be 8, 16, 32 or 64 pixels' unless [8, 16, 32, 64].include? sprite_size
-    @sprite_size = sprite_size
+    @char_size = 8
 
     raise ArgumentError, 'BPP must be 2, 4, or 8' unless [2, 4, 8].include? bpp
     @bpp = bpp
 
-    raise ArgumentError, 'Image width and height must be a multiple of sprite size' if (@image.width % sprite_size != 0) or (@image.height % sprite_size != 0)
+    raise ArgumentError, 'Image width and height must be a multiple of sprite size' if (@image.width % @char_size != 0) or (@image.height % @char_size != 0)
 
     alpha_first if alpha
     fill_palette
@@ -63,16 +61,16 @@ class Png2Snes
   def extract_sprites
     pixel_idx = pixel_indices
 
-    sprite_per_row = @image.width / @sprite_size
-    sprite_per_col = @image.height / @sprite_size
+    sprite_per_row = @image.width / @char_size
+    sprite_per_col = @image.height / @char_size
     sprite_per_sheet =  sprite_per_row * sprite_per_col
 
     sprites = []
     (0..sprite_per_sheet-1).each do |s|
       sprite = []
-      (0..@sprite_size-1).each do |r|
-        offset = (s/sprite_per_row)*sprite_per_row * @sprite_size**2 + s % sprite_per_row * @sprite_size
-        sprite += pixel_idx[offset + r*sprite_per_row*@sprite_size, @sprite_size]
+      (0..@char_size-1).each do |r|
+        offset = (s/sprite_per_row)*sprite_per_row * @char_size**2 + s % sprite_per_row * @char_size
+        sprite += pixel_idx[offset + r*sprite_per_row*@char_size, @char_size]
       end
       sprites.push(sprite)
     end
@@ -90,7 +88,7 @@ class Png2Snes
   end
 
   def write_image
-    sprite_per_row = @image.width / @sprite_size
+    sprite_per_row = @image.width / @char_size
     sprites = extract_sprites
     sprites_bitplanes = sprites.map { |s| extract_bitplanes s }
 
@@ -100,9 +98,9 @@ class Png2Snes
 
       bitplane_bits = ""
       sprite_bitplane_pairs.each do |bitplane|
-        (0..@sprite_size-1).each do |r|
-          offset = r*@sprite_size
-          bitplane_bits += bitplane[0][offset, @sprite_size].join + bitplane[1][offset, @sprite_size].join
+        (0..@char_size-1).each do |r|
+          offset = r*@char_size
+          bitplane_bits += bitplane[0][offset, @char_size].join + bitplane[1][offset, @char_size].join
         end
       end
       image_bits += bitplane_bits
