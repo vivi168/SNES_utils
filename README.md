@@ -1,31 +1,24 @@
 # SNES Utils
 
-Given an input image, extract color palette and sprite data, in a file format readable by the SNES.
+Given an input image, extract color palette and character data, in a file format readable by the SNES. (Read: that you can load into VRAM/CGRAM as is).
 
-As of now : we assume the palette is 4BPP, and a sprite is 8x8 pixels, the source image is composed of 4 sprites (16x16 pixels)
-
-## Test
+## How to use
 
 ```
-$ ruby png2snes.rb -f assets/link_full.png
+$ ruby png2snes.rb -f assets/mario.png
+$ ruby png2snes.rb -f assets/background.png
 $ sh make.sh
 ```
 
 Run with Snes9x or bsnes+.
 
-You should see Link in the middle of the screen.
+You should see Mario in the middle of the screen.
 
-ASM files courtesy of [https://georgjz.github.io/snesaa04/](https://georgjz.github.io/snesaa04/)
+At first, I used the source from [https://georgjz.github.io/snesaa04/](https://georgjz.github.io/snesaa04/)
 
+As of now, I've rewritten everything to use DMA. I will use this base to make a small SNES game.
 
-## Goal :
+# TODO
 
-* Detect number of colors in use (4, 16 or 256) and so the bit per pixel (2BPP, 4BPP or 8BPP)
-* Determine the color palette accordingly, save it to binary file
-* Given sprite size, extract the sprites and save it to binary file
-
-# Tools
-
-```
-gem install chunky_png
-```
+* I should make a Gem.
+* Show a background behind Mario.
