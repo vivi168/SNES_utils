@@ -22,3 +22,4 @@ As of now, I've rewritten everything to use DMA. I will use this base to make a 
 
 * I should make a Gem.
 * Show a background behind Mario.
+* Convert Tiled .tmx files into usable SNES tilemap files
