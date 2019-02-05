@@ -18,10 +18,11 @@ ColorData:
 
 .segment "STARTUP"
 
-NMIStub:
-    jml NMIHandler
 ResetStub:
     jml ResetHandler
+
+NMIStub:
+    jml NMIHandler
 
 .segment "CODE"
 
@@ -173,14 +174,15 @@ set_x_msb:
         jmp GameLoop            ; all initialization is done
 .endproc
 
-.proc   GameLoop
-        wai                     ; wait for NMI / V-Blank
-
-        jmp GameLoop
-.endproc
-
 .proc   NMIHandler
         lda RDNMI               ; read NMI status, acknowledge NMI
 
         rti
+.endproc
+
+
+.proc   GameLoop
+        wai                     ; wait for NMI / V-Blank
+
+        jmp GameLoop
 .endproc
