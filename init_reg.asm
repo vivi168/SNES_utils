@@ -7,7 +7,7 @@
 
 .proc init_reg
     sep #$20
-.a8
+
     lda #$8f
     sta INIDISP
     stz OBJSEL
@@ -24,7 +24,7 @@
     stz BG34NBA
 
     rep #$20
-.a16
+
     stz BG1HOFS
     stz BG1VOFS
     stz BG2HOFS
@@ -35,7 +35,7 @@
     stz BG4VOFS
 
     sep #$20
-.a8
+
     lda #$80
     sta VMAINC
     stz VMADDL
@@ -43,7 +43,7 @@
     stz M7SEL
 
     rep #$20
-.a16
+
     lda #$0001
     sta M7A
     stz M7B
@@ -54,7 +54,7 @@
     stz M7Y
 
     sep #$20
-.a8
+
     stz CGADD
     stz W12SEL
     stz W34SEL
