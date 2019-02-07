@@ -10,11 +10,14 @@ OAMH_BUF_START = $0300
 .segment "DATA"
 
 character_data:
-    .incbin "assets/background.png.vra" ; $a80 bytes
-    .incbin "assets/mario.png.vra" ; $800 bytes
+    .incbin "assets/background.png.vra" ; $800 bytes, $8000
+    .incbin "assets/mario.png.vra" ; $800 bytes, $8800
 palette_data:
-    .incbin "assets/background.png.pal" ; $20 bytes
-    .incbin "assets/mario.png.pal" ; $20 bytes
+    .incbin "assets/background.png.pal" ; $20 bytes, $9000
+    .incbin "assets/mario.png.pal" ; $20 bytes, $9020
+tilemap_data:
+    .incbin "assets/tilemap.csv.map" ; $800 bytes, $9040
+
 
 .segment "STARTUP"
 
@@ -48,7 +51,8 @@ nmi_stub:
         inx
         stz OAML_BUF_START, x
         inx
-        stz OAML_BUF_START, x
+        lda #%00110000 ; OBJ prio 3
+        sta OAML_BUF_START, x
         inx
         ; LEGS
         lda #(256/2 - 16)
@@ -60,7 +64,8 @@ nmi_stub:
         lda #$02
         sta OAML_BUF_START, x
         inx
-        stz OAML_BUF_START, x
+        lda #%00110000 ; OBJ prio 3
+        sta OAML_BUF_START, x
 
         ; reset those two sprites X MSB
         ldx #$0000
@@ -69,24 +74,61 @@ nmi_stub:
         jsr transfer_oam_buffer
 
         rep #$30 ; A 16 I 16
-        lda #$6000 ; VRAM start addr : $6000
-        ldx #$8a80 ; ROM start addr : $8000 + bg = $8a80
+
+        ; transfer background data
+        lda #$0000
+        ldx #$8000
+        ldy #$0800
+        jsr transfer_vram
+
+        ;transfer tilemap data
+        lda #$2000
+        ldx #$9040
+        ldy #$0800
+        jsr transfer_vram
+
+        ; transfer mario data
+        lda #$6000 ; VRAM start addr
+        ldx #$8800 ; ROM start addr
         ldy #$0800 ; 800 bytes to transfer
         jsr transfer_vram
 
-        ; transfer mario palette @ CGRAM $80 (first sprite addr)
         sep #$20 ; A 8
-        lda #$80 ; CGRAM start addre
-        ldx #$92a0 ; ROM start addr $8000 + bg + mario + bg pal = $92a0
+        ; transfer background palette
+        lda #$00 ; CGRAM start addr
+        ldx #$9000 ; ROM start addr
         ldy #$0020 ; 20 bytes to transfer
         jsr transfer_cgram
+        ; transfer mario palette @ CGRAM $80 (first sprite addr)
+        lda #$80 ; CGRAM start addr
+        ldx #$9020 ; ROM start addr
+        ldy #$0020 ; 20 bytes to transfer
+        jsr transfer_cgram
+
+        ; set bg mode 1, 16x16 tiles
+        lda #%00010001
+        sta BGMODE
+
+        ; set tilemap address
+        lda #$20
+        sta BG1SC
+
+        ; set tileset address for bg 1 and 2
+        ; @ $0000
+        lda #$00
+        sta BG12NBA
+        stz BG34NBA
+
+        ; set bg 1 V/H offset to 0
+        stz BG1HOFS
+        stz BG1VOFS
 
         ; Set sprite size to 16/32, start @ VRAM $6000
         lda #$63
         sta OBJSEL
 
-        ; enables sprites
-        lda #$10
+        ; enables sprites, BG 1
+        lda #%00010001
         sta TM
         ; release forced blanking, set screen to full brightness
         lda #$0f
