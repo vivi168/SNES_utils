@@ -16,7 +16,7 @@ palette_data:
     .incbin "assets/background.png.pal" ; $20 bytes, $9000
     .incbin "assets/mario.png.pal" ; $20 bytes, $9020
 tilemap_data:
-    .incbin "assets/tilemap.csv.map" ; $800 bytes, $9040
+    .incbin "assets/tilemap.tmx.map" ; $800 bytes, $9040
 
 
 .segment "STARTUP"
@@ -43,10 +43,10 @@ nmi_stub:
         ; once that's done, load our sprite data
         ldx #$0000
         ; TORSO
-        lda #(256/2 - 16)
+        lda #$10
         sta OAML_BUF_START, x
         inx
-        lda #(224/2 - 16)
+        lda #(224-48)
         sta OAML_BUF_START, x
         inx
         stz OAML_BUF_START, x
@@ -55,10 +55,10 @@ nmi_stub:
         sta OAML_BUF_START, x
         inx
         ; LEGS
-        lda #(256/2 - 16)
+        lda #$10
         sta OAML_BUF_START, x
         inx
-        lda #(224/2)
+        lda #(224-32)
         sta OAML_BUF_START, x
         inx
         lda #$02

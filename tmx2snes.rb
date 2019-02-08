@@ -1,7 +1,9 @@
-require 'csv'
+require 'nokogiri'
+require 'optparse'
 
-class Csv2Snes
+class Tmx2Snes
   def initialize(file_name, big_char:false, palette:0, v:false, h:false, p:false)
+    raise unless File.file? file_name
     @file_name = file_name
     @tilemap = []
     raise if palette < 0 || palette > 7
@@ -9,10 +11,15 @@ class Csv2Snes
     @v_flip = v ? "1" : "0"
     @h_flip = h ? "1" : "0"
     @prio_bg3 = p ? "1" : "0"
-    tnm = big_char ? 2 : 1
-    row_offset = 16 * (tnm - 1)
+    tnm = big_char ? 2 : 1 # big_char : 16x16 tiles. otherwise, 8x8 tiles
+    row_offset = 16 * (tnm - 1) # Skip a row in case of 16x16 tiles ( tile #9 starts at index 32)
 
-    CSV.foreach(@file_name) do |row|
+    doc = Nokogiri::XML(File.open(@file_name))
+    csv_node = doc.xpath('//data').children.first.to_s
+
+    csv = csv_node.split("\n").compact.reject { |e| e.empty? }.map { |row| row.split(',') }
+
+    csv.each do |row|
       raise if row.length != 32
       @tilemap += row.map { |r| (r.to_i - 1)*tnm + row_offset * ((r.to_i - 1)/8).to_i }
     end
@@ -47,6 +54,15 @@ class Csv2Snes
   end
 end
 
-t = Csv2Snes.new 'assets/tilemap.csv', big_char: true
+options = {}
+OptionParser.new do |opts|
+  opts.on('-f', '--file FILENAME', 'TMX source file') { |o| options[:filename] = o }
+  opts.on('-s', '--tile-size TILESIZE', '8 or 16') { |o| options[:tile_size] = o.to_i }
+end.parse!
+
+raise OptionParser::MissingArgument, 'Must specify TMX source file' if options[:filename].nil?
+raise 'Wrong size : must either be 8 or 16' unless [8, 16].include? options[:tile_size]
+
+t = Tmx2Snes.new options[:filename], big_char: options[:tile_size] == 16
 
 t.write

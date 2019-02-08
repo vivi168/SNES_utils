@@ -1,7 +1,7 @@
 # SNES Utils
 
 * Given an input image, extract color palette and character data, in a file format readable by the SNES. (Read: that you can load into VRAM/CGRAM as is).
-* Given a CSV file (generated with Tiled), generate a tilemap loadable in the SNES vram.
+* Given a TMX file (generated with Tiled), generate a tilemap loadable in the SNES vram.
 
 Warning: Tileset should be 128 pixel wide for best usability.
 
@@ -10,7 +10,7 @@ Warning: Tileset should be 128 pixel wide for best usability.
 ```
 $ ruby png2snes.rb -f assets/mario.png
 $ ruby png2snes.rb -f assets/background.png
-$ ruby csv2snes.rb
+$ ruby tmx2snes.rb -f assets/tilemap.tmx -s 16
 $ sh make.sh
 ```
 
@@ -24,6 +24,6 @@ As of now, I've rewritten everything to use DMA. I will use this base to make a 
 
 # TODO
 
-* I should make a Gem, combining Png2Snes and Csv2Snes
-* Convert Tiled .tmx files into usable SNES tilemap files directly (instead of manually extracting the csv from the TMX)
-* Support tilemap larger than 32x32 tiles
+* I should make a Gem, combining Png2Snes and Tmx2Snes
+* Support 32x64, 64x32 and 64x64 tilemaps
+* Add a way to set the flip bits per tile (an additional CSV file?)
