@@ -3,6 +3,14 @@
 .include "include/header.inc"
 .import init_reg
 
+PLAYERX     = $0001
+JOY1_RAWL   = $0010
+JOY1_RAWH   = $0011
+JOY1_HELDL  = $0012
+JOY1_HELDH  = $0013
+JOY1_PRESSL = $0014
+JOY1_PRESSH = $0015
+
 .segment "DATA"
     .incbin "assets/background.png.vra" ; $800 bytes, $8000
     .incbin "assets/mario.png.vra" ; $800 bytes, $8800
@@ -32,9 +40,11 @@ nmi_stub:
     reset_oam_buffer
 
     ; once that's done, load our sprite data
+    lda #$10
+    sta PLAYERX
     ldx #$0000
     ; TORSO
-    lda #$10
+    lda PLAYERX
     sta OAML_BUF_START, x
     inx
     lda #(224-48)
@@ -46,7 +56,7 @@ nmi_stub:
     sta OAML_BUF_START, x
     inx
     ; LEGS
-    lda #$10
+    lda PLAYERX
     sta OAML_BUF_START, x
     inx
     lda #(224-32)
@@ -113,9 +123,13 @@ nmi_stub:
     jmp GameLoop
 .endproc
 
+; A8 I16
 .proc nmi_int
     ; read NMI status, acknowledge NMI
     lda RDNMI
+
+    transfer_oam_buffer
+    jsr read_joypad
 
     rti
 .endproc
@@ -124,5 +138,54 @@ nmi_stub:
     ; wait for NMI / V-Blank
     wai
 
+    ; not sure if it's the best way
+    ; but whatever, it works for now :P
+    lda JOY1_HELDH
+    and #$01
+    bne move_right
+    lda JOY1_HELDH
+    and #$02
+    bne move_left
+
+    bra continue
+
+move_right:
+    lda PLAYERX
+    inc
+    sta PLAYERX
+    bra update
+move_left:
+    lda PLAYERX
+    dec
+    sta PLAYERX
+update:
+    sta OAML_BUF_START
+    ldx #$04
+    sta OAML_BUF_START, x
+
+continue:
     jmp GameLoop
 .endproc
+
+read_joypad:
+    php
+read_data:
+    lda HVBJOY ; read joypad status
+    and #$01
+    bne read_data ; read done when 0
+
+    rep #$30 ; A 16, I 16
+
+    ldx JOY1_RAWL   ; read previous frame raw input
+    lda JOY1L       ; read current frame raw input
+    sta JOY1_RAWL   ; save it
+    txa             ; move previous frame raw input to A
+    eor JOY1_RAWL   ; XOR previous with current, get changes. Held and unpressed become 0
+    and JOY1_RAWL   ; AND previous with current, only pressed left to 1
+    sta JOY1_PRESSL ; store pressed
+    txa             ; move previous frame raw input to A
+    and JOY1_RAWL   ; AND with current, only held are left to 1
+    sta JOY1_HELDL  ; stored held
+
+    plp
+    rts
