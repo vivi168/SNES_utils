@@ -1,9 +1,7 @@
 .include "include/reg.inc"
+.include "include/macros.inc"
 .include "include/header.inc"
 .import init_reg
-
-OAML_BUF_START = $0100
-OAMH_BUF_START = $0300
 
 .segment "DATA"
     .incbin "assets/background.png.vra" ; $800 bytes, $8000
@@ -31,7 +29,7 @@ nmi_stub:
         rep #$10 ; I 16
         sep #$20 ; A 8
 
-        jsr reset_oam_buffer
+        reset_oam_buffer
 
         ; once that's done, load our sprite data
         ldx #$0000
@@ -64,39 +62,20 @@ nmi_stub:
         ldx #$0000
         lda #%01010000
         sta OAMH_BUF_START, x
-        jsr transfer_oam_buffer
 
-        rep #$30 ; A 16 I 16
+        transfer_oam_buffer
 
         ; transfer background data
-        lda #$0000
-        ldx #$8000
-        ldy #$0800
-        jsr transfer_vram
-
+        transfer_vram #$0000, #$02, #$8000, #$0800
         ;transfer tilemap data
-        lda #$2000
-        ldx #$9040
-        ldy #$0800
-        jsr transfer_vram
-
+        transfer_vram #$2000, #$02, #$9040, #$0800
         ; transfer mario data
-        lda #$6000 ; VRAM start addr
-        ldx #$8800 ; ROM start addr
-        ldy #$0800 ; 800 bytes to transfer
-        jsr transfer_vram
+        transfer_vram #$6000, #$02, #$8800, #$0800
 
-        sep #$20 ; A 8
-        ; transfer background palette
-        lda #$00 ; CGRAM start addr
-        ldx #$9000 ; ROM start addr
-        ldy #$0020 ; 20 bytes to transfer
-        jsr transfer_cgram
-        ; transfer mario palette @ CGRAM $80 (first sprite addr)
-        lda #$80 ; CGRAM start addr
-        ldx #$9020 ; ROM start addr
-        ldy #$0020 ; 20 bytes to transfer
-        jsr transfer_cgram
+        ; transfer bg color data
+        transfer_cgram #$00, #$02, #$9000, #$0020
+        ; transfer mario color data
+        transfer_cgram #$80, #$02, #$9020, #$0020
 
         ; set bg mode 1, 16x16 tiles
         lda #%00010001
@@ -146,115 +125,4 @@ nmi_stub:
     wai
 
     jmp GameLoop
-.endproc
-
-.proc reset_oam_buffer
-    php
-    ; Load dummy data in WRAM, set all sprites at position $101 (out of screen)
-    ; first load $01 in all sprites X coord (LSB)
-    lda #$01
-set_x_lsb:
-    sta OAML_BUF_START, x
-    inx
-    inx
-    inx
-    inx
-    cpx #$0200
-    bne set_x_lsb
-
-    ; then, set all sprite X MSB to 1
-    lda #$55
-set_x_msb:
-    sta OAML_BUF_START, x
-    inx
-    sta OAML_BUF_START, x
-    inx
-    cpx #$0220
-    bne set_x_msb
-
-    plp
-    rts
-.endproc
-
-; A 8, I 16
-.proc transfer_oam_buffer
-    ; -------------
-    ; LOAD our dummy data into OAM via DMA
-    ; -------------
-    stz OAMADDL
-    stz OAMADDH
-
-    lda #$04 ; OAMDATA $21`04`
-    sta BBAD0
-    ; from WRAM address $7e:0100 (A bus address)
-    lda #$7e
-    sta A1T0B
-    ldx #$0100
-    stx A1T0L
-    ; total number of bytes to transfer (OAM is $220 bytes)
-    ldx #$0220
-    stx DAS0L
-    ; DMA params : A to B
-    lda #$00
-    sta DMAP0
-    ; initiate DMA via channel 0 (LSB = channel 0, MSB channel 7)
-    lda #$01
-    sta MDMAEN
-
-    rts
-.endproc
-
-; A16, I16
-; A : VRAM start address
-; X : ROM start address
-; Y : bytes to transfer
-.proc transfer_vram
-    php
-    ; -------------
-    ; VRAM DMA TRANSFER
-    ; -------------
-    ; VRAM insert start address
-    sta VMADDL
-    ; via VRAM write register 21`18` (B bus address)
-    sep #$20 ; A 8
-    lda #$18
-    sta BBAD0
-    ; from rom address (A bus address)
-    lda #$02
-    sta A1T0B
-    stx A1T0L
-    ; total number of bytes to transfer
-    sty DAS0L
-    ; DMA params : A to B, increment, 2 bytes to 2 registers
-    lda #%00000001
-    sta DMAP0
-    ; initiate DMA via channel 0 (LSB = channel 0, MSB channel 7)
-    lda #%00000001
-    sta MDMAEN
-
-    plp
-    rts
-.endproc
-
-; A8, I16
-; A : CGRAM start address
-; X : ROM start address
-; Y : bytes to transfer
-.proc transfer_cgram
-    ; -------------
-    ; CGRAM DMA TRANSFER
-    ; -------------
-    sta CGADD
-    lda #$22
-    sta BBAD1
-    lda #$02
-    sta A1T1B
-    stx A1T1L
-    sty DAS1L
-    lda #$00
-    sta DMAP1
-    lda #$02
-    sta MDMAEN
-
-    rts
 .endproc
