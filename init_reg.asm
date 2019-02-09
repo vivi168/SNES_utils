@@ -1,8 +1,6 @@
 .include "include/reg.inc"
 .export init_reg
 
-.p816
-
 .segment "CODE"
 
 .proc init_reg

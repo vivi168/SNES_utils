@@ -1,23 +1,16 @@
-.include "include/header.inc"
 .include "include/reg.inc"
+.include "include/header.inc"
 .import init_reg
 
 OAML_BUF_START = $0100
 OAMH_BUF_START = $0300
 
-.p816
-
 .segment "DATA"
-
-character_data:
     .incbin "assets/background.png.vra" ; $800 bytes, $8000
     .incbin "assets/mario.png.vra" ; $800 bytes, $8800
-palette_data:
     .incbin "assets/background.png.pal" ; $20 bytes, $9000
     .incbin "assets/mario.png.pal" ; $20 bytes, $9020
-tilemap_data:
     .incbin "assets/tilemap.tmx.map" ; $800 bytes, $9040
-
 
 .segment "STARTUP"
 

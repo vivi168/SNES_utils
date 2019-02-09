@@ -1,9 +1,11 @@
 .ifndef REG_INC
 .define REG_INC
 
-;-------------------------------------------------------------------------------
+.p816
+
+; -------------
 ;   PPU Registers
-;-------------------------------------------------------------------------------
+; -------------
 INIDISP     = $2100    ; Display Control 1
 OBJSEL      = $2101    ; Object Size & Object Base
 OAMADDL     = $2102    ; OAM Address, lower byte
@@ -83,9 +85,9 @@ WMADDH      = $2183    ; WRAM Address (Upper  1-Bit)
 JOYWR       = $4016    ; Joypad Output
 JOYA        = $4016    ; Joypad Input Register A
 JOYB        = $4017    ; Joypad Input Register B
-;-------------------------------------------------------------------------------
+; -------------
 ;   CPU Registers
-;-------------------------------------------------------------------------------
+; -------------
 NMITIMEN    = $4200    ; Interrupt Enable & Joypad Request
 WRIO        = $4201    ; Programmable I/O Port (Open-Collector Output)
 WRMPYA      = $4202    ; Set Unsigned  8-Bit Multiplicand
@@ -116,9 +118,9 @@ JOY3L       = $421C    ; Joypad 3 (Gameport 1, Pin 5), lower byte
 JOY3H       = $421D    ; Joypad 3 (Gameport 1, Pin 5), higher byte
 JOY4L       = $421E    ; Joypad 4 (Gameport 2, Pin 5), lower byte
 JOY4H       = $421F    ; Joypad 4 (Gameport 2, Pin 5), higher byte
-;-------------------------------------------------------------------------------
+; -------------
 ;   DMA Registers
-;-------------------------------------------------------------------------------
+; -------------
 DMAP0       = $4300    ; DMA0 DMA/HDMA Parameters
 BBAD0       = $4301    ; DMA0 DMA/HDMA I/O-Bus Address (PPU-Bus AKA B-Bus)
 A1T0L       = $4302    ; DMA0 DMA/HDMA Table Start Address, lower byte
