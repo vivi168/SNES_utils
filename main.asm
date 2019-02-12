@@ -49,9 +49,9 @@ nmi_stub:
     reset_oam_buffer
 
     ; once that's done, load our sprite data
-    ldx #$0000
+    ldx #$0010
     stx PLAYER_MXL
-    lda #$00
+    lda #$10
     sta PLAYER_SX
     ldx #$0000
     ; TORSO
