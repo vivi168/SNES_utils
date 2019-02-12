@@ -200,10 +200,12 @@ continue_mr2:
     lda #240 ; else block at 120
     sta PLAYER_SX
     bra update
+
 move_left:
-    lda PLAYERX
+    lda PLAYER_SX
     dec
-    sta PLAYERX
+    sta PLAYER_SX
+
 update:
     sta OAML_BUF_START
     ldx #$04
