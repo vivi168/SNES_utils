@@ -164,6 +164,7 @@ nmi_stub:
 
     bra continue
 
+; may need to optimize this
 move_right:
     ldx PLAYER_MXL
     inx
@@ -201,8 +202,38 @@ check_right_edge:
     bra update
 
 move_left:
+    ldx PLAYER_MXL
+    dex
+    stx PLAYER_MXL
+    cpx #$00
+    bpl check_left_center
+    ldx #$00
+    stx PLAYER_MXL
+
+check_left_center:
     lda PLAYER_SX
     dec
+    sta PLAYER_SX
+
+    ldx PLAYER_MXL
+    cpx #120
+    bcc check_left_edge
+
+    lda PLAYER_SX
+    cmp #120
+    bcs update
+    lda #120
+    sta PLAYER_SX
+
+    ldx BGH_SCRL
+    dex
+    stx BGH_SCRL
+
+check_left_edge:
+    lda PLAYER_SX
+    cmp #$00
+    bpl update
+    lda #$00
     sta PLAYER_SX
 
 update:
