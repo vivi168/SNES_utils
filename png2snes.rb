@@ -36,7 +36,7 @@ class Png2Snes
   def fill_palette
     target_size = 2**@bpp
     missing_colors = target_size - @palette.count
-    raise ArgumentError, 'Palette size to large for target BPP' if missing_colors < 0
+    raise ArgumentError, "Palette size too large for target BPP (#{@palette.count})" if missing_colors < 0
 
     @palette += [0] * missing_colors
   end
