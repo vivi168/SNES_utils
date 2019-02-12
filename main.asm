@@ -51,8 +51,7 @@ nmi_stub:
     ; once that's done, load our sprite data
     ldx #$0010
     stx PLAYER_MXL
-    lda #$10
-    sta PLAYER_SX
+    stx PLAYER_SX
     ldx #$0000
     ; TORSO
     lda PLAYER_SX
@@ -170,30 +169,30 @@ move_right:
     inx
     stx PLAYER_MXL
     cpx #512
-    bcc continue_mr1 ; P_MX < 512 ? continue_mr1
+    bcc check_right_center
     ldx #512
     stx PLAYER_MXL
 
-continue_mr1:
+check_right_center:
     lda PLAYER_SX
     inc
     sta PLAYER_SX
 
     ldx PLAYER_MXL
     cpx #(512-120)
-    bcs continue_mr2 ; P_MX > 392 ? update
+    bcs check_right_edge
 
     lda PLAYER_SX
     cmp #120
-    bcc update ; P_SX < 120 ? update
-    lda #120 ; else block at 120
+    bcc update
+    lda #120
     sta PLAYER_SX
 
     ldx BGH_SCRL
     inx
     stx BGH_SCRL
 
-continue_mr2:
+check_right_edge:
     lda PLAYER_SX
     cmp #240
     bcc update ; P_SX < 120 ? update
