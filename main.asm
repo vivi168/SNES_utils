@@ -19,14 +19,25 @@ JOY1_HELDH  = $0013
 JOY1_PRESSL = $0014
 JOY1_PRESSH = $0015
 
+; constants
+TILEMAP_START = $8000
+TILEMAP_SIZE = $800
+BG_SIZE = $800
+BG_START = TILEMAP_START + TILEMAP_SIZE
+MARIO_SIZE = $800
+MARIO_START = BG_START + BG_SIZE
+BG_PAL_SIZE = $20
+BG_PAL_START = MARIO_START + MARIO_SIZE
+MARIO_PAL_SIZE = $20
+MARIO_PAL_START = BG_PAL_START + BG_PAL_SIZE
+
 .segment "DATA"
     ; TODO find a way to find each 'bin' address/size by name
-    .incbin "assets/background.png.vra" ; $800 bytes, $8000
-    ; TODO : Sprite look up table (for animations)
-    .incbin "assets/mario.png.vra" ; $800 bytes, $8800
-    .incbin "assets/background.png.pal" ; $20 bytes, $9000
-    .incbin "assets/mario.png.pal" ; $20 bytes, $9020
-    .incbin "assets/tilemap.tmx.map" ; $800 bytes, $9040
+    .incbin "assets/tilemap.tmx.map"
+    .incbin "assets/background.png.vra"
+    .incbin "assets/mario.png.vra"
+    .incbin "assets/background.png.pal"
+    .incbin "assets/mario.png.pal"
 
 .segment "STARTUP"
 
@@ -87,16 +98,16 @@ nmi_stub:
     transfer_oam_buffer
 
     ; transfer background data
-    transfer_vram #$0000, #$02, #$8000, #$0800
+    transfer_vram #$0000, #$02, #BG_START, #BG_SIZE
     ;transfer tilemap data
-    transfer_vram #$2000, #$02, #$9040, #$0800
+    transfer_vram #$2000, #$02, #TILEMAP_START, #TILEMAP_SIZE
     ; transfer mario data
-    transfer_vram #$6000, #$02, #$8800, #$0800
+    transfer_vram #$6000, #$02, #MARIO_START, #MARIO_SIZE
 
     ; transfer bg color data
-    transfer_cgram #$00, #$02, #$9000, #$0020
+    transfer_cgram #$00, #$02, #BG_PAL_START, #BG_PAL_SIZE
     ; transfer mario color data
-    transfer_cgram #$80, #$02, #$9020, #$0020
+    transfer_cgram #$80, #$02, #MARIO_PAL_START, #MARIO_PAL_SIZE
 
     ; set bg mode 1, 16x16 tiles
     lda #%00010001
