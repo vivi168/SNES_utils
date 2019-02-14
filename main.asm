@@ -12,6 +12,7 @@ BGV_SCRL    = $0004
 PLAYER_ATTR = $0005
 PLAYER_MXL  = $0006
 PLAYER_MXH  = $0007
+UPDATE_SPRITE = $0008
 JOY1_RAWL   = $0010
 JOY1_RAWH   = $0011
 JOY1_HELDL  = $0012
@@ -61,7 +62,7 @@ nmi_stub:
     reset_oam_buffer
 
     ; once that's done, load our sprite data
-    ldx #$0010
+    ldx #$0050
     stx PLAYER_MXL
     stx PLAYER_SX
     ldx #$0000
@@ -128,6 +129,7 @@ nmi_stub:
     stz BGH_SCRH
 
     stz PLAYER_ATTR
+    stz UPDATE_SPRITE
 
     ; Set sprite size to 16/32, start @ VRAM $6000
     lda #$63
@@ -174,7 +176,7 @@ nmi_stub:
     and #$02
     bne move_left
 
-    bra continue
+    brl stand_still
 
 ; may need to optimize this
 move_right:
@@ -263,6 +265,47 @@ check_left_edge:
 update:
     sta OAML_BUF_START
     ldx #$04
+    sta OAML_BUF_START, x
+
+    lda UPDATE_SPRITE
+    inc
+    sta UPDATE_SPRITE
+    cmp #$04
+    bne continue
+    stz UPDATE_SPRITE
+
+update_torso:
+    ldx #$02
+    lda OAML_BUF_START, x
+    inc
+    inc
+    inc
+    inc
+    sta OAML_BUF_START, x
+    cmp #$09
+    bcc update_legs
+    lda #$00
+    sta OAML_BUF_START, x
+update_legs:
+    ldx #$06
+    lda OAML_BUF_START, x
+    inc
+    inc
+    inc
+    inc
+    sta OAML_BUF_START, x
+    cmp #$0b
+    bcc continue
+    lda #$02
+    sta OAML_BUF_START, x
+    bra continue
+
+stand_still:
+    lda #$00
+    ldx #$02
+    sta OAML_BUF_START, x
+    lda #$02
+    ldx #$06
     sta OAML_BUF_START, x
 
 continue:
