@@ -154,6 +154,8 @@ nmi_stub:
     ; read NMI status, acknowledge NMI
     lda RDNMI
 
+    ; TODO: maybe don't transfer full OAM Buffer each time
+    ; but only modified data
     transfer_oam_buffer
     lda BGH_SCRL
     sta BG1HOFS
@@ -180,6 +182,8 @@ nmi_stub:
 
 ; may need to optimize this
 move_right:
+    ; TODO: would be better to track direction in PLAYER_ATTR
+    ; if direction has changed, flip (EOR #$40)
     ldx #$03
     lda #$30
     sta OAML_BUF_START, x
@@ -274,6 +278,7 @@ update:
     bne continue
     stz UPDATE_SPRITE
 
+; TODO: Use look up table instead of incrementing tile name
 update_torso:
     ldx #$02
     lda OAML_BUF_START, x
