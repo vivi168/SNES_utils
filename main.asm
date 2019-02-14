@@ -178,6 +178,12 @@ nmi_stub:
 
 ; may need to optimize this
 move_right:
+    ldx #$03
+    lda #$30
+    sta OAML_BUF_START, x
+    ldx #$07
+    sta OAML_BUF_START, x
+
     ldx PLAYER_MXL
     inx
     inx
@@ -214,6 +220,12 @@ check_right_edge:
     bra update
 
 move_left:
+    ldx #$03
+    lda #$70
+    sta OAML_BUF_START, x
+    ldx #$07
+    sta OAML_BUF_START, x
+
     ldx PLAYER_MXL
     dex
     dex
