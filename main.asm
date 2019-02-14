@@ -180,6 +180,7 @@ nmi_stub:
 move_right:
     ldx PLAYER_MXL
     inx
+    inx
     stx PLAYER_MXL
     cpx #512
     bcc check_right_center
@@ -188,6 +189,7 @@ move_right:
 
 check_right_center:
     lda PLAYER_SX
+    inc
     inc
     sta PLAYER_SX
 
@@ -201,6 +203,7 @@ check_right_center:
 
     ldx BGH_SCRL
     inx
+    inx
     stx BGH_SCRL
 
 check_right_edge:
@@ -213,6 +216,7 @@ check_right_edge:
 move_left:
     ldx PLAYER_MXL
     dex
+    dex
     stx PLAYER_MXL
     cpx #$00
     bpl check_left_center
@@ -221,6 +225,7 @@ move_left:
 
 check_left_center:
     lda PLAYER_SX
+    dec
     dec
     sta PLAYER_SX
 
@@ -233,6 +238,7 @@ check_left_center:
     sta PLAYER_SX
 
     ldx BGH_SCRL
+    dex
     dex
     stx BGH_SCRL
 
