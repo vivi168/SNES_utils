@@ -205,8 +205,8 @@ check_right_center:
 
 check_right_edge:
     cmp #240
-    bcc update ; P_SX < 120 ? update
-    lda #240 ; else block at 120
+    bcc update
+    lda #240
     sta PLAYER_SX
     bra update
 
