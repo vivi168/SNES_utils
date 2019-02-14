@@ -191,11 +191,9 @@ check_right_center:
     inc
     sta PLAYER_SX
 
-    ldx PLAYER_MXL
     cpx #(512-120)
     bcs check_right_edge
 
-    lda PLAYER_SX
     cmp #120
     bcc update
     lda #120
@@ -206,7 +204,6 @@ check_right_center:
     stx BGH_SCRL
 
 check_right_edge:
-    lda PLAYER_SX
     cmp #240
     bcc update ; P_SX < 120 ? update
     lda #240 ; else block at 120
@@ -227,11 +224,9 @@ check_left_center:
     dec
     sta PLAYER_SX
 
-    ldx PLAYER_MXL
     cpx #120
     bcc check_left_edge
 
-    lda PLAYER_SX
     cmp #120
     bcs update
     lda #120
@@ -242,7 +237,6 @@ check_left_center:
     stx BGH_SCRL
 
 check_left_edge:
-    lda PLAYER_SX
     cmp #$00
     bpl update
     lda #$00
