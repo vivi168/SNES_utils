@@ -3,15 +3,15 @@
 .include "include/header.inc"
 .import init_reg
 
-; TODO : find a better way to define ram location
+; TODO : find a better way to define ram locations
 ; .segement ZEROPAGE, .byte/.word ?
 PLAYER_SX   = $0001
 BGH_SCRL    = $0002
 BGH_SCRH    = $0003
 BGV_SCRL    = $0004
-DIRECTION   = $0005
+PLAYER_ATTR = $0005
 PLAYER_MXL  = $0006
-PLAYER_MXH  = $0006
+PLAYER_MXH  = $0007
 JOY1_RAWL   = $0010
 JOY1_RAWH   = $0011
 JOY1_HELDL  = $0012
@@ -20,6 +20,7 @@ JOY1_PRESSL = $0014
 JOY1_PRESSH = $0015
 
 .segment "DATA"
+    ; TODO find a way to find each 'bin' address/size by name
     .incbin "assets/background.png.vra" ; $800 bytes, $8000
     ; TODO : Sprite look up table (for animations)
     .incbin "assets/mario.png.vra" ; $800 bytes, $8800
@@ -115,7 +116,7 @@ nmi_stub:
     stz BGH_SCRL
     stz BGH_SCRH
 
-    stz DIRECTION
+    stz PLAYER_ATTR
 
     ; Set sprite size to 16/32, start @ VRAM $6000
     lda #$63
