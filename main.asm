@@ -258,7 +258,7 @@ continue:
     jmp GameLoop
 .endproc
 
-read_joypad:
+.proc read_joypad
     php
 read_data:
     lda HVBJOY ; read joypad status
@@ -280,3 +280,4 @@ read_data:
 
     plp
     rts
+.endproc

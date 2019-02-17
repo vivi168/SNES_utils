@@ -5,10 +5,10 @@
 
 .segment "CODE"
 
-init_oam_buffer:
-    rep #$10 ; I 16
-    sep #$20 ; A 8
+rep #$10 ; I 16
+sep #$20 ; A 8
 
+.proc init_oam_buffer
     ldx #$0050
     stx PLAYER_MXL
     stx PLAYER_SX
@@ -44,3 +44,4 @@ init_oam_buffer:
     sta OAMH_BUF_START, x
 
     rts
+.endproc
