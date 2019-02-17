@@ -8,22 +8,17 @@ Warning: Tileset should be 128 pixel wide for best usability.
 ## How to use
 
 ```
-$ ruby png2snes.rb -f assets/mario.png
-$ ruby png2snes.rb -f assets/background.png
-$ ruby tmx2snes.rb -f assets/tilemap.tmx -s 16
-$ sh make.sh
+$ ruby png2snes.rb -f file.png
+$ ruby tmx2snes.rb -f file.tmx [-s tile_size]
 ```
 
-Run with Snes9x or bsnes+.
+## Demo
 
-You should see Mario in the middle of the screen.
-
-At first, I used the source from [https://georgjz.github.io/snesaa04/](https://georgjz.github.io/snesaa04/)
-
-As of now, I've rewritten everything to use DMA. I will use this base to make a small SNES game.
+You need ca65 to build the demo. run `make`, it should produce `demo.smc`
 
 # TODO
 
 * I should make a Gem, combining Png2Snes and Tmx2Snes
+* Chose output directory
 * Support 32x64, 64x32 and 64x64 tilemaps
 * Add a way to set the flip bits per tile (an additional CSV file?)

@@ -3,9 +3,11 @@ require 'matrix'
 require 'optparse'
 
 class Png2Snes
-  def initialize(file_name, bpp:4, alpha:nil)
-    @file_name = file_name
-    @image = ChunkyPNG::Image.from_file(@file_name)
+  def initialize(file_path, bpp:4, alpha:nil)
+    @file_path = file_path
+    @file_dir = File.dirname(@file_path)
+    @file_name = File.basename(@file_path, File.extname(@file_path))
+    @image = ChunkyPNG::Image.from_file(@file_path)
     @pixels = pixels_to_bgr5
 
     @palette = @pixels.uniq
@@ -41,15 +43,15 @@ class Png2Snes
     @palette += [0] * missing_colors
   end
 
-  def write hex, file_name
-    File.open(file_name, 'w+b') do |file|
+  def write hex, file_path
+    File.open(file_path, 'w+b') do |file|
       file.write([hex.join].pack('H*'))
     end
   end
 
   def write_palette
     palette_hex = @palette.map { |c| ('%04x' % c).scan(/.{2}/).reverse.join }
-    write palette_hex, "#{@file_name}.pal"
+    write palette_hex, File.expand_path("#{@file_name}-pal.bin", @file_dir)
   end
 
   def pixel_indices
@@ -108,7 +110,7 @@ class Png2Snes
     end
 
     image_hex = image_bits.scan(/.{8}/).map { |b| "%02x" % b.to_i(2) }
-    write image_hex, "#{@file_name}.vra"
+    write image_hex, File.expand_path("#{@file_name}.bin", @file_dir)
   end
 
 end

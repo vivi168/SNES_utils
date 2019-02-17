@@ -2,9 +2,11 @@ require 'nokogiri'
 require 'optparse'
 
 class Tmx2Snes
-  def initialize(file_name, big_char:false, palette:0, v:false, h:false, p:false)
-    raise unless File.file? file_name
-    @file_name = file_name
+  def initialize(file_path, big_char:false, palette:0, v:false, h:false, p:false)
+    raise unless File.file? file_path
+    @file_path = file_path
+    @file_dir = File.dirname(@file_path)
+    @file_name = File.basename(@file_path, File.extname(@file_path))
     @tilemap = []
     raise if palette < 0 || palette > 7
     @palette = palette
@@ -14,7 +16,7 @@ class Tmx2Snes
     tnm = big_char ? 2 : 1 # big_char : 16x16 tiles. otherwise, 8x8 tiles
     row_offset = 16 * (tnm - 1) # Skip a row in case of 16x16 tiles ( tile #9 starts at index 32)
 
-    doc = Nokogiri::XML(File.open(@file_name))
+    doc = Nokogiri::XML(File.open(@file_path))
     csv_node = doc.xpath('//data').children.first.to_s
 
     csv = csv_node.split("\n").compact.reject { |e| e.empty? }.map { |row| row.split(',') }
@@ -48,7 +50,8 @@ class Tmx2Snes
   end
 
   def write
-    File.open("#{@file_name}.map", 'w+b') do |file|
+    out = File.expand_path("#{@file_name}.map", @file_dir)
+    File.open(out, 'w+b') do |file|
       file.write([tilemap_to_data.join].pack('H*'))
     end
   end

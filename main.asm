@@ -7,11 +7,11 @@
 
 .segment "DATA"
     ; TODO find a way to find each 'bin' address/size by name
-    .incbin "assets/tilemap.tmx.map"
-    .incbin "assets/background.png.vra"
-    .incbin "assets/mario.png.vra"
-    .incbin "assets/background.png.pal"
-    .incbin "assets/mario.png.pal"
+    .incbin "assets/tilemap.map"
+    .incbin "assets/background.bin"
+    .incbin "assets/mario.bin"
+    .incbin "assets/background-pal.bin"
+    .incbin "assets/mario-pal.bin"
 
 .segment "STARTUP"
 
