@@ -1,12 +1,6 @@
 .ifndef MACROS_INC
 .define MACROS_INC
 
-OAML_BUF_START = $0100
-OAMH_BUF_START = $0300
-OAML_SIZE      = $0200
-OAMH_SIZE      = $0020
-OAM_SIZE       = OAML_SIZE + OAMH_SIZE
-
 .macro reset_oam_buffer
     ; Load dummy data in WRAM, set all sprites at position $101 (out of screen)
     ; first load $01 in all sprites X coord (LSB)

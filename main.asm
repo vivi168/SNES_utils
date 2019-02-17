@@ -1,36 +1,9 @@
 .include "include/reg.inc"
+.include "include/def.inc"
 .include "include/macros.inc"
 .include "include/header.inc"
+
 .import init_reg
-
-; TODO : find a better way to define ram locations
-; .segement ZEROPAGE, .byte/.word ?
-PLAYER_SX   = $0001
-BGH_SCRL    = $0002
-BGH_SCRH    = $0003
-BGV_SCRL    = $0004
-PLAYER_ATTR = $0005
-PLAYER_MXL  = $0006
-PLAYER_MXH  = $0007
-UPDATE_SPRITE = $0008
-JOY1_RAWL   = $0010
-JOY1_RAWH   = $0011
-JOY1_HELDL  = $0012
-JOY1_HELDH  = $0013
-JOY1_PRESSL = $0014
-JOY1_PRESSH = $0015
-
-; constants
-TILEMAP_START = $8000
-TILEMAP_SIZE = $800
-BG_SIZE = $800
-BG_START = TILEMAP_START + TILEMAP_SIZE
-MARIO_SIZE = $800
-MARIO_START = BG_START + BG_SIZE
-BG_PAL_SIZE = $20
-BG_PAL_START = MARIO_START + MARIO_SIZE
-MARIO_PAL_SIZE = $20
-MARIO_PAL_START = BG_PAL_START + BG_PAL_SIZE
 
 .segment "DATA"
     ; TODO find a way to find each 'bin' address/size by name
@@ -129,7 +102,7 @@ nmi_stub:
     stz BGH_SCRH
 
     stz PLAYER_ATTR
-    stz UPDATE_SPRITE
+    stz UPDATE_OBJ
 
     ; Set sprite size to 16/32, start @ VRAM $6000
     lda #$63
@@ -271,12 +244,12 @@ update:
     ldx #$04
     sta OAML_BUF_START, x
 
-    lda UPDATE_SPRITE
+    lda UPDATE_OBJ
     inc
-    sta UPDATE_SPRITE
+    sta UPDATE_OBJ
     cmp #$04
     bne continue
-    stz UPDATE_SPRITE
+    stz UPDATE_OBJ
 
 ; TODO: Use look up table instead of incrementing tile name
 update_torso:
