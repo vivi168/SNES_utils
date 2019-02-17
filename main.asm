@@ -2,9 +2,7 @@
 .include "include/def.inc"
 .include "include/macros.inc"
 .include "include/header.inc"
-
-.import init_reg
-.import init_oam_buffer
+.include "include/import.inc"
 
 .segment "DATA"
     ; TODO find a way to find each 'bin' address/size by name
@@ -119,131 +117,18 @@ nmi_stub:
     and #$02
     bne move_left
 
-    brl stand_still
+    bra stand_still
 
 ; may need to optimize this
 move_right:
-    ; TODO: would be better to track direction in PLAYER_ATTR
-    ; if direction has changed, flip (EOR #$40)
-    ldx #$03
-    lda #$30
-    sta OAML_BUF_START, x
-    ldx #$07
-    sta OAML_BUF_START, x
-
-    ldx PLAYER_MXL
-    inx
-    inx
-    stx PLAYER_MXL
-    cpx #512
-    bcc check_right_center
-    ldx #512
-    stx PLAYER_MXL
-
-check_right_center:
-    lda PLAYER_SX
-    inc
-    inc
-    sta PLAYER_SX
-
-    cpx #(512-120)
-    bcs check_right_edge
-
-    cmp #120
-    bcc update
-    lda #120
-    sta PLAYER_SX
-
-    ldx BGH_SCRL
-    inx
-    inx
-    stx BGH_SCRL
-
-check_right_edge:
-    cmp #240
-    bcc update
-    lda #240
-    sta PLAYER_SX
+    jsr player_move_right
     bra update
 
 move_left:
-    ldx #$03
-    lda #$70
-    sta OAML_BUF_START, x
-    ldx #$07
-    sta OAML_BUF_START, x
-
-    ldx PLAYER_MXL
-    dex
-    dex
-    stx PLAYER_MXL
-    cpx #$00
-    bpl check_left_center
-    ldx #$00
-    stx PLAYER_MXL
-
-check_left_center:
-    lda PLAYER_SX
-    dec
-    dec
-    sta PLAYER_SX
-
-    cpx #120
-    bcc check_left_edge
-
-    cmp #120
-    bcs update
-    lda #120
-    sta PLAYER_SX
-
-    ldx BGH_SCRL
-    dex
-    dex
-    stx BGH_SCRL
-
-check_left_edge:
-    cmp #$00
-    bpl update
-    lda #$00
-    sta PLAYER_SX
+    jsr player_move_left
 
 update:
-    sta OAML_BUF_START
-    ldx #$04
-    sta OAML_BUF_START, x
-
-    lda UPDATE_OBJ
-    inc
-    sta UPDATE_OBJ
-    cmp #$04
-    bne continue
-    stz UPDATE_OBJ
-
-; TODO: Use look up table instead of incrementing tile name
-update_torso:
-    ldx #$02
-    lda OAML_BUF_START, x
-    inc
-    inc
-    inc
-    inc
-    sta OAML_BUF_START, x
-    cmp #$09
-    bcc update_legs
-    lda #$00
-    sta OAML_BUF_START, x
-update_legs:
-    ldx #$06
-    lda OAML_BUF_START, x
-    inc
-    inc
-    inc
-    inc
-    sta OAML_BUF_START, x
-    cmp #$0b
-    bcc continue
-    lda #$02
-    sta OAML_BUF_START, x
+    jsr update_oam_buffer
     bra continue
 
 stand_still:
