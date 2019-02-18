@@ -113,10 +113,10 @@ nmi_stub:
 
     lda JOY1_HELDH
     tax
-    and #$01
+    and #JOY_RIGHT
     bne move_right
     txa
-    and #$02
+    and #JOY_LEFT
     bne move_left
 
     bra stand_still

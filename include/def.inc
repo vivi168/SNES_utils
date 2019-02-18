@@ -25,6 +25,9 @@ OAML_SIZE      = $0200
 OAMH_SIZE      = $0020
 OAM_SIZE       = OAML_SIZE + OAMH_SIZE
 
+JOY_RIGHT = $01
+JOY_LEFT  = $02
+
 TILEMAP_SIZE    = $800
 BG_SIZE         = $800
 MARIO_SIZE      = $800
