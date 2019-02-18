@@ -39,4 +39,4 @@ $(ASSETS_DIR)/%.bin: $(ASSETS_DIR)/%.png
 	ruby png2snes.rb -f $<
 
 $(ASSETS_DIR)/%.map: $(ASSETS_DIR)/%.tmx
-	ruby tmx2snes.rb -s 16 -f $<
+	ruby tmx2snes.rb -s 8 -f $<

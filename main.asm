@@ -6,7 +6,8 @@
 
 .segment "DATA"
     ; TODO find a way to find each 'bin' address/size by name
-    .incbin "assets/tilemap.map"
+    .incbin "assets/test.map"
+    .incbin "assets/test2.map"
     .incbin "assets/background.bin"
     .incbin "assets/mario.bin"
     .incbin "assets/background-pal.bin"
@@ -40,7 +41,8 @@ nmi_stub:
     ; transfer background data
     transfer_vram #$0000, #$02, #BG_START, #BG_SIZE
     ;transfer tilemap data
-    transfer_vram #$2000, #$02, #TILEMAP_START, #TILEMAP_SIZE
+    transfer_vram #$1000, #$02, #TILEMAP_START, #TILEMAP_SIZE
+    transfer_vram #$2000, #$02, #TILEMAP2_START, #TILEMAP_SIZE
     ; transfer mario data
     transfer_vram #$6000, #$02, #MARIO_START, #MARIO_SIZE
 
@@ -49,8 +51,8 @@ nmi_stub:
     ; transfer mario color data
     transfer_cgram #$80, #$02, #MARIO_PAL_START, #MARIO_PAL_SIZE
 
-    ; set bg mode 1, 16x16 tiles
-    lda #%00010001
+    ; set bg mode 1, 8x8 tiles
+    lda #$01
     sta BGMODE
 
     ; set tilemap address
