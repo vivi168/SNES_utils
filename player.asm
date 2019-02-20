@@ -157,6 +157,14 @@ return:
 
 check_left_center:
     lda PLAYER_SX
+    cmp #240
+    bne continue1
+    ldx PLAYER_MXL
+    dex
+    dex
+    stx PLAYER_MXL
+
+continue1:
     dec
     dec
     sta PLAYER_SX
@@ -177,13 +185,13 @@ check_left_center:
 check_left_edge:
     ldx PLAYER_MXL
     cpx #120
-    bne continue
+    bne continue2
     ldx BGH_SCRL
     dex
     dex
     stx BGH_SCRL
 
-continue:
+continue2:
     cmp #$00
     bpl return
     lda #$00
