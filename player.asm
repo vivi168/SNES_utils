@@ -175,6 +175,15 @@ check_left_center:
     stx BGH_SCRL
 
 check_left_edge:
+    ldx PLAYER_MXL
+    cpx #120
+    bne continue
+    ldx BGH_SCRL
+    dex
+    dex
+    stx BGH_SCRL
+
+continue:
     cmp #$00
     bpl return
     lda #$00
