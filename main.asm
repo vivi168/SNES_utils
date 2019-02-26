@@ -42,7 +42,6 @@ nmi_stub:
     transfer_vram #$0000, #$02, #BG_START, #BG_SIZE
     ;transfer tilemap data
     transfer_vram #$1000, #$02, #TILEMAP_START, #TILEMAP_SIZE
-    transfer_vram #$2000, #$02, #TILEMAP2_START, #TILEMAP_SIZE
     ; transfer mario data
     transfer_vram #$6000, #$02, #MARIO_START, #MARIO_SIZE
 
@@ -56,7 +55,7 @@ nmi_stub:
     sta BGMODE
 
     ; set tilemap address
-    lda #$20
+    lda #$10
     sta BG1SC
 
     ; set tileset address for bg 1 and 2
