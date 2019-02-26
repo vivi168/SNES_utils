@@ -42,6 +42,36 @@ nmi_stub:
     transfer_vram #$0000, #$02, #BG_START, #BG_SIZE
     ;transfer tilemap data
     transfer_vram #$1000, #$02, #TILEMAP_START, #TILEMAP_SIZE
+
+    ; TODO this is just a POC
+    ; Need to place this in the movement algorithm
+    ; to update the tilemap while moving left and right
+    lda #$81 ; increment VRAM by 32 after each write to 2119
+    sta $2115
+    ldx #$1000 ; tilemap start in VRAM. increment this by 1 to get next column
+    stx VMADDL
+
+    rep #$20 ; A 16
+
+    ldx #$00
+    ldy #$80 ; column size, $80
+copy_column:
+    lda $028800, x ; target tilemap address in ROM
+    sta $2118
+
+    txa
+    clc
+    adc #$40
+    tax
+
+    dey
+    bne copy_column
+
+    sep #$20 ; A 8
+
+    lda #$80
+    sta $2115
+
     ; transfer mario data
     transfer_vram #$6000, #$02, #MARIO_START, #MARIO_SIZE
 
