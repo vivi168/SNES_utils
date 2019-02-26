@@ -50,13 +50,13 @@ sep #$20 ; A 8
 .endproc
 
 .proc update_oam_buffer
+    lda PLAYER_SX
     sta OAML_BUF_START
     ldx #$04
     sta OAML_BUF_START, x
 
+    inc UPDATE_OBJ
     lda UPDATE_OBJ
-    inc
-    sta UPDATE_OBJ
     cmp #$04
     bne return
     stz UPDATE_OBJ
