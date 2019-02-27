@@ -43,32 +43,11 @@ nmi_stub:
     ;transfer tilemap data
     transfer_vram #$1000, #$02, #TILEMAP_START, #TILEMAP_SIZE
 
-    ; TODO this is just a POC
-    ; Need to place this in the movement algorithm
-    ; to update the tilemap while moving left and right
     lda #$81 ; increment VRAM by 32 after each write to 2119
     sta $2115
-    ldx #$1000 ; tilemap start in VRAM. increment this by 1 to get next column
-    stx VMADDL
-
-    rep #$20 ; A 16
-
-    ldx #$00
-    ldy #$80 ; column size, $80
-copy_column:
-    lda $028800, x ; target tilemap address in ROM
-    sta $2118
-
-    txa
-    clc
-    adc #$40
-    tax
-
-    dey
-    bne copy_column
-
-    sep #$20 ; A 8
-
+    ldx #$1000
+    ldy #$800
+    jsr copy_tilemap_column
     lda #$80
     sta $2115
 
@@ -193,6 +172,37 @@ read_data:
     txa             ; move previous frame raw input to A
     and JOY1_RAWL   ; AND with current, only held are left to 1
     sta JOY1_HELDL  ; stored held
+
+    plp
+    rts
+.endproc
+
+.proc copy_tilemap_column
+    php
+    ; TODO this is just a POC
+    ; Need to place this in the movement algorithm
+    ; to update the tilemap while moving left and right
+    ; ldx #$1000 ; tilemap start in VRAM. increment this by 1 to get next column
+    stx VMADDL
+
+    rep #$20 ; A 16
+
+    ; ldx #$800
+    tyx
+    ldy #$80 ; column size, $80
+copy_column:
+    lda $028000, x ; target tilemap address in ROM
+    sta $2118
+
+    txa
+    clc
+    adc #$40
+    tax
+
+    dey
+    bne copy_column
+
+    sep #$20 ; A 8
 
     plp
     rts
