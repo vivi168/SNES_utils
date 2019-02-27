@@ -104,9 +104,9 @@ return:
     inx
     inx
     stx PLAYER_MXL
-    cpx #512
+    cpx #496
     bcc check_right_center
-    ldx #512
+    ldx #496
     stx PLAYER_MXL
 
 check_right_center:
@@ -115,11 +115,11 @@ check_right_center:
     inc
     sta PLAYER_SX
 
-    cpx #(512-120)
+    cpx #(496-120)
     bcs check_right_edge
 
     cmp #120
-    bcc return
+    bcc reset_next_tilemap
     lda #120
     sta PLAYER_SX
 
@@ -139,16 +139,28 @@ check_right_center:
     ldx MODULO8
     cpx PLAYER_MXL
     bne check_right_edge
-    inc NEXT_COL_VRAML
-    inc NEXT_COL_ROML
-    inc NEXT_COL_ROML
-
+    ldx NEXT_COL_VRAML
+    inx
+    stx NEXT_COL_VRAML
+    ldx NEXT_COL_ROML
+    inx
+    inx
+    stx NEXT_COL_ROML
 
 check_right_edge:
     cmp #240
     bcc return
     lda #240
     sta PLAYER_SX
+    bra return
+
+reset_next_tilemap:
+    ldx #$0fff
+    ldy #$7fe
+    stx LAST_COL_VRAML
+    stx NEXT_COL_VRAML
+    sty LAST_COL_ROML
+    sty NEXT_COL_ROML
 
 return:
 
@@ -189,7 +201,7 @@ continue1:
     bcc check_left_edge
 
     cmp #120
-    bcs return
+    bcs reset_prev_tilemap
     lda #120
     sta PLAYER_SX
 
@@ -197,6 +209,25 @@ continue1:
     dex
     dex
     stx BGH_SCRL
+    ; TODO update next colum here
+    ldx PLAYER_MXL
+    stx MODULO8
+    LSR MODULO8
+    LSR MODULO8
+    LSR MODULO8
+    ASL MODULO8
+    ASL MODULO8
+    ASL MODULO8
+    ldx MODULO8
+    cpx PLAYER_MXL
+    bne check_left_edge
+    ldx NEXT_COL_VRAML
+    dex
+    stx NEXT_COL_VRAML
+    ldx NEXT_COL_ROML
+    dex
+    dex
+    stx NEXT_COL_ROML
 
 check_left_edge:
     ldx PLAYER_MXL
@@ -212,6 +243,15 @@ continue2:
     bpl return
     lda #$00
     sta PLAYER_SX
+    bra return
+
+reset_prev_tilemap:
+    ldx #$1000
+    ldy #$0000
+    stx LAST_COL_VRAML
+    stx NEXT_COL_VRAML
+    sty LAST_COL_ROML
+    sty NEXT_COL_ROML
 
 return:
     rts

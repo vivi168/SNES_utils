@@ -43,17 +43,13 @@ nmi_stub:
     ;transfer tilemap data
     transfer_vram #$1000, #$02, #TILEMAP_START, #TILEMAP_SIZE
 
-    lda #$81 ; increment VRAM by 32 after each write to 2119
-    sta $2115
-    ldx #$1000
-    ldy #$800
+    ; initial values
+    ldx #$0fff
+    ldy #$7fe
     stx LAST_COL_VRAML
     stx NEXT_COL_VRAML
     sty LAST_COL_ROML
     sty NEXT_COL_ROML
-    jsr copy_tilemap_column
-    lda #$80
-    sta $2115
 
     ; transfer mario data
     transfer_vram #$6000, #$02, #MARIO_START, #MARIO_SIZE
