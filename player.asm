@@ -127,6 +127,22 @@ check_right_center:
     inx
     inx
     stx BGH_SCRL
+    ; TODO update next colum here
+    ldx PLAYER_MXL
+    stx MODULO8
+    LSR MODULO8
+    LSR MODULO8
+    LSR MODULO8
+    ASL MODULO8
+    ASL MODULO8
+    ASL MODULO8
+    ldx MODULO8
+    cpx PLAYER_MXL
+    bne check_right_edge
+    inc NEXT_COL_VRAML
+    inc NEXT_COL_ROML
+    inc NEXT_COL_ROML
+
 
 check_right_edge:
     cmp #240
