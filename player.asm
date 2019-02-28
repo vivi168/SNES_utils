@@ -104,9 +104,9 @@ return:
     inx
     inx
     stx PLAYER_MXL
-    cpx #496
+    cpx #752
     bcc check_right_center
-    ldx #496
+    ldx #752
     stx PLAYER_MXL
 
 check_right_center:
@@ -115,7 +115,7 @@ check_right_center:
     inc
     sta PLAYER_SX
 
-    cpx #(496-120)
+    cpx #(752-120)
     bcs check_right_edge
 
     cmp #120
@@ -139,12 +139,29 @@ check_right_center:
     ldx MODULO8
     cpx PLAYER_MXL
     bne check_right_edge
+
     ldx NEXT_COL_VRAML
     inx
+    cpx #$1020
+    bcc inc_vram
+    ldx #$1000
+inc_vram:
     stx NEXT_COL_VRAML
+
     ldx NEXT_COL_ROML
     inx
     inx
+    lda NEXT_COL_ROML
+    cmp #$3e
+    bcc inc_rom
+    lda #$00
+    sta NEXT_COL_ROML
+    lda NEXT_COL_ROMH
+    clc
+    adc #$08
+    sta NEXT_COL_ROMH
+    bra check_right_edge
+inc_rom:
     stx NEXT_COL_ROML
 
 check_right_edge:
@@ -155,8 +172,8 @@ check_right_edge:
     bra return
 
 reset_next_tilemap:
-    ldx #$0fff
-    ldy #$7fe
+    ldx #$1000
+    ldy #$800
     stx LAST_COL_VRAML
     stx NEXT_COL_VRAML
     sty LAST_COL_ROML

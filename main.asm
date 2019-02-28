@@ -6,12 +6,13 @@
 
 .segment "DATA"
     ; TODO find a way to find each 'bin' address/size by name
-    .incbin "assets/test.map"
-    .incbin "assets/test2.map"
     .incbin "assets/background.bin"
     .incbin "assets/mario.bin"
     .incbin "assets/background-pal.bin"
     .incbin "assets/mario-pal.bin"
+    .incbin "assets/test.map"
+    .incbin "assets/test2.map"
+    .incbin "assets/test3.map"
 
 .segment "STARTUP"
 
@@ -44,8 +45,8 @@ nmi_stub:
     transfer_vram #$1000, #$02, #TILEMAP_START, #TILEMAP_SIZE
 
     ; initial values
-    ldx #$0fff
-    ldy #$7fe
+    ldx #$1000
+    ldy #$800
     stx LAST_COL_VRAML
     stx NEXT_COL_VRAML
     sty LAST_COL_ROML
@@ -203,16 +204,14 @@ read_data:
     ; TODO this is just a POC
     ; Need to place this in the movement algorithm
     ; to update the tilemap while moving left and right
-    ; ldx #$1000 ; tilemap start in VRAM. increment this by 1 to get next column
     stx VMADDL
 
     rep #$20 ; A 16
 
-    ; ldx #$800
     tyx
     ldy #$80 ; column size, $80
 copy_column:
-    lda $028000, x ; target tilemap address in ROM
+    lda $029040, x ; target tilemap address in ROM
     sta $2118
 
     txa
