@@ -35,6 +35,10 @@ nmi_stub:
 
     reset_oam_buffer
 
+    ldx #$2d0
+    stx PLAYER_MXL
+    jsr update_sprite_x
+
     ; once that's done, load our sprite data
     jsr init_oam_buffer
     transfer_oam_buffer
@@ -106,32 +110,14 @@ nmi_stub:
 
     ; TODO: maybe don't transfer full OAM Buffer each time
     ; but only modified data
+    jsr update_sprite_x
     transfer_oam_buffer
 
-    lda NEXT_COL_VRAML
-    cmp LAST_COL_VRAML
-    beq update_bg_scroll
-
-check_update_rom:
-    lda NEXT_COL_ROML
-    cmp LAST_COL_ROML
-    beq update_bg_scroll
-
-    lda #$81
-    sta $2115
-    ldx NEXT_COL_VRAML
-    stx LAST_COL_VRAML
-    ldy NEXT_COL_ROML
-    sty LAST_COL_ROML
-    jsr copy_tilemap_column
-    lda #$80
-    sta $2115
-
-update_bg_scroll:
     lda BGH_SCRL
     sta BG1HOFS
     lda BGH_SCRH
     sta BG1HOFS
+
     jsr read_joypad
 
     rti

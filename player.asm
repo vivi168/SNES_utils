@@ -3,6 +3,7 @@
 
 .export init_oam_buffer
 .export update_oam_buffer
+.export update_sprite_x
 .export player_move_right
 .export player_move_left
 
@@ -12,9 +13,6 @@ rep #$10 ; I 16
 sep #$20 ; A 8
 
 .proc init_oam_buffer
-    ldx #$0050
-    stx PLAYER_MXL
-    stx PLAYER_SX
     ldx #$0000
     ; TORSO
     lda PLAYER_SX
@@ -91,185 +89,58 @@ return:
     rts
 .endproc
 
-.proc player_move_right
-    ; TODO: would be better to track direction in PLAYER_ATTR
-    ; if direction has changed, flip (EOR #$40)
-    ldx #$03
-    lda #$30
-    sta OAML_BUF_START, x
-    ldx #$07
-    sta OAML_BUF_START, x
-
+.proc update_sprite_x
     ldx PLAYER_MXL
-    inx
-    inx
-    stx PLAYER_MXL
-    cpx #752
-    bcc check_right_center
-    ldx #752
-    stx PLAYER_MXL
-
-check_right_center:
-    lda PLAYER_SX
-    inc
-    inc
-    sta PLAYER_SX
-
-    cpx #(752-120)
-    bcs check_right_edge
-
-    cmp #120
-    bcc reset_next_tilemap
-    lda #120
-    sta PLAYER_SX
-
-    ldx BGH_SCRL
-    inx
-    inx
-    stx BGH_SCRL
-    ; TODO update next colum here
-    ldx PLAYER_MXL
-    stx MODULO8
-    LSR MODULO8
-    LSR MODULO8
-    LSR MODULO8
-    ASL MODULO8
-    ASL MODULO8
-    ASL MODULO8
-    ldx MODULO8
-    cpx PLAYER_MXL
-    bne check_right_edge
-
-    ldx NEXT_COL_VRAML
-    inx
-    cpx #$1020
-    bcc inc_vram
-    ldx #$1000
-inc_vram:
-    stx NEXT_COL_VRAML
-
-    ldx NEXT_COL_ROML
-    inx
-    inx
-    lda NEXT_COL_ROML
-    cmp #$3e
-    bcc inc_rom
-    lda #$00
-    sta NEXT_COL_ROML
-    lda NEXT_COL_ROMH
-    clc
-    adc #$08
-    sta NEXT_COL_ROMH
-    bra check_right_edge
-inc_rom:
-    stx NEXT_COL_ROML
-
-check_right_edge:
-    cmp #240
-    bcc return
-    lda #240
+    cpx #CENTER_X
+    bcc far_left
+    cpx #(MAP_W - SPRITE_W - CENTER_X)
+    bcs far_right
+    lda #CENTER_X
     sta PLAYER_SX
     bra return
 
-reset_next_tilemap:
-    ldx #$1000
-    ldy #$800
-    stx LAST_COL_VRAML
-    stx NEXT_COL_VRAML
-    sty LAST_COL_ROML
-    sty NEXT_COL_ROML
+far_left:
+    stx PLAYER_SX
+    bra return
+
+far_right:
+    rep #$20 ; A 16
+    lda PLAYER_MXL
+    clc
+    adc #CENTER_X
+    adc #CENTER_X
+    adc #SPRITE_W
+    sec
+    sbc #MAP_W
+    sta PLAYER_SX
+    sep #$20 ; A 8
 
 return:
+    rts
+.endproc
 
+.proc player_move_right
+    ldx PLAYER_MXL
+    inx
+    inx
+    cpx #(MAP_W - SPRITE_W)
+    bcc return
+    ldx #(MAP_W - SPRITE_W)
+
+return:
+    stx PLAYER_MXL
     rts
 .endproc
 
 .proc player_move_left
-    ldx #$03
-    lda #$70
-    sta OAML_BUF_START, x
-    ldx #$07
-    sta OAML_BUF_START, x
-
     ldx PLAYER_MXL
     dex
     dex
-    stx PLAYER_MXL
     cpx #$00
-    bpl check_left_center
-    ldx #$00
-    stx PLAYER_MXL
-
-check_left_center:
-    lda PLAYER_SX
-    cmp #240
-    bne continue1
-    ldx PLAYER_MXL
-    dex
-    dex
-    stx PLAYER_MXL
-
-continue1:
-    dec
-    dec
-    sta PLAYER_SX
-
-    cpx #120
-    bcc check_left_edge
-
-    cmp #120
-    bcs reset_prev_tilemap
-    lda #120
-    sta PLAYER_SX
-
-    ldx BGH_SCRL
-    dex
-    dex
-    stx BGH_SCRL
-    ; TODO update next colum here
-    ldx PLAYER_MXL
-    stx MODULO8
-    LSR MODULO8
-    LSR MODULO8
-    LSR MODULO8
-    ASL MODULO8
-    ASL MODULO8
-    ASL MODULO8
-    ldx MODULO8
-    cpx PLAYER_MXL
-    bne check_left_edge
-    ldx NEXT_COL_VRAML
-    dex
-    stx NEXT_COL_VRAML
-    ldx NEXT_COL_ROML
-    dex
-    dex
-    stx NEXT_COL_ROML
-
-check_left_edge:
-    ldx PLAYER_MXL
-    cpx #120
-    bne continue2
-    ldx BGH_SCRL
-    dex
-    dex
-    stx BGH_SCRL
-
-continue2:
-    cmp #$00
     bpl return
-    lda #$00
-    sta PLAYER_SX
-    bra return
-
-reset_prev_tilemap:
-    ldx #$1000
-    ldy #$0000
-    stx LAST_COL_VRAML
-    stx NEXT_COL_VRAML
-    sty LAST_COL_ROML
-    sty NEXT_COL_ROML
+    ldx #$00
 
 return:
+    stx PLAYER_MXL
     rts
 .endproc
