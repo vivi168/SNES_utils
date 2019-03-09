@@ -35,7 +35,9 @@ nmi_stub:
 
     reset_oam_buffer
 
-    ldx #$2d0
+    ldx #X_VEL_MAX
+    stx PLAYER_X_VEL
+    ldx #$0d0
     stx PLAYER_XL
     jsr update_sprite_x
 

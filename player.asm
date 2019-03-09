@@ -120,27 +120,31 @@ return:
 .endproc
 
 .proc player_move_right
-    ldx PLAYER_XL
-    inx
-    inx
-    cpx #(MAP_W - SPRITE_W)
+    rep #$20
+    lda PLAYER_XL
+    clc
+    adc PLAYER_X_VEL
+    cmp #(MAP_W - SPRITE_W)
     bcc return
-    ldx #(MAP_W - SPRITE_W)
+    lda #(MAP_W - SPRITE_W)
 
 return:
-    stx PLAYER_XL
+    sta PLAYER_XL
+    sep #$20
     rts
 .endproc
 
 .proc player_move_left
-    ldx PLAYER_XL
-    dex
-    dex
-    cpx #$00
+    rep #$20
+    lda PLAYER_XL
+    sec
+    sbc PLAYER_X_VEL
+    cmp #$00
     bpl return
-    ldx #$00
+    lda #$00
 
 return:
-    stx PLAYER_XL
+    sta PLAYER_XL
+    sep #$20
     rts
 .endproc
