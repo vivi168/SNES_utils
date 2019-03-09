@@ -36,7 +36,7 @@ nmi_stub:
     reset_oam_buffer
 
     ldx #$2d0
-    stx PLAYER_MXL
+    stx PLAYER_XL
     jsr update_sprite_x
 
     ; once that's done, load our sprite data

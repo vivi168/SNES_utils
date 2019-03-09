@@ -15,7 +15,7 @@ sep #$20 ; A 8
 .proc init_oam_buffer
     ldx #$0000
     ; TORSO
-    lda PLAYER_SX
+    lda SPRITE_X
     sta OAML_BUF_START, x
     inx
     lda #(224-64)
@@ -27,7 +27,7 @@ sep #$20 ; A 8
     sta OAML_BUF_START, x
     inx
     ; LEGS
-    lda PLAYER_SX
+    lda SPRITE_X
     sta OAML_BUF_START, x
     inx
     lda #(224-48)
@@ -48,7 +48,7 @@ sep #$20 ; A 8
 .endproc
 
 .proc update_oam_buffer
-    lda PLAYER_SX
+    lda SPRITE_X
     sta OAML_BUF_START
     ldx #$04
     sta OAML_BUF_START, x
@@ -90,29 +90,29 @@ return:
 .endproc
 
 .proc update_sprite_x
-    ldx PLAYER_MXL
+    ldx PLAYER_XL
     cpx #CENTER_X
     bcc far_left
     cpx #(MAP_W - SPRITE_W - CENTER_X)
     bcs far_right
     lda #CENTER_X
-    sta PLAYER_SX
+    sta SPRITE_X
     bra return
 
 far_left:
-    stx PLAYER_SX
+    stx SPRITE_X
     bra return
 
 far_right:
     rep #$20 ; A 16
-    lda PLAYER_MXL
+    lda PLAYER_XL
     clc
     adc #CENTER_X
     adc #CENTER_X
     adc #SPRITE_W
     sec
     sbc #MAP_W
-    sta PLAYER_SX
+    sta SPRITE_X
     sep #$20 ; A 8
 
 return:
@@ -120,7 +120,7 @@ return:
 .endproc
 
 .proc player_move_right
-    ldx PLAYER_MXL
+    ldx PLAYER_XL
     inx
     inx
     cpx #(MAP_W - SPRITE_W)
@@ -128,12 +128,12 @@ return:
     ldx #(MAP_W - SPRITE_W)
 
 return:
-    stx PLAYER_MXL
+    stx PLAYER_XL
     rts
 .endproc
 
 .proc player_move_left
-    ldx PLAYER_MXL
+    ldx PLAYER_XL
     dex
     dex
     cpx #$00
@@ -141,6 +141,6 @@ return:
     ldx #$00
 
 return:
-    stx PLAYER_MXL
+    stx PLAYER_XL
     rts
 .endproc
