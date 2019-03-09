@@ -38,7 +38,7 @@ nmi_stub:
     ldx #X_VEL_MAX
     stx PLAYER_X_VEL
     ldx #$0d0
-    stx PLAYER_XL
+    stx PLAYER_X
     jsr update_sprite_x
 
     ; once that's done, load our sprite data

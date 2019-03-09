@@ -90,7 +90,7 @@ return:
 .endproc
 
 .proc update_sprite_x
-    ldx PLAYER_XL
+    ldx PLAYER_X
     cpx #CENTER_X
     bcc far_left
     cpx #(MAP_W - SPRITE_W - CENTER_X)
@@ -105,7 +105,7 @@ far_left:
 
 far_right:
     rep #$20 ; A 16
-    lda PLAYER_XL
+    lda PLAYER_X
     clc
     adc #CENTER_X
     adc #CENTER_X
@@ -121,7 +121,7 @@ return:
 
 .proc player_move_right
     rep #$20
-    lda PLAYER_XL
+    lda PLAYER_X
     clc
     adc PLAYER_X_VEL
     cmp #(MAP_W - SPRITE_W)
@@ -129,14 +129,14 @@ return:
     lda #(MAP_W - SPRITE_W)
 
 return:
-    sta PLAYER_XL
+    sta PLAYER_X
     sep #$20
     rts
 .endproc
 
 .proc player_move_left
     rep #$20
-    lda PLAYER_XL
+    lda PLAYER_X
     sec
     sbc PLAYER_X_VEL
     cmp #$00
@@ -144,7 +144,7 @@ return:
     lda #$00
 
 return:
-    sta PLAYER_XL
+    sta PLAYER_X
     sep #$20
     rts
 .endproc
