@@ -37,7 +37,7 @@ nmi_stub:
 
     ldx #X_VEL_MAX
     stx PLAYER_X_VEL
-    ldx #$0d0
+    ldx #$00
     stx PLAYER_X
     jsr update_sprite_x
 
@@ -148,6 +148,7 @@ move_left:
     jsr player_move_left
 
 update:
+    jsr update_bg_scroll
     jsr update_oam_buffer
     bra continue
 

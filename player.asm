@@ -6,6 +6,7 @@
 .export update_sprite_x
 .export player_move_right
 .export player_move_left
+.export update_bg_scroll
 
 .segment "CODE"
 
@@ -122,6 +123,7 @@ return:
 .proc player_move_right
     rep #$20
     lda PLAYER_X
+    sta PREV_PLAYER_X
     clc
     adc PLAYER_X_VEL
     cmp #(MAP_W - SPRITE_W)
@@ -137,6 +139,7 @@ return:
 .proc player_move_left
     rep #$20
     lda PLAYER_X
+    sta PREV_PLAYER_X
     sec
     sbc PLAYER_X_VEL
     cmp #$00
@@ -145,6 +148,27 @@ return:
 
 return:
     sta PLAYER_X
+    sep #$20
+    rts
+.endproc
+
+.proc update_bg_scroll
+    ldx PLAYER_X
+    cpx #CENTER_X
+    bcs check_far_right
+    rts
+check_far_right:
+    cpx #(MAP_W - SPRITE_W - CENTER_X)
+    bcc update
+    rts
+update:
+    rep #$20
+    lda PLAYER_X
+    sec
+    sbc PREV_PLAYER_X
+    clc
+    adc BGH_SCRL
+    sta BGH_SCRL
     sep #$20
     rts
 .endproc

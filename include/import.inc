@@ -7,3 +7,4 @@
 .import update_sprite_x
 .import player_move_right
 .import player_move_left
+.import update_bg_scroll
