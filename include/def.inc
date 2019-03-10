@@ -3,7 +3,8 @@
 
 ; RAM addresses
 SPRITE_X     = $0000
-BGH_SCRL     = SPRITE_X     + 2
+PREV_SPRITE_X = SPRITE_X + 2
+BGH_SCRL     = PREV_SPRITE_X + 2
 BGH_SCRH     = BGH_SCRL     + 1
 BGV_SCRL     = BGH_SCRH     + 1
 PLAYER_ATTR  = BGV_SCRL     + 1

@@ -91,6 +91,8 @@ return:
 .endproc
 
 .proc update_sprite_x
+    ldx SPRITE_X
+    stx PREV_SPRITE_X
     ldx PLAYER_X
     cpx #CENTER_X
     bcc far_left
@@ -154,7 +156,7 @@ return:
 
 .proc update_bg_scroll
     ldx SPRITE_X
-    cpx #CENTER_X
+    cpx PREV_SPRITE_X
     beq update
     rts
 update:
