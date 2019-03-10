@@ -153,13 +153,9 @@ return:
 .endproc
 
 .proc update_bg_scroll
-    ldx PLAYER_X
+    ldx SPRITE_X
     cpx #CENTER_X
-    bcs check_far_right
-    rts
-check_far_right:
-    cpx #(MAP_W - SPRITE_W - CENTER_X)
-    bcc update
+    beq update
     rts
 update:
     rep #$20

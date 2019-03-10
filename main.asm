@@ -112,7 +112,6 @@ nmi_stub:
 
     ; TODO: maybe don't transfer full OAM Buffer each time
     ; but only modified data
-    jsr update_sprite_x
     transfer_oam_buffer
 
     lda BGH_SCRL
@@ -148,8 +147,9 @@ move_left:
     jsr player_move_left
 
 update:
-    jsr update_bg_scroll
+    jsr update_sprite_x
     jsr update_oam_buffer
+    jsr update_bg_scroll
     bra continue
 
 stand_still:
