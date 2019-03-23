@@ -123,6 +123,12 @@ return:
 .endproc
 
 .proc player_move_right
+    ldx #$03
+    lda #$30
+    sta OAML_BUF_START, x
+    ldx #$07
+    sta OAML_BUF_START, x
+
     rep #$20
     lda PLAYER_X
     sta PREV_PLAYER_X
@@ -139,6 +145,12 @@ return:
 .endproc
 
 .proc player_move_left
+    ldx #$03
+    lda #$70
+    sta OAML_BUF_START, x
+    ldx #$07
+    sta OAML_BUF_START, x
+
     rep #$20
     lda PLAYER_X
     sta PREV_PLAYER_X
