@@ -54,7 +54,8 @@ class MiniAssembler
         @normal_mode = true
         @lorom = true
         @memory = (1..0x8000).map { |b| rand(0..255).to_s(16).rjust(2, '0') }
-        @program_counter = 0
+        @current_addr = 0
+        @current_bank = 0
     end
 
     def getline
@@ -75,6 +76,8 @@ class MiniAssembler
                 end_addr = matches[2].to_i(16)
                 end_addr = start_addr if end_addr < start_addr
 
+                # TODO check address is in current bank
+
                 padding_count = start_addr % 8
                 padding = (1..padding_count).map { |b| '  ' }
                 arr = @memory[start_addr..end_addr].insert(8-padding_count, *padding).each_slice(8).to_a
@@ -84,8 +87,17 @@ class MiniAssembler
                     else
                         line_addr = start_addr - padding_count + idx * 8
                     end
-                    ["#{line_addr.to_s(16).rjust(4, '0')}-", *row].join(' ')
+                    ["#{@current_bank.to_s(16).rjust(2, '0')}/#{line_addr.to_s(16).rjust(4, '0')}-", *row].join(' ')
                 end.join("\n")
+            elsif matches = /^([0-9a-fA-F]+):([0-9a-fA-F ]+)$/.match(line)
+                addr = matches[1].to_i(16)
+                bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| b.to_i(16).to_s(16).rjust(2, '0') }
+                @memory[addr..addr+bytes.length-1] = bytes
+                return
+            elsif /^[0-9a-fA-F]{2}\/$/
+                # check if memory has enough bank.
+                # lowrom bank size = 0x8000
+                # hirom bank size =  0x10000
             end
         else
             if line == ''
