@@ -24,8 +24,7 @@ class MiniAssembler
 
   def getline
     prompt = @normal_mode ? '*' : '!'
-    print(prompt)
-    gets.strip.chomp
+    Readline.readline(prompt, true).strip.chomp
   end
 
   def parse_line(line)
