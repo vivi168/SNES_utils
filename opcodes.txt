@@ -1,0 +1,258 @@
+OP LEN MODE      SYNTAX
+-- --- --------- ------
+61 2   (dir,X)   ADC ($10,X)
+63 2   stk,S     ADC $32,S
+65 2   dir       ADC $10
+67 2   [dir]     ADC [$10]
+69 3-m imm       ADC #$54
+6D 3   abs       ADC $9876
+6F 4   long      ADC $FEDBCA
+71 2   (dir),Y   ADC ($10),Y
+72 2   (dir)     ADC ($10)
+73 2   (stk,S),Y ADC ($32,S),Y
+75 2   dir,X     ADC $10,X
+77 2   [dir],Y   ADC [$10],Y
+79 3   abs,Y     ADC $9876,Y
+7D 3   abs,X     ADC $9876,X
+7F 4   long,X    ADC $FEDCBA,X
+E1 2   (dir,X)   SBC ($10,X)
+E3 2   stk,S     SBC $32,S
+E5 2   dir       SBC $10
+E7 2   [dir]     SBC [$10]
+E9 3-m imm       SBC #$54
+ED 3   abs       SBC $9876
+EF 4   long      SBC $FEDBCA
+F1 2   (dir),Y   SBC ($10),Y
+F2 2   (dir)     SBC ($10)
+F3 2   (stk,S),Y SBC ($32,S),Y
+F5 2   dir,X     SBC $10,X
+F7 2   [dir],Y   SBC [$10],Y
+F9 3   abs,Y     SBC $9876,Y
+FD 3   abs,X     SBC $9876,X
+FF 4   long,X    SBC $FEDCBA,X
+C1 2   (dir,X)   CMP ($10,X)
+C3 2   stk,S     CMP $32,S
+C5 2   dir       CMP $10
+C7 2   [dir]     CMP [$10]
+C9 3-m imm       CMP #$54
+CD 3   abs       CMP $9876
+CF 4   long      CMP $FEDBCA
+D1 2   (dir),Y   CMP ($10),Y
+D2 2   (dir)     CMP ($10)
+D3 2   (stk,S),Y CMP ($32,S),Y
+D5 2   dir,X     CMP $10,X
+D7 2   [dir],Y   CMP [$10],Y
+D9 3   abs,Y     CMP $9876,Y
+DD 3   abs,X     CMP $9876,X
+DF 4   long,X    CMP $FEDCBA,X
+E0 3-x imm       CPX #$54
+E4 2   dir       CPX $10
+EC 3   abs       CPX $9876
+C0 3-x imm       CPY #$54
+C4 2   dir       CPY $10
+CC 3   abs       CPY $9876
+3A 1   acc       DEC
+C6 2   dir       DEC $10
+CE 3   abs       DEC $9876
+D6 2   dir,X     DEC $10,X
+DE 3   abs,X     DEC $9876,X
+CA 1   imp       DEX
+88 1   imp       DEY
+1A 1   acc       INC
+E6 2   dir       INC $10
+EE 3   abs       INC $9876
+F6 2   dir,X     INC $10,X
+FE 3   abs,X     INC $9876,X
+E8 1   imp       INX
+C8 1   imp       INY
+21 2   (dir,X)   AND ($10,X)
+23 2   stk,S     AND $32,S
+25 2   dir       AND $10
+27 2   [dir]     AND [$10]
+29 3-m imm       AND #$54
+2D 3   abs       AND $9876
+2F 4   long      AND $FEDBCA
+31 2   (dir),Y   AND ($10),Y
+32 2   (dir)     AND ($10)
+33 2   (stk,S),Y AND ($32,S),Y
+35 2   dir,X     AND $10,X
+37 2   [dir],Y   AND [$10],Y
+39 3   abs,Y     AND $9876,Y
+3D 3   abs,X     AND $9876,X
+3F 4   long,X    AND $FEDCBA,X
+41 2   (dir,X)   EOR ($10,X)
+43 2   stk,S     EOR $32,S
+45 2   dir       EOR $10
+47 2   [dir]     EOR [$10]
+49 3-m imm       EOR #$54
+4D 3   abs       EOR $9876
+4F 4   long      EOR $FEDBCA
+51 2   (dir),Y   EOR ($10),Y
+52 2   (dir)     EOR ($10)
+53 2   (stk,S),Y EOR ($32,S),Y
+55 2   dir,X     EOR $10,X
+57 2   [dir],Y   EOR [$10],Y
+59 3   abs,Y     EOR $9876,Y
+5D 3   abs,X     EOR $9876,X
+5F 4   long,X    EOR $FEDCBA,X
+01 2   (dir,X)   ORA ($10,X)
+03 2   stk,S     ORA $32,S
+05 2   dir       ORA $10
+07 2   [dir]     ORA [$10]
+09 3-m imm       ORA #$54
+0D 3   abs       ORA $9876
+0F 4   long      ORA $FEDBCA
+11 2   (dir),Y   ORA ($10),Y
+12 2   (dir)     ORA ($10)
+13 2   (stk,S),Y ORA ($32,S),Y
+15 2   dir,X     ORA $10,X
+17 2   [dir],Y   ORA [$10],Y
+19 3   abs,Y     ORA $9876,Y
+1D 3   abs,X     ORA $9876,X
+1F 4   long,X    ORA $FEDCBA,X
+24 2   dir       BIT $10
+2C 3   abs       BIT $9876
+34 2   dir,X     BIT $10,X
+3C 3   abs,X     BIT $9876,X
+89 3-m imm       BIT #$54
+14 2   dir       TRB $10
+1C 3   abs       TRB $9876
+04 2   dir       TSB $10
+0C 3   abs       TSB $9876
+06 2   dir       ASL $10
+0A 1   acc       ASL
+0E 3   abs       ASL $9876
+16 2   dir,X     ASL $10,X
+1E 3   abs,X     ASL $9876,X
+46 2   dir       LSR $10
+4A 1   acc       LSR
+4E 3   abs       LSR $9876
+56 2   dir,X     LSR $10,X
+5E 3   abs,X     LSR $9876,X
+26 2   dir       ROL $10
+2A 1   acc       ROL
+2E 3   abs       ROL $9876
+36 2   dir,X     ROL $10,X
+3E 3   abs,X     ROL $9876,X
+66 2   dir       ROR $10
+6A 1   acc       ROR
+6E 3   abs       ROR $9876
+76 2   dir,X     ROR $10,X
+7E 3   abs,X     ROR $9876,X
+90 2   rel8      BCC LABEL
+B0 2   rel8      BCS LABEL
+F0 2   rel8      BEQ LABEL
+30 2   rel8      BMI LABEL
+D0 2   rel8      BNE LABEL
+10 2   rel8      BPL LABEL
+80 2   rel8      BRA LABEL
+50 2   rel8      BVC LABEL
+70 2   rel8      BVS LABEL
+82 3   rel16     BRL LABEL
+4C 3   abs       JMP $1234
+5C 4   long      JMP $FEDCBA
+6C 3   (abs)     JMP ($1234)
+7C 3   (abs,X)   JMP ($1234,X)
+DC 3   [abs]     JMP [$1234]
+22 4   long      JSL $123456
+20 3   abs       JSR $1234
+FC 3   (abs,X)   JSR ($1234,X)
+6B 1   imp       RTL
+60 1   imp       RTS
+00 1   imp       BRK
+02 2   imm       COP #$12
+40 1   imp       RTI
+18 1   imp       CLC
+D8 1   imp       CLD
+58 1   imp       CLI
+B8 1   imp       CLV
+38 1   imp       SEC
+F8 1   imp       SED
+78 1   imp       SEI
+C2 2   imm       REP #$12
+E2 2   imm       SEP #$12
+A1 2   (dir,X)   LDA ($10,X)
+A3 2   stk,S     LDA $32,S
+A5 2   dir       LDA $10
+A7 2   [dir]     LDA [$10]
+A9 3-m imm       LDA #$54
+AD 3   abs       LDA $9876
+AF 4   long      LDA $FEDBCA
+B1 2   (dir),Y   LDA ($10),Y
+B2 2   (dir)     LDA ($10)
+B3 2   (stk,S),Y LDA ($32,S),Y
+B5 2   dir,X     LDA $10,X
+B7 2   [dir],Y   LDA [$10],Y
+B9 3   abs,Y     LDA $9876,Y
+BD 3   abs,X     LDA $9876,X
+BF 4   long,X    LDA $FEDCBA,X
+A2 3-x imm       LDX #$54
+A6 2   dir       LDX $10
+AE 3   abs       LDX $9876
+B6 2   dir,Y     LDX $10,Y
+BE 3   abs,Y     LDX $9876,Y
+A0 3-x imm       LDY #$54
+A4 2   dir       LDY $10
+AC 3   abs       LDY $9876
+B4 2   dir,X     LDY $10,X
+BC 3   abs,X     LDY $9876,X
+81 2   (dir,X)   STA ($10,X)
+83 2   stk,S     STA $32,S
+85 2   dir       STA $10
+87 2   [dir]     STA [$10]
+8D 3   abs       STA $9876
+8F 4   long      STA $FEDBCA
+91 2   (dir),Y   STA ($10),Y
+92 2   (dir)     STA ($10)
+93 2   (stk,S),Y STA ($32,S),Y
+95 2   dir,X     STA $10,X
+97 2   [dir],Y   STA [$10],Y
+99 3   abs,Y     STA $9876,Y
+9D 3   abs,X     STA $9876,X
+9F 4   long,X    STA $FEDCBA,X
+86 2   dir       STX $10
+8E 3   abs       STX $9876
+96 2   dir,Y     STX $10,Y
+84 2   dir       STY $10
+8C 3   abs       STY $9876
+94 2   dir,X     STY $10,X
+64 2   dir       STZ $10
+74 2   dir,X     STZ $10,X
+9C 3   abs       STZ $9876
+9E 3   abs,X     STZ $9876,X
+54 3   src,dest  MVN #$12,#$34
+44 3   src,dest  MVP #$12,#$34
+EA 1   imp       NOP
+42 2   imm       WDM
+F4 3   imm       PEA #$1234
+D4 2   dir       PEI $12
+62 3   imm       PER LABEL
+48 1   imp       PHA
+DA 1   imp       PHX
+5A 1   imp       PHY
+68 1   imp       PLA
+FA 1   imp       PLX
+7A 1   imp       PLY
+8B 1   imp       PHB
+0B 1   imp       PHD
+4B 1   imp       PHK
+08 1   imp       PHP
+AB 1   imp       PLB
+2B 1   imp       PLD
+28 1   imp       PLP
+DB 1   imp       STP
+CB 1   imp       WAI
+AA 1   imp       TAX
+A8 1   imp       TAY
+BA 1   imp       TSX
+8A 1   imp       TXA
+9A 1   imp       TXS
+9B 1   imp       TXY
+98 1   imp       TYA
+BB 1   imp       TYX
+5B 1   imp       TCD
+1B 1   imp       TCS
+7B 1   imp       TDC
+3B 1   imp       TSC
+EB 1   imp       XBA
+FB 1   imp       XCE
