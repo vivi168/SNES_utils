@@ -53,9 +53,14 @@ class MiniAssembler
     def initialize
         @normal_mode = true
         @lorom = true
-        @memory = (1..0x8000).map { |b| rand(0..255).to_s(16).rjust(2, '0') }
+        @bank_size = @lorom ? 0x8000 : 0x10000
+        @memory = (0..255).map { |bank| (1..@bank_size).map { |b| rand(0..255).to_s(16).rjust(2, '0') } }
         @current_addr = 0
-        @current_bank = 0
+        @current_bank_no = 0
+    end
+
+    def current_bank
+        @memory[@current_bank_no]
     end
 
     def getline
@@ -70,7 +75,7 @@ class MiniAssembler
                 @normal_mode = false
                 return
             elsif /^[0-9a-fA-F]+$/ =~ line
-                return @memory[line.to_i(16)]
+                return current_bank[line.to_i(16)]
             elsif matches = /^([0-9a-fA-F]+)\.+([0-9a-fA-F]+)$/.match(line)
                 start_addr = matches[1].to_i(16)
                 end_addr = matches[2].to_i(16)
@@ -80,24 +85,25 @@ class MiniAssembler
 
                 padding_count = start_addr % 8
                 padding = (1..padding_count).map { |b| '  ' }
-                arr = @memory[start_addr..end_addr].insert(8-padding_count, *padding).each_slice(8).to_a
+                arr = current_bank[start_addr..end_addr].insert(8-padding_count, *padding).each_slice(8).to_a
                 return arr.each_with_index.map do |row, idx|
                     if idx == 0
                         line_addr = start_addr
                     else
                         line_addr = start_addr - padding_count + idx * 8
                     end
-                    ["#{@current_bank.to_s(16).rjust(2, '0')}/#{line_addr.to_s(16).rjust(4, '0')}-", *row].join(' ')
+                    ["#{@current_bank_no.to_s(16).rjust(2, '0')}/#{line_addr.to_s(16).rjust(4, '0')}-", *row].join(' ')
                 end.join("\n")
             elsif matches = /^([0-9a-fA-F]+):([0-9a-fA-F ]+)$/.match(line)
                 addr = matches[1].to_i(16)
                 bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| b.to_i(16).to_s(16).rjust(2, '0') }
-                @memory[addr..addr+bytes.length-1] = bytes
+                current_bank[addr..addr+bytes.length-1] = bytes
                 return
-            elsif /^[0-9a-fA-F]{2}\/$/
+            elsif matches = /^([0-9a-fA-F]{2})\/$/.match(line)
                 # check if memory has enough bank.
                 # lowrom bank size = 0x8000
                 # hirom bank size =  0x10000
+                @current_bank_no = matches[1].to_i(16)
             end
         else
             if line == ''
