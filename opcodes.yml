@@ -1,4 +1,7 @@
 modes:
+  imp:
+    regexp: !ruby/regexp /^$/
+    example: ''
   imm8:
     regexp: !ruby/regexp /^#\$?([0-9a-fA-F]{1,2})$/
     example: '#$00'
@@ -57,8 +60,8 @@ modes:
     regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{3,4}),X\)$/
     example: '($0000,X)'
   ial:
-    regexp: !ruby/regexp /^\[\$?([0-9a-fA-F]{5,6})\]$/
-    example: '[$000000]'
+    regexp: !ruby/regexp /^\[\$?([0-9a-fA-F]{3,4})\]$/
+    example: '[$0000]'
   rel:
     regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4})$/
     example: '$0000'
@@ -70,366 +73,366 @@ modes:
     example: '$00,$00'
 opcodes:
   adc:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: [idx, sr, dp, idl, imm8, imm16, abs, abl, idy, idp, isy, dpx, idly, aby, abx, alx]
+    code: [61, 63, 65, 67, 69, 69, 6D, 6F, 71, 72, 73, 75, 77, 79, 7D, 7F]
+    length: [2, 2, 2, 2, 2, 3, 3, 4, 2, 2, 2, 2, 2, 3, 3, 4]
   sbc:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   cmp:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   cpx:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   cpy:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   dec:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   dex:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   dey:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   inc:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   inx:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   iny:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   and:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   eor:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   ora:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   bit:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   trb:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tsb:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   asl:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   lsr:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   rol:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   ror:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   bcc:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   bcs:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   beq:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   bmi:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   bne:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   bpl:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   bra:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   bvc:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   bvs:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   brl:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   jmp:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   jsl:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   jsr:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   rtl:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   rts:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   brk:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   cop:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   rti:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   clc:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   cld:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   cli:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   clv:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   sec:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   sed:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   sei:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   rep:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   sep:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   lda:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   ldx:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   ldy:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   sta:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   stx:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   sty:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   stz:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   mvn:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   mvp:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   nop:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   wdm:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   pea:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   pei:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   per:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   pha:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   phx:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   phy:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   pla:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   plx:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   ply:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   phb:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   phd:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   phk:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   php:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   plb:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   pld:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   plp:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   stp:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   wai:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tax:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tay:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tsx:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   txa:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   txs:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   txy:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tya:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tyx:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tcd:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tcs:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tdc:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   tsc:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   xba:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
   xce:
-    allowed_modes:
-    length:
-    code:
+    allowed_modes: []
+    code: []
+    length: []
