@@ -1,50 +1,73 @@
 modes:
   imm8:
-    regex: //
+    regexp: !ruby/regexp /^#\$?([0-9a-fA-F]{1,2})$/
+    example: '#$00'
   imm16:
-    regex: //
+    regexp: !ruby/regexp /^#\$?([0-9a-fA-F]{3,4})$/
+    example: '#$0000'
   sr:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2}),S$/
+    example: '$00,S'
   dp:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2})$/
+    example: '$00'
   dpx:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2}),X$/
+    example: '$00,X'
   dpy:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2}),Y$/
+    example: '$00,Y'
   idp:
-    regex: //
+    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{1,2})\)$/
+    example: '($00)'
   idx:
-    regex: //
+    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{1,2}),X\)$/
+    example: '($00,X)'
   idy:
-    regex: //
+    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{1,2})\),Y$/
+    example: '($00),Y'
   idl:
-    regex: //
+    regexp: !ruby/regexp /^\[\$?([0-9a-fA-F]{1,2})\]$/
+    example: '[$00]'
   idly:
-    regex: //
+    regexp: !ruby/regexp /^\[\$?([0-9a-fA-F]{1,2})\],Y$/
+    example: '[$00],Y'
   isy:
-    regex: //
+    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{1,2}),S\),Y$/
+    example: '($00,S),Y'
   abs:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4})$/
+    example: '$0000'
   abx:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4}),X$/
+    example: '$0000,X'
   aby:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4}),Y$/
+    example: '$0000,Y'
   abl:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{5,6})$/
+    example: '$000000'
   alx:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{5,6}),X$/
+    example: '$000000,X'
   ind:
-    regex: //
+    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{3,4})\)$/
+    example: '($0000)'
   iax:
-    regex: //
+    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{3,4}),X\)$/
+    example: '($0000,X)'
   ial:
-    regex: //
+    regexp: !ruby/regexp /^\[\$?([0-9a-fA-F]{5,6})\]$/
+    example: '[$000000]'
   rel:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4})$/
+    example: '$0000'
   rell:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4})$/
+    example: '$0000'
   bm:
-    regex: //
+    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2}),\$?([0-9a-fA-F]{1,2})$/
+    example: '$00,$00'
 opcodes:
   adc:
     allowed_modes:
