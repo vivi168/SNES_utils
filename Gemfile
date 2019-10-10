@@ -3,4 +3,5 @@ source 'https://rubygems.org' do
   gem 'nokogiri'
   gem 'rb-readline'
   gem 'rspec'
+  gem 'byebug'
 end

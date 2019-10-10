@@ -1,5 +1,6 @@
 require 'yaml'
 require 'readline'
+require 'byebug'
 
 def write(nbytes)
   data = (1..nbytes).map { |b| '00' }
@@ -46,6 +47,11 @@ class MiniAssembler
     @memory = (0..255).map { |bank| (1..@bank_size).map { |b| rand(0..255).to_s(16).rjust(2, '0') } }
     @current_addr = 0
     @current_bank_no = 0
+  end
+
+  def opcodes
+    # write spec to check integrity of this file
+    @opcodes = YAML.load_file File.join(File.dirname(__FILE__), "/opcodes/opcodes.yml")
   end
 
   def current_bank
@@ -97,17 +103,54 @@ class MiniAssembler
       if line == ''
         @normal_mode = true
         return
+      else
+        address = parse_address(line)
+        instruction, length = parse_instruction(line)
+        return 'error' unless instruction
+        current_bank[@current_addr..@current_addr+length-1] = instruction
+        @current_addr += length
+        return 'ok'
       end
     end
   end
 
   def parse_address(line)
-    line.split(':').first.to_i
+    return @current_addr if line.index(':').nil?
+    line.split(':').first.to_i(16)
   end
 
   def parse_instruction(line)
+    instruction = line.split(':').last.split(' ')
+    mnemonic = instruction[0].upcase
+    param = instruction[1].to_s
+
+    opcodes_list = opcodes[mnemonic.to_sym]
+    return [nil, nil] unless opcodes_list&.any?
+
+    mode = parse_mode(opcodes_list, param)
+
+    return [nil, nil] unless mode&.any?
+    opcode_info = opcodes_list[mode[0]]
+    opcode = opcode_info[0]
+    length = opcode_info[1].to_i
+
+    # TODO handle relative addressing
+    param_bytes = mode[1].to_s(16).rjust(length-1, '0').scan(/.{2}/).reverse.join if mode[1]
+
+    encoded_result = "#{opcode}#{param_bytes}"
+
+    return [encoded_result.scan(/.{2}/), length]
   end
 
-  def parse_mode(line, instruction)
+  def parse_mode(available_modes, param)
+    available_modes.keys.map do |m|
+      if matches = MiniAssembler::MODES_REGEXES[m].match(param)
+        if matches.length > 1
+          [m, matches[1].to_i(16)]
+        else
+          [m, nil]
+        end
+      end
+    end.compact.first
   end
 end
