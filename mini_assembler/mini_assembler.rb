@@ -107,8 +107,8 @@ class MiniAssembler
         address = parse_address(line)
         instruction, length = parse_instruction(line)
         return 'error' unless instruction
-        current_bank[@current_addr..@current_addr+length-1] = instruction
-        @current_addr += length
+        current_bank[address..address+length-1] = instruction
+        @current_addr = address + length
         return 'ok'
       end
     end
