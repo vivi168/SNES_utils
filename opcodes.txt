@@ -168,8 +168,8 @@ DC 3   [abs]     JMP [$1234]
 FC 3   (abs,X)   JSR ($1234,X)
 6B 1   imp       RTL
 60 1   imp       RTS
-00 1   imp       BRK
-02 2   imm       COP #$12
+00 1   imm       BRK $00
+02 2   imm       COP $12
 40 1   imp       RTI
 18 1   imp       CLC
 D8 1   imp       CLD
@@ -178,8 +178,8 @@ B8 1   imp       CLV
 38 1   imp       SEC
 F8 1   imp       SED
 78 1   imp       SEI
-C2 2   imm       REP #$12
-E2 2   imm       SEP #$12
+C2 2   imm8      REP #$12
+E2 2   imm8      SEP #$12
 A1 2   (dir,X)   LDA ($10,X)
 A3 2   stk,S     LDA $32,S
 A5 2   dir       LDA $10
@@ -232,13 +232,13 @@ BC 3   abs,X     LDY $9876,X
 74 2   dir,X     STZ $10,X
 9C 3   abs       STZ $9876
 9E 3   abs,X     STZ $9876,X
-54 3   src,dest  MVN #$12,#$34
-44 3   src,dest  MVP #$12,#$34
+54 3   src,dest  MVN $12,$34
+44 3   src,dest  MVP $12,$34
 EA 1   imp       NOP
-42 2   imm       WDM
-F4 3   imm       PEA #$1234
+42 2   imm       WDM $12
+F4 3   iml       PEA $1234
 D4 2   dir       PEI $12
-62 3   imm       PER LABEL
+62 3   rel16     PER LABEL
 48 1   imp       PHA
 DA 1   imp       PHX
 5A 1   imp       PHY

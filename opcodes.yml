@@ -7,6 +7,14 @@ modes:
     syntax: 'imp'
     regexp: !ruby/regexp /^$/
     example: ''
+  imm:
+    syntax: 'imm'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{1,2})$/i
+    example: '$00'
+  iml:
+    syntax: 'iml'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{1,2})$/i
+    example: '$0000'
   imm8:
     syntax: 'imm8'
     regexp: !ruby/regexp /^#\$?([0-9a-f]{1,2})$/i
@@ -97,8 +105,8 @@ modes:
     example: '$0000'
   bm:
     syntax: 'src,dest'
-    regexp: !ruby/regexp /^#\$?([0-9a-f]{1,2}),#\$?([0-9a-f]{1,2})$/i
-    example: '#$00,#$00'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{1,2}),\$?([0-9a-f]{1,2})$/i
+    example: '$00,$00'
 opcodes:
   adc:
     allowed_modes: [idx, sr, dp, idl, imm8, imm16, abs, abl, idy, idp, isy, dpx, idly, aby, abx, alx]
