@@ -47,6 +47,8 @@ class MiniAssembler
     @memory = (0..255).map { |bank| (1..@bank_size).map { |b| rand(0..255).to_s(16).rjust(2, '0') } }
     @current_addr = 0
     @current_bank_no = 0
+    @accumulator = 1
+    @index = 1
   end
 
   def opcodes
@@ -59,7 +61,7 @@ class MiniAssembler
   end
 
   def getline
-    prompt = @normal_mode ? '*' : '!'
+    prompt = @normal_mode ? "(#{@accumulator}=m #{@index}=x)*" : "!"
     Readline.readline(prompt, true).strip.chomp
   end
 
@@ -98,6 +100,17 @@ class MiniAssembler
         # lowrom bank size = 0x8000
         # hirom bank size =  0x10000
         @current_bank_no = matches[1].to_i(16)
+      elsif matches = /^([01])=([xm])$/i.match(line)
+        val = matches[1]
+        reg = matches[2]
+
+        if reg.downcase == 'm'
+          @accumulator = val.to_i
+        elsif reg.downcase == 'x'
+          @index = val.to_i
+        end
+
+        return
       end
     else
       if line == ''
