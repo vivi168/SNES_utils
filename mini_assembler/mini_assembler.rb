@@ -9,6 +9,36 @@ def write(nbytes)
 end
 
 class MiniAssembler
+  MODES_REGEXES = {
+    acc: /^$/,
+    imp: /^$/,
+    imm: /^\$?([0-9a-f]{1,2})$/i,
+    iml: /^\$?([0-9a-f]{1,2})$/i,
+    imm8: /^#\$?([0-9a-f]{1,2})$/i,
+    imm16: /^#\$?([0-9a-f]{3,4})$/i,
+    sr: /^\$?([0-9a-f]{1,2}),S$/i,
+    dp: /^\$?([0-9a-f]{1,2})$/i,
+    dpx: /^\$?([0-9a-f]{1,2}),X$/i,
+    dpy: /^\$?([0-9a-f]{1,2}),Y$/i,
+    idp: /^\(\$?([0-9a-f]{1,2})\)$/i,
+    idx: /^\(\$?([0-9a-f]{1,2}),X\)$/i,
+    idy: /^\(\$?([0-9a-f]{1,2})\),Y$/i,
+    idl: /^\[\$?([0-9a-f]{1,2})\]$/i,
+    idly: /^\[\$?([0-9a-f]{1,2})\],Y$/i,
+    isy: /^\(\$?([0-9a-f]{1,2}),S\),Y$/i,
+    abs: /^\$?([0-9a-f]{3,4})$/i,
+    abx: /^\$?([0-9a-f]{3,4}),X$/i,
+    aby: /^\$?([0-9a-f]{3,4}),Y$/i,
+    abl: /^\$?([0-9a-f]{5,6})$/i,
+    alx: /^\$?([0-9a-f]{5,6}),X$/i,
+    ind: /^\(\$?([0-9a-f]{3,4})\)$/i,
+    iax: /^\(\$?([0-9a-f]{3,4}),X\)$/i,
+    ial: /^\[\$?([0-9a-f]{3,4})\]$/i,
+    rel: /^\$?([0-9a-f]{3,4})$/i,
+    rell: /^\$?([0-9a-f]{3,4})$/i,
+    bm: /^\$?([0-9a-f]{1,2}),\$?([0-9a-f]{1,2})$/i
+  }
+
   def initialize
     @normal_mode = true
     @lorom = true
@@ -16,10 +46,6 @@ class MiniAssembler
     @memory = (0..255).map { |bank| (1..@bank_size).map { |b| rand(0..255).to_s(16).rjust(2, '0') } }
     @current_addr = 0
     @current_bank_no = 0
-  end
-
-  def modes
-    @modes = YAML.load_file('opcodes.yml')['modes']
   end
 
   def current_bank
