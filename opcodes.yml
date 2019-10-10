@@ -1,76 +1,104 @@
 modes:
+  acc:
+    syntax: 'acc'
+    regexp: !ruby/regexp /^$/
+    example: ''
   imp:
+    syntax: 'imp'
     regexp: !ruby/regexp /^$/
     example: ''
   imm8:
-    regexp: !ruby/regexp /^#\$?([0-9a-fA-F]{1,2})$/
+    syntax: 'imm8'
+    regexp: !ruby/regexp /^#\$?([0-9a-f]{1,2})$/i
     example: '#$00'
   imm16:
-    regexp: !ruby/regexp /^#\$?([0-9a-fA-F]{3,4})$/
+    syntax: 'imm16'
+    regexp: !ruby/regexp /^#\$?([0-9a-f]{3,4})$/i
     example: '#$0000'
   sr:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2}),S$/
+    syntax: 'stk,S'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{1,2}),S$/i
     example: '$00,S'
   dp:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2})$/
+    syntax: 'dir'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{1,2})$/i
     example: '$00'
   dpx:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2}),X$/
+    syntax: 'dir,X'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{1,2}),X$/i
     example: '$00,X'
   dpy:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2}),Y$/
+    syntax: 'dir,Y'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{1,2}),Y$/i
     example: '$00,Y'
   idp:
-    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{1,2})\)$/
+    syntax: '(dir)'
+    regexp: !ruby/regexp /^\(\$?([0-9a-f]{1,2})\)$/i
     example: '($00)'
   idx:
-    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{1,2}),X\)$/
+    syntax: '(dir,X)'
+    regexp: !ruby/regexp /^\(\$?([0-9a-f]{1,2}),X\)$/i
     example: '($00,X)'
   idy:
-    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{1,2})\),Y$/
+    syntax: '(dir),Y'
+    regexp: !ruby/regexp /^\(\$?([0-9a-f]{1,2})\),Y$/i
     example: '($00),Y'
   idl:
-    regexp: !ruby/regexp /^\[\$?([0-9a-fA-F]{1,2})\]$/
+    syntax: '[dir]'
+    regexp: !ruby/regexp /^\[\$?([0-9a-f]{1,2})\]$/i
     example: '[$00]'
   idly:
-    regexp: !ruby/regexp /^\[\$?([0-9a-fA-F]{1,2})\],Y$/
+    syntax: '[dir],Y'
+    regexp: !ruby/regexp /^\[\$?([0-9a-f]{1,2})\],Y$/i
     example: '[$00],Y'
   isy:
-    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{1,2}),S\),Y$/
+    syntax: '(stk,S),Y'
+    regexp: !ruby/regexp /^\(\$?([0-9a-f]{1,2}),S\),Y$/i
     example: '($00,S),Y'
   abs:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4})$/
+    syntax: 'abs'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{3,4})$/i
     example: '$0000'
   abx:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4}),X$/
+    syntax: 'abs,X'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{3,4}),X$/i
     example: '$0000,X'
   aby:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4}),Y$/
+    syntax: 'abs,Y'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{3,4}),Y$/i
     example: '$0000,Y'
   abl:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{5,6})$/
+    syntax: 'long'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{5,6})$/i
     example: '$000000'
   alx:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{5,6}),X$/
+    syntax: 'long,X'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{5,6}),X$/i
     example: '$000000,X'
   ind:
-    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{3,4})\)$/
+    syntax: '(abs)'
+    regexp: !ruby/regexp /^\(\$?([0-9a-f]{3,4})\)$/i
     example: '($0000)'
   iax:
-    regexp: !ruby/regexp /^\(\$?([0-9a-fA-F]{3,4}),X\)$/
+    syntax: '(abs,X)'
+    regexp: !ruby/regexp /^\(\$?([0-9a-f]{3,4}),X\)$/i
     example: '($0000,X)'
   ial:
-    regexp: !ruby/regexp /^\[\$?([0-9a-fA-F]{3,4})\]$/
+    syntax: '[abs]'
+    regexp: !ruby/regexp /^\[\$?([0-9a-f]{3,4})\]$/i
     example: '[$0000]'
   rel:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4})$/
+    syntax: 'rel8'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{3,4})$/i
     example: '$0000'
   rell:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{3,4})$/
+    syntax: 'rel16'
+    regexp: !ruby/regexp /^\$?([0-9a-f]{3,4})$/i
     example: '$0000'
   bm:
-    regexp: !ruby/regexp /^\$?([0-9a-fA-F]{1,2}),\$?([0-9a-fA-F]{1,2})$/
-    example: '$00,$00'
+    syntax: 'src,dest'
+    regexp: !ruby/regexp /^#\$?([0-9a-f]{1,2}),#\$?([0-9a-f]{1,2})$/i
+    example: '#$00,#$00'
 opcodes:
   adc:
     allowed_modes: [idx, sr, dp, idl, imm8, imm16, abs, abl, idy, idp, isy, dpx, idly, aby, abx, alx]

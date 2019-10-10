@@ -4,7 +4,8 @@ OP LEN MODE      SYNTAX
 63 2   stk,S     ADC $32,S
 65 2   dir       ADC $10
 67 2   [dir]     ADC [$10]
-69 3-m imm       ADC #$54
+69 2   imm8      ADC #$54
+69 3   imm16     ADC #$5454
 6D 3   abs       ADC $9876
 6F 4   long      ADC $FEDBCA
 71 2   (dir),Y   ADC ($10),Y
@@ -19,7 +20,8 @@ E1 2   (dir,X)   SBC ($10,X)
 E3 2   stk,S     SBC $32,S
 E5 2   dir       SBC $10
 E7 2   [dir]     SBC [$10]
-E9 3-m imm       SBC #$54
+E9 2   imm8      SBC #$54
+E9 3   imm16     SBC #$5454
 ED 3   abs       SBC $9876
 EF 4   long      SBC $FEDBCA
 F1 2   (dir),Y   SBC ($10),Y
@@ -34,7 +36,8 @@ C1 2   (dir,X)   CMP ($10,X)
 C3 2   stk,S     CMP $32,S
 C5 2   dir       CMP $10
 C7 2   [dir]     CMP [$10]
-C9 3-m imm       CMP #$54
+C9 2   imm8      CMP #$54
+C9 3   imm16     CMP #$5454
 CD 3   abs       CMP $9876
 CF 4   long      CMP $FEDBCA
 D1 2   (dir),Y   CMP ($10),Y
@@ -45,10 +48,12 @@ D7 2   [dir],Y   CMP [$10],Y
 D9 3   abs,Y     CMP $9876,Y
 DD 3   abs,X     CMP $9876,X
 DF 4   long,X    CMP $FEDCBA,X
-E0 3-x imm       CPX #$54
+E0 2   imm8      CPX #$54
+E0 3   imm16     CPX #$5454
 E4 2   dir       CPX $10
 EC 3   abs       CPX $9876
-C0 3-x imm       CPY #$54
+C0 2   imm8      CPY #$54
+C0 3   imm16     CPY #$5454
 C4 2   dir       CPY $10
 CC 3   abs       CPY $9876
 3A 1   acc       DEC
@@ -69,7 +74,8 @@ C8 1   imp       INY
 23 2   stk,S     AND $32,S
 25 2   dir       AND $10
 27 2   [dir]     AND [$10]
-29 3-m imm       AND #$54
+29 2   imm8      AND #$54
+29 3   imm16     AND #$5454
 2D 3   abs       AND $9876
 2F 4   long      AND $FEDBCA
 31 2   (dir),Y   AND ($10),Y
@@ -84,7 +90,8 @@ C8 1   imp       INY
 43 2   stk,S     EOR $32,S
 45 2   dir       EOR $10
 47 2   [dir]     EOR [$10]
-49 3-m imm       EOR #$54
+49 2   imm8      EOR #$54
+49 3   imm16     EOR #$5454
 4D 3   abs       EOR $9876
 4F 4   long      EOR $FEDBCA
 51 2   (dir),Y   EOR ($10),Y
@@ -99,7 +106,8 @@ C8 1   imp       INY
 03 2   stk,S     ORA $32,S
 05 2   dir       ORA $10
 07 2   [dir]     ORA [$10]
-09 3-m imm       ORA #$54
+09 2   imm8      ORA #$54
+09 3   imm16     ORA #$5454
 0D 3   abs       ORA $9876
 0F 4   long      ORA $FEDBCA
 11 2   (dir),Y   ORA ($10),Y
@@ -114,7 +122,8 @@ C8 1   imp       INY
 2C 3   abs       BIT $9876
 34 2   dir,X     BIT $10,X
 3C 3   abs,X     BIT $9876,X
-89 3-m imm       BIT #$54
+89 2   imm8      BIT #$54
+89 3   imm16     BIT #$5454
 14 2   dir       TRB $10
 1C 3   abs       TRB $9876
 04 2   dir       TSB $10
@@ -175,7 +184,8 @@ A1 2   (dir,X)   LDA ($10,X)
 A3 2   stk,S     LDA $32,S
 A5 2   dir       LDA $10
 A7 2   [dir]     LDA [$10]
-A9 3-m imm       LDA #$54
+A9 2   imm8      LDA #$54
+A9 3   imm16     LDA #$5454
 AD 3   abs       LDA $9876
 AF 4   long      LDA $FEDBCA
 B1 2   (dir),Y   LDA ($10),Y
@@ -186,12 +196,14 @@ B7 2   [dir],Y   LDA [$10],Y
 B9 3   abs,Y     LDA $9876,Y
 BD 3   abs,X     LDA $9876,X
 BF 4   long,X    LDA $FEDCBA,X
-A2 3-x imm       LDX #$54
+A2 2   imm8      LDX #$54
+A2 3   imm16     LDX #$5454
 A6 2   dir       LDX $10
 AE 3   abs       LDX $9876
 B6 2   dir,Y     LDX $10,Y
 BE 3   abs,Y     LDX $9876,Y
-A0 3-x imm       LDY #$54
+A0 2   imm8      LDY #$54
+A0 3   imm16     LDY #$5454
 A4 2   dir       LDY $10
 AC 3   abs       LDY $9876
 B4 2   dir,X     LDY $10,X
