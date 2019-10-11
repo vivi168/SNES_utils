@@ -26,11 +26,11 @@ describe MiniAssembler do
 
   describe '#parse_instruction' do
     subject { mini_asm.parse_instruction(line) }
-    context 'imm' do
+    context 'imm8' do
       let(:line) { 'ora #17' }
 
       it do
-        expect(subject).to eq ['09', '17']
+        expect(subject).to eq [['09', '17'], 2]
       end
     end
 
@@ -38,7 +38,7 @@ describe MiniAssembler do
       let(:line) { 'lda $1234' }
 
       it do
-        expect(subject).to eq ['AD','34','12']
+        expect(subject).to eq [['AD','34','12'], 3]
       end
     end
 
@@ -46,7 +46,7 @@ describe MiniAssembler do
       let(:line) { '300:xce' }
 
       it do
-        expect(subject).to eq ['FB']
+        expect(subject).to eq [['FB'], 1]
       end
     end
 
@@ -54,7 +54,7 @@ describe MiniAssembler do
       let(:line) { 'ADC [$12],Y' }
 
       it do
-        expect(subject).to eq ['77', '12']
+        expect(subject).to eq [['77', '12'], 2]
       end
     end
   end
