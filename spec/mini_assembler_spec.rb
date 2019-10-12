@@ -57,5 +57,31 @@ describe MiniAssembler do
         expect(subject).to eq [['77', '12'], 2]
       end
     end
+
+    describe 'relative addressing' do
+      context '8 bit rel postivie' do
+        let(:line) { '300:BMI 305' }
+
+        it { expect(subject).to eq [['30', '03'], 2] }
+      end
+
+      context '8 bit rel negative' do
+        let(:line) { '30a:bcc 300' }
+
+        it { expect(subject).to eq [['90', 'f4'], 2] }
+      end
+
+      context '16 bit rel postivie' do
+        let(:line) { '304:BRL $03A0' }
+
+        it { expect(subject).to eq [['82', '99', '00'], 3] }
+      end
+
+      context '16 bit rel negative' do
+        let(:line) { '3bf:per 37a' }
+
+        it { expect(subject).to eq [['62', 'b8', 'ff'], 3] }
+      end
+    end
   end
 end

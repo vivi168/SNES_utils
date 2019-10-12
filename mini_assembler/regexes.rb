@@ -1,8 +1,8 @@
 module Regexes
   HEX_DIGIT = '[0-9a-f]'
-  HEX8  = "\$?(#{HEX_DIGIT}{1,2})"
-  HEX16 = "\$?(#{HEX_DIGIT}{3,4})"
-  HEX24 = "\$?(#{HEX_DIGIT}{5,6})"
+  HEX8  = "\\$?(#{HEX_DIGIT}{1,2})"
+  HEX16 = "\\$?(#{HEX_DIGIT}{3,4})"
+  HEX24 = "\\$?(#{HEX_DIGIT}{5,6})"
 
   MODES_REGEXES = {
     acc:   /^$/,

@@ -107,6 +107,7 @@ class MiniAssembler
   end
 
   def parse_instruction(line)
+    current_address = parse_address(line)
     instruction = line.split(':').last.split(' ')
     mnemonic = instruction[0].upcase
     param = instruction[1].to_s
@@ -121,8 +122,17 @@ class MiniAssembler
     opcode = opcode_info[0]
     length = opcode_info[1].to_i
 
-    # TODO handle relative addressing
-    param_bytes = mode[1].to_s(16).rjust(length-1, '0').scan(/.{2}/).reverse.join if mode[1]
+    if mode[1]
+      mode_param = mode[1]
+      if %i[rel rell].include? mode[0]
+        relative_addr = mode_param - current_address - length
+        relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
+
+        param_bytes = relative_addr.to_s(16).rjust(2*(length-1), '0').scan(/.{2}/).reverse.join
+      else
+        param_bytes = mode_param.to_s(16).rjust(2*(length-1), '0').scan(/.{2}/).reverse.join
+      end
+    end
 
     encoded_result = "#{opcode}#{param_bytes}"
 
