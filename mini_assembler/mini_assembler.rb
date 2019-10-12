@@ -101,7 +101,7 @@ class MiniAssembler
         return 'error' unless instruction
         current_bank[address..address+length-1] = instruction
         @current_addr = address + length
-        return disassemble_range(address, 1, length > 2)
+        return disassemble_range(address, 1, length > 2).join
       end
     end
   end
@@ -180,7 +180,7 @@ class MiniAssembler
       hex_codes = current_bank[next_idx..next_idx+length-1]
       prefix = ["#{@current_bank_no.to_s(16).rjust(2, '0')}/#{next_idx.to_s(16).rjust(4, '0')}:", *hex_codes].join(' ')
 
-      instructions << "#{prefix.ljust(40)} #{format % param}".upcase
+      instructions << "#{prefix.ljust(40)} #{format % param}"
       next_idx += length
     end
 

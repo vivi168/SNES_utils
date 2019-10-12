@@ -5,5 +5,5 @@ mini = MiniAssembler.new
 while true
   line = mini.getline
   result = mini.parse_line(line)
-  puts result if result
+  puts result.upcase if result
 end
