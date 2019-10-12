@@ -3,6 +3,7 @@ require 'readline'
 require 'byebug'
 
 require_relative './regexes'
+require_relative './opcodes'
 
 def write(nbytes)
   data = (1..nbytes).map { |b| '00' }
@@ -13,6 +14,7 @@ end
 
 class MiniAssembler
   include Regexes
+  include Opcodes
 
   def initialize
     @normal_mode = true
@@ -69,6 +71,9 @@ class MiniAssembler
         bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| b.to_i(16).to_s(16).rjust(2, '0') }
         current_bank[addr..addr+bytes.length-1] = bytes
         return
+      elsif matches = MiniAssembler::DISASSEMBLE.match(line)
+        start = matches[1].to_i(16)
+        return disassemble_range(start, 20).join("\n")
       elsif matches = MiniAssembler::SWITCH_BANK.match(line)
         # check if memory has enough bank.
         # lowrom bank size = 0x8000
@@ -96,7 +101,7 @@ class MiniAssembler
         return 'error' unless instruction
         current_bank[address..address+length-1] = instruction
         @current_addr = address + length
-        return 'ok'
+        return disassemble_range(address, 1, length > 2)
       end
     end
   end
@@ -149,5 +154,36 @@ class MiniAssembler
         end
       end
     end.compact.first
+  end
+
+  def disassemble_range(start, count, force_length = false)
+    next_idx = start
+    instructions = []
+    count.times do
+      opcode = current_bank[next_idx].to_i(16)
+      instruction_arr = MiniAssembler::OPCODES[opcode]
+      length = instruction_arr[0].to_i # TODO change array data type to int
+      formats = instruction_arr[1]
+      if formats.is_a? Array
+        offset = force_length ? 0 : @accumulator
+        format = formats[offset] # TODO for LDX,LDY etc, it's actually @index register
+        length -= offset
+      else
+        format = formats
+      end
+
+      if length > 1
+      end
+
+      param = current_bank[next_idx+1..next_idx+length-1].reverse.join.to_i(16)
+
+      hex_codes = current_bank[next_idx..next_idx+length-1]
+      prefix = ["#{@current_bank_no.to_s(16).rjust(2, '0')}/#{next_idx.to_s(16).rjust(4, '0')}:", *hex_codes].join(' ')
+
+      instructions << "#{prefix.ljust(40)} #{format % param}".upcase
+      next_idx += length
+    end
+
+    return instructions
   end
 end

@@ -36,7 +36,8 @@ module Regexes
 
   BYTE_LOC = /^#{HEX_DIGIT}{1,4}$/i
   BYTE_RANGE = /^(#{HEX_DIGIT}{1,4})\.+(#{HEX_DIGIT}{1,4})$/i
-  BYTE_SEQUENCE = /^(#{HEX_DIGIT}{1,4}):([0-9a-f ]+)$/i
+  BYTE_SEQUENCE = /^(#{HEX_DIGIT}{1,4}):\s*([0-9a-f ]+)$/i
+  DISASSEMBLE = /^(#{HEX_DIGIT}{1,4})l/i
   SWITCH_BANK = /^([0-9a-f]{2})\/$/i
   FLIP_MX_REG = /^([01])=([xm])$/i
 end

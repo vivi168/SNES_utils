@@ -1,4 +1,5 @@
 require 'yaml'
+require 'csv'
 opcodes = File.read('opcodes.txt').split("\n").map { |l| l.split(' ') }
 
 modes = {
@@ -31,6 +32,36 @@ modes = {
   'src,dest' => :bm
 }
 
+formats = {
+  :acc => '',
+  :imp => '',
+  :imm => "#$%02x",
+  :iml => "$%02x",
+  :imm8 => "#$%02x",
+  :imm16 => "#$%04x",
+  :sr => "#$%02x,S",
+  :dp => "$%02x",
+  :dpx => "$%02x,X",
+  :dpy => "$%02x,Y",
+  :idp => "($%02x)",
+  :idx => "($%02x,X)",
+  :idy => "($%02x),Y",
+  :idl => "[$%02x]",
+  :idly => "[$%02x],Y",
+  :isy => "($%02x,S),Y",
+  :abs => "$%04x",
+  :abx => "$%04x,X",
+  :aby => "$%04x,Y",
+  :abl => "$%06x",
+  :alx => "$%06x,X",
+  :ind => "($%04x)",
+  :iax => "($%04x,X)",
+  :ial => "[$%04x]",
+  :rel => "$%02x",
+  :rell => "$%04x",
+  :bm => "$%02x,$%02x"
+}
+
 regexes = {
   acc: /^$/,
   imp: /^$/,
@@ -61,6 +92,7 @@ regexes = {
   bm: /^\$?([0-9a-f]{1,2}),\$?([0-9a-f]{1,2})$/i
 }
 
+opcode_dis = (0..255).map { |i| nil }
 
 opcodes_arr = opcodes[2..-1].map do |opcode|
   mode_syntax = opcode[2]
@@ -68,6 +100,17 @@ opcodes_arr = opcodes[2..-1].map do |opcode|
   op = opcode[0]
   len = opcode[1]
   mnemonic = opcode[3]
+
+  format = formats[mode]
+  if opcode_dis[op.to_i(16)].nil?
+    opcode_dis[op.to_i(16)] = [len, "#{mnemonic} #{format}".strip]
+  else
+    new_format = "#{mnemonic} #{format}".strip
+    prev_format = opcode_dis[op.to_i(16)][1]
+    fmt = [new_format, prev_format]
+    opcode_dis[op.to_i(16)] = [len, fmt]
+  end
+
 
   [mnemonic, mode, op, len]
 end
@@ -79,4 +122,6 @@ opcodes_arr.each do |opcode|
   opcodes_hash[opcode[0].to_sym][opcode[1].to_sym] = [opcode[2], opcode[3]]
 end
 
-puts opcodes_hash.to_yaml
+# puts opcodes_hash.to_yaml
+
+pp opcode_dis
