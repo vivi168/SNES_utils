@@ -1,6 +1,6 @@
 require_relative 'mini_assembler/mini_assembler'
 
-mini = MiniAssembler.new
+mini = MiniAssembler.new('demo.smc')
 
 while true
   line = mini.getline

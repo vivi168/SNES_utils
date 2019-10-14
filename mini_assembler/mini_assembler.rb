@@ -5,26 +5,28 @@ require 'byebug'
 require_relative './regexes'
 require_relative './opcodes'
 
-def write(nbytes)
-  data = (1..nbytes).map { |b| '00' }
-  File.open('test.bin', 'w+b') do |file|
-    file.write([data.join].pack('H*'))
-  end
-end
-
 class MiniAssembler
   include Regexes
   include Opcodes
 
-  def initialize
+  def initialize(file)
+    @file = File.open(file)
+    @bytes = @file.each_byte.map { |b| b.to_s(16).rjust(2, '0') }
+
+    @memory = @bytes.each_slice(0x10000).to_a
+
     @normal_mode = true
-    @bank_no = 0x100
-    @bank_size = 0x10000
-    @memory = (0..@bank_no-1).map { |bank| (0..@bank_size-1).map { |b| rand(0..255).to_s(16).rjust(2, '0') } }
+
     @current_addr = 0
     @current_bank_no = 0
     @accumulator = 1
     @index = 1
+  end
+
+  def write()
+    File.open('out.smc', 'w+b') do |file|
+      file.write([@memory.flatten.join].pack('H*'))
+    end
   end
 
   def opcodes
@@ -46,6 +48,9 @@ class MiniAssembler
       if line == '!'
         @normal_mode = false
         return
+      elsif line =='.write'
+        write
+        return 'written'
       elsif MiniAssembler::BYTE_LOC =~ line
         return current_bank[line.to_i(16)]
       elsif matches = MiniAssembler::BYTE_RANGE.match(line)
