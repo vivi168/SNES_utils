@@ -80,10 +80,10 @@ class MiniAssembler
         start = matches[1].to_i(16)
         return disassemble_range(start, 20).join("\n")
       elsif matches = MiniAssembler::SWITCH_BANK.match(line)
-        # check if memory has enough bank.
-        # lowrom bank size = 0x8000
-        # hirom bank size =  0x10000
-        @current_bank_no = matches[1].to_i(16)
+        target_bank_no = matches[1].to_i(16)
+        return if target_bank_no >= @memory.count
+        @current_bank_no = target_bank_no
+        return @current_bank_no.to_s(16).rjust(2, '0')
       elsif matches = MiniAssembler::FLIP_MX_REG.match(line)
         val = matches[1]
         reg = matches[2]
