@@ -11,9 +11,7 @@ class MiniAssembler
 
   def initialize(file)
     @file = File.open(file)
-    @bytes = @file.each_byte.map { |b| b.to_s(16).rjust(2, '0') }
-
-    @memory = @bytes.each_slice(0x10000).to_a
+    @memory = @file.each_byte.map { |b| b.to_s(16).rjust(2, '0') }
 
     @normal_mode = true
 
@@ -25,7 +23,7 @@ class MiniAssembler
 
   def write()
     File.open('out.smc', 'w+b') do |file|
-      file.write([@memory.flatten.join].pack('H*'))
+      file.write([@memory.join].pack('H*'))
     end
   end
 
@@ -34,12 +32,37 @@ class MiniAssembler
     @opcodes = YAML.load_file File.join(File.dirname(__FILE__), "/opcodes/opcodes.yml")
   end
 
-  def current_bank
-    @memory[@current_bank_no]
+  def full_address(address)
+    (@current_bank_no << 16) | address
+  end
+
+  def address_human(addr=nil)
+    address = full_address(addr || @current_addr)
+    bank = address >> 16
+    addr = (((address>>8)&0xFF) << 8) | (address&0xFF)
+    "#{bank.to_s(16).rjust(2, '0')}/#{addr.to_s(16).rjust(4, '0')}"
+  end
+
+  def memory_loc(address)
+    @memory[full_address(address)]
+  end
+
+  def memory_range(start_addr, end_addr)
+    start_full_addr = full_address(start_addr)
+    end_full_addr = full_address(end_addr)
+
+    @memory[start_full_addr..end_full_addr]
+  end
+
+  def replace_memory_range(start_addr, end_addr, bytes)
+    start_full_addr = full_address(start_addr)
+    end_full_addr = full_address(end_addr)
+
+    @memory[start_full_addr..end_full_addr] = bytes
   end
 
   def getline
-    prompt = @normal_mode ? "(#{@accumulator}=m #{@index}=x)*" : "!"
+    prompt = @normal_mode ? "(#{@accumulator}=m #{@index}=x)*" : "(#{address_human})!"
     Readline.readline(prompt, true).strip.chomp
   end
 
@@ -52,7 +75,7 @@ class MiniAssembler
         write
         return 'written'
       elsif MiniAssembler::BYTE_LOC =~ line
-        return current_bank[line.to_i(16)]
+        return memory_loc(line.to_i(16))
       elsif matches = MiniAssembler::BYTE_RANGE.match(line)
         start_addr = matches[1].to_i(16)
         end_addr = matches[2].to_i(16)
@@ -62,27 +85,27 @@ class MiniAssembler
 
         padding_count = start_addr % 8
         padding = (1..padding_count).map { |b| '  ' }
-        arr = current_bank[start_addr..end_addr].insert(8-padding_count, *padding).each_slice(8).to_a
+        arr = memory_range(start_addr, end_addr).insert(8-padding_count, *padding).each_slice(8).to_a
         return arr.each_with_index.map do |row, idx|
           if idx == 0
             line_addr = start_addr
           else
             line_addr = start_addr - padding_count + idx * 8
           end
-          ["#{@current_bank_no.to_s(16).rjust(2, '0')}/#{line_addr.to_s(16).rjust(4, '0')}-", *row].join(' ')
+          ["#{address_human(line_addr)}-", *row].join(' ')
         end.join("\n")
       elsif matches = MiniAssembler::BYTE_SEQUENCE.match(line)
         addr = matches[1].to_i(16)
         bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| b.to_i(16).to_s(16).rjust(2, '0') }
-        current_bank[addr..addr+bytes.length-1] = bytes
+        replace_memory_range(addr, addr + bytes.length - 1, bytes)
         return
       elsif matches = MiniAssembler::DISASSEMBLE.match(line)
         start = matches[1].to_i(16)
         return disassemble_range(start, 20).join("\n")
       elsif matches = MiniAssembler::SWITCH_BANK.match(line)
         target_bank_no = matches[1].to_i(16)
-        return if target_bank_no >= @memory.count
         @current_bank_no = target_bank_no
+        @current_addr = @current_bank_no << 16
         return @current_bank_no.to_s(16).rjust(2, '0')
       elsif matches = MiniAssembler::FLIP_MX_REG.match(line)
         val = matches[1]
@@ -104,7 +127,8 @@ class MiniAssembler
         address = parse_address(line)
         instruction, length = parse_instruction(line)
         return 'error' unless instruction
-        current_bank[address..address+length-1] = instruction
+
+        replace_memory_range(address, address+length-1, instruction)
         @current_addr = address + length
         return disassemble_range(address, 1, length > 2).join
       end
@@ -165,7 +189,7 @@ class MiniAssembler
     next_idx = start
     instructions = []
     count.times do
-      opcode = current_bank[next_idx].to_i(16)
+      opcode = memory_loc(next_idx).to_i(16)
       instruction_arr = MiniAssembler::OPCODES[opcode]
       length = instruction_arr[0].to_i # TODO change array data type to int
       formats = instruction_arr[1]
@@ -180,10 +204,10 @@ class MiniAssembler
       if length > 1
       end
 
-      param = current_bank[next_idx+1..next_idx+length-1].reverse.join.to_i(16)
+      param = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
 
-      hex_codes = current_bank[next_idx..next_idx+length-1]
-      prefix = ["#{@current_bank_no.to_s(16).rjust(2, '0')}/#{next_idx.to_s(16).rjust(4, '0')}:", *hex_codes].join(' ')
+      hex_codes = memory_range(next_idx, next_idx+length-1)
+      prefix = ["#{address_human(next_idx)}:", *hex_codes].join(' ')
 
       instructions << "#{prefix.ljust(40)} #{format % param}"
       next_idx += length
