@@ -27,6 +27,13 @@ class MiniAssembler
     end
   end
 
+  def incbin(filepath, addr)
+    file = File.open(filepath)
+    bytes = file.each_byte.map { |b| b.to_s(16).rjust(2, '0') }
+
+    replace_memory_range(addr, addr + bytes.size - 1, bytes)
+  end
+
   def opcodes
     # write spec to check integrity of this file
     @opcodes = YAML.load_file File.join(File.dirname(__FILE__), "/opcodes/opcodes.yml")
@@ -74,6 +81,11 @@ class MiniAssembler
       elsif line =='.write'
         write
         return 'written'
+      elsif matches = MiniAssembler::INCBIN.match(line)
+        filepath = matches[1]
+        start_addr = matches[2].to_i(16)
+        incbin(filepath, start_addr)
+        return 'incbin'
       elsif MiniAssembler::BYTE_LOC =~ line
         return memory_loc(line.to_i(16))
       elsif matches = MiniAssembler::BYTE_RANGE.match(line)

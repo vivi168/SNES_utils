@@ -40,4 +40,5 @@ module Regexes
   DISASSEMBLE = /^(#{HEX_DIGIT}{1,4})l/i
   SWITCH_BANK = /^([0-9a-f]{2})\/$/i
   FLIP_MX_REG = /^([01])=([xm])$/i
+  INCBIN = /^\.incbin\s+(.*)\s+(#{HEX_DIGIT}{1,4})$/
 end
