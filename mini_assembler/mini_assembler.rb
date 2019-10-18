@@ -23,7 +23,7 @@ class MiniAssembler
 
   def write()
     File.open('out.smc', 'w+b') do |file|
-      file.write([@memory.join].pack('H*'))
+      file.write([@memory.map { |i| i ? i : '00' }.join].pack('H*'))
     end
   end
 
@@ -189,7 +189,9 @@ class MiniAssembler
     next_idx = start
     instructions = []
     count.times do
-      opcode = memory_loc(next_idx).to_i(16)
+      byte = memory_loc(next_idx)
+      break unless byte
+      opcode = byte.to_i(16)
       instruction_arr = MiniAssembler::OPCODES[opcode]
       length = instruction_arr[0].to_i # TODO change array data type to int
       formats = instruction_arr[1]
