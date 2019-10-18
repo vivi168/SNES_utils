@@ -211,7 +211,7 @@ class MiniAssembler
       hex_codes = memory_range(next_idx, next_idx+length-1)
       prefix = ["#{address_human(next_idx)}:", *hex_codes].join(' ')
 
-      instructions << "#{prefix.ljust(40)} #{format % param}"
+      instructions << "#{prefix.ljust(30)} #{format % param}"
       next_idx += length
     end
 
