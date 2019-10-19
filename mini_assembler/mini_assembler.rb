@@ -180,6 +180,9 @@ class MiniAssembler
     if operand
       if %i[rel rell].include? mode
         relative_addr = operand - current_address - length
+        return if mode == :rel && (relative_addr < -128 || relative_addr > 127)
+        return if mode == :rell && (relative_addr < -32768 || relative_addr > 32767)
+
         relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
 
         param_bytes = relative_addr.to_s(16).rjust(2*(length-1), '0').scan(/.{2}/).reverse.join
@@ -226,6 +229,14 @@ class MiniAssembler
 
       if mode == :bm
         operand = operand.to_s(16).scan(/.{2}/).map { |op| op.to_i(16) }
+      elsif %i[rel rell].include? mode
+        limit = mode == :rel ? 0x7f : 0x7fff
+        offset = mode == :rel ? 0x100 : 0x10000
+        rjust_len = mode == :rel ? 2 : 4
+        relative_addr = operand > limit ? operand - offset : operand
+        relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{relative_addr.abs.to_s(16).rjust(rjust_len, '0')}"
+        absolute_addr = next_idx + length + relative_addr
+        operand = [absolute_addr, relative_addr_s]
       end
 
       instructions << "#{prefix.ljust(30)} #{format % [mnemonic, *operand]}"

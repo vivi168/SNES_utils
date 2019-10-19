@@ -59,8 +59,8 @@ module Regexes
     ind:   "%s (%04x)",
     iax:   "%s (%04x,X)",
     ial:   "%s [%04x]",
-    rel:   "%s %02x",
-    rell:  "%s %04x",
+    rel:   "%s %04x {%s}",
+    rell:  "%s %04x {%s}",
     bm:    "%s %02x,%02x"
   }
 
