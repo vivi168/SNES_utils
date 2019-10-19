@@ -236,6 +236,7 @@ class MiniAssembler
         relative_addr = operand > limit ? operand - offset : operand
         relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{relative_addr.abs.to_s(16).rjust(rjust_len, '0')}"
         absolute_addr = next_idx + length + relative_addr
+        absolute_addr += 0x10000 if absolute_addr.negative?
         operand = [absolute_addr, relative_addr_s]
       end
 
