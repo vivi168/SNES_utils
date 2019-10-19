@@ -5,5 +5,5 @@ mini = MiniAssembler.new('demo.smc')
 while true
   line = mini.getline
   result = mini.parse_line(line)
-  puts result.upcase if result
+  puts result if result
 end

@@ -13,7 +13,7 @@ class MiniAssembler
 
   def initialize(file)
     @file = File.open(file)
-    @memory = @file.each_byte.map { |b| b.to_s(16).rjust(2, '0') }
+    @memory = @file.each_byte.map { |b| hex(b) }
 
     @normal_mode = true
 
@@ -21,6 +21,10 @@ class MiniAssembler
     @current_bank_no = 0
     @accumulator_flag = 1
     @index_flag = 1
+  end
+
+  def hex(num, rjust_len = 2)
+    num.to_s(16).rjust(rjust_len, '0').upcase
   end
 
   def write()
@@ -31,7 +35,7 @@ class MiniAssembler
 
   def incbin(filepath, addr)
     file = File.open(filepath)
-    bytes = file.each_byte.map { |b| b.to_s(16).rjust(2, '0') }
+    bytes = file.each_byte.map { |b| hex(b) }
 
     replace_memory_range(addr, addr + bytes.size - 1, bytes)
   end
@@ -56,7 +60,7 @@ class MiniAssembler
     address = full_address(addr || @current_addr)
     bank = address >> 16
     addr = (((address>>8)&0xFF) << 8) | (address&0xFF)
-    "#{bank.to_s(16).rjust(2, '0')}/#{addr.to_s(16).rjust(4, '0')}"
+    "#{hex(bank)}/#{hex(addr, 4)}"
   end
 
   def memory_loc(address)
@@ -117,7 +121,7 @@ class MiniAssembler
         end.join("\n")
       elsif matches = MiniAssembler::BYTE_SEQUENCE.match(line)
         addr = matches[1].to_i(16)
-        bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| b.to_i(16).to_s(16).rjust(2, '0') }
+        bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
         replace_memory_range(addr, addr + bytes.length - 1, bytes)
         return
       elsif matches = MiniAssembler::DISASSEMBLE.match(line)
@@ -127,7 +131,7 @@ class MiniAssembler
         target_bank_no = matches[1].to_i(16)
         @current_bank_no = target_bank_no
         @current_addr = @current_bank_no << 16
-        return @current_bank_no.to_s(16).rjust(2, '0')
+        return hex(@current_bank_no)
       elsif matches = MiniAssembler::FLIP_MX_REG.match(line)
         val = matches[1]
         reg = matches[2]
@@ -170,7 +174,7 @@ class MiniAssembler
 
     return unless opcode_data
 
-    opcode = opcode_data['opcode'].to_s(16).rjust(2, '0')
+    opcode = hex(opcode_data['opcode'])
     mode = opcode_data['mode'].to_sym
     length = opcode_data['length']
 
@@ -189,9 +193,9 @@ class MiniAssembler
 
         relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
 
-        param_bytes = relative_addr.to_s(16).rjust(2*(length-1), '0').scan(/.{2}/).reverse.join
+        param_bytes = hex(relative_addr, 2*(length-1)).scan(/.{2}/).reverse.join
       else
-        param_bytes = operand.to_s(16).rjust(2*(length-1), '0').scan(/.{2}/).reverse.join
+        param_bytes = hex(operand, 2*(length-1)).scan(/.{2}/).reverse.join
       end
     end
 
@@ -238,7 +242,7 @@ class MiniAssembler
         offset = mode == :rel ? 0x100 : 0x10000
         rjust_len = mode == :rel ? 2 : 4
         relative_addr = operand > limit ? operand - offset : operand
-        relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{relative_addr.abs.to_s(16).rjust(rjust_len, '0')}"
+        relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
         absolute_addr = next_idx + length + relative_addr
         absolute_addr += 0x10000 if absolute_addr.negative?
         operand = [absolute_addr, relative_addr_s]
