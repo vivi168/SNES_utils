@@ -2,7 +2,7 @@ require 'spec_helper'
 require_relative '../mini_assembler/mini_assembler'
 
 describe MiniAssembler do
-  let(:mini_asm) { MiniAssembler.new }
+  let(:mini_asm) { MiniAssembler.new('demo.smc') }
 
   describe '#parse_address' do
     subject { mini_asm.parse_address(line) }
@@ -30,7 +30,7 @@ describe MiniAssembler do
       let(:line) { 'ora #17' }
 
       it do
-        expect(subject).to eq [['09', '17'], 2]
+        expect(subject).to eq [['09', '17'], 2, 0]
       end
     end
 
@@ -38,7 +38,7 @@ describe MiniAssembler do
       let(:line) { 'lda $1234' }
 
       it do
-        expect(subject).to eq [['AD','34','12'], 3]
+        expect(subject).to eq [['ad','34','12'], 3, 0]
       end
     end
 
@@ -46,7 +46,7 @@ describe MiniAssembler do
       let(:line) { '300:xce' }
 
       it do
-        expect(subject).to eq [['FB'], 1]
+        expect(subject).to eq [['fb'], 1, 0x300]
       end
     end
 
@@ -54,7 +54,7 @@ describe MiniAssembler do
       let(:line) { 'ADC [$12],Y' }
 
       it do
-        expect(subject).to eq [['77', '12'], 2]
+        expect(subject).to eq [['77', '12'], 2, 0]
       end
     end
 
@@ -62,25 +62,25 @@ describe MiniAssembler do
       context '8 bit rel postivie' do
         let(:line) { '300:BMI 305' }
 
-        it { expect(subject).to eq [['30', '03'], 2] }
+        it { expect(subject).to eq [['30', '03'], 2, 0x300] }
       end
 
       context '8 bit rel negative' do
         let(:line) { '30a:bcc 300' }
 
-        it { expect(subject).to eq [['90', 'f4'], 2] }
+        it { expect(subject).to eq [['90', 'f4'], 2, 0x30a] }
       end
 
       context '16 bit rel postivie' do
         let(:line) { '304:BRL $03A0' }
 
-        it { expect(subject).to eq [['82', '99', '00'], 3] }
+        it { expect(subject).to eq [['82', '99', '00'], 3, 0x304] }
       end
 
       context '16 bit rel negative' do
         let(:line) { '3bf:per 37a' }
 
-        it { expect(subject).to eq [['62', 'b8', 'ff'], 3] }
+        it { expect(subject).to eq [['62', 'b8', 'ff'], 3, 0x3bf] }
       end
     end
   end

@@ -34,6 +34,36 @@ module Regexes
     bm:    /^#{HEX8},#{HEX8}$/i
   }
 
+  MODES_FORMATS = {
+    acc:   '%s ',
+    imp:   '%s ',
+    imm:   "%s #$%02x",
+    iml:   "%s $%02x",
+    imm8:  "%s #$%02x",
+    imm16: "%s #$%04x",
+    sr:    "%s #$%02x,S",
+    dp:    "%s $%02x",
+    dpx:   "%s $%02x,X",
+    dpy:   "%s $%02x,Y",
+    idp:   "%s ($%02x)",
+    idx:   "%s ($%02x,X)",
+    idy:   "%s ($%02x),Y",
+    idl:   "%s [$%02x]",
+    idly:  "%s [$%02x],Y",
+    isy:   "%s ($%02x,S),Y",
+    abs:   "%s $%04x",
+    abx:   "%s $%04x,X",
+    aby:   "%s $%04x,Y",
+    abl:   "%s $%06x",
+    alx:   "%s $%06x,X",
+    ind:   "%s ($%04x)",
+    iax:   "%s ($%04x,X)",
+    ial:   "%s [$%04x]",
+    rel:   "%s $%02x",
+    rell:  "%s $%04x",
+    bm:    "%s $%02x,$%02x"
+  }
+
   BYTE_LOC = /^#{HEX_DIGIT}{1,4}$/i
   BYTE_RANGE = /^(#{HEX_DIGIT}{1,4})\.+(#{HEX_DIGIT}{1,4})$/i
   BYTE_SEQUENCE = /^(#{HEX_DIGIT}{1,4}):\s*([0-9a-f ]+)$/i
