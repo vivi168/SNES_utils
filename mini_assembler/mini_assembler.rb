@@ -17,8 +17,8 @@ class MiniAssembler
 
     @current_addr = 0
     @current_bank_no = 0
-    @accumulator = 1
-    @index = 1
+    @accumulator_flag = 1
+    @index_flag = 1
   end
 
   def write()
@@ -69,7 +69,7 @@ class MiniAssembler
   end
 
   def getline
-    prompt = @normal_mode ? "(#{@accumulator}=m #{@index}=x)*" : "(#{address_human})!"
+    prompt = @normal_mode ? "(#{@accumulator_flag}=m #{@index_flag}=x)*" : "(#{address_human})!"
     Readline.readline(prompt, true).strip.chomp
   end
 
@@ -119,9 +119,9 @@ class MiniAssembler
         reg = matches[2]
 
         if reg.downcase == 'm'
-          @accumulator = val.to_i
+          @accumulator_flag = val.to_i
         elsif reg.downcase == 'x'
-          @index = val.to_i
+          @index_flag = val.to_i
         end
 
         return
@@ -186,26 +186,29 @@ class MiniAssembler
       byte = memory_loc(next_idx)
       break unless byte
       opcode = byte.to_i(16)
-      instruction_arr = MiniAssembler::OPCODES[opcode]
-      length = instruction_arr[0].to_i # TODO change array data type to int
-      formats = instruction_arr[1]
-      if formats.is_a? Array
-        offset = force_length ? 0 : @accumulator
-        format = formats[offset] # TODO for LDX,LDY etc, it's actually @index register
-        length -= offset
-      else
-        format = formats
+
+      opcode_data = opcodes.detect do |row|
+        if row['m']
+          row['opcode'] == opcode && row['m'] == @accumulator_flag
+        elsif row['x']
+          row['opcode'] == opcode && row['x'] == @index_flag
+        else
+          row['opcode'] == opcode
+        end
       end
 
-      if length > 1
-      end
+      mnemonic = opcode_data['mnemonic']
+      mode = opcode_data['mode'].to_sym
+      length = opcode_data['length']
 
-      param = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
+      format = MiniAssembler::MODES_FORMATS[mode]
 
-      hex_codes = memory_range(next_idx, next_idx+length-1)
-      prefix = ["#{address_human(next_idx)}:", *hex_codes].join(' ')
+      operand = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
 
-      instructions << "#{prefix.ljust(30)} #{format % param}"
+      hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
+      prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
+
+      instructions << "#{prefix.ljust(30)} #{format % [mnemonic, operand]}"
       next_idx += length
     end
 
