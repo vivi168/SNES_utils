@@ -173,7 +173,11 @@ class MiniAssembler
     length = opcode_data['length']
 
     operand_matches = MiniAssembler::MODES_REGEXES[mode].match(raw_operand)
+    if mode == :bm
+      operand = "#{operand_matches[1]}#{operand_matches[2]}".to_i(16)
+    else
     operand = operand_matches[1]&.to_i(16)
+    end
 
     if operand
       if %i[rel rell].include? mode
@@ -220,7 +224,11 @@ class MiniAssembler
       hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
       prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
 
-      instructions << "#{prefix.ljust(30)} #{format % [mnemonic, operand]}"
+      if mode == :bm
+        operand = operand.to_s(16).scan(/.{2}/).map { |op| op.to_i(16) }
+      end
+
+      instructions << "#{prefix.ljust(30)} #{format % [mnemonic, *operand]}"
       next_idx += length
     end
 
