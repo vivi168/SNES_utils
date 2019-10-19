@@ -31,7 +31,7 @@ class MiniAssembler
     @opcodes ||= CSV.parse(File.read(File.join(File.dirname(__FILE__), "/opcodes.csv")), headers: true, converters: %i[numeric])
   end
 
-  def select_opcode_data(mnemonic, operand)
+  def detect_opcode_data(mnemonic, operand)
     opcodes.detect do |row|
       mode = row['mode'].to_sym
       regex = MiniAssembler::MODES_REGEXES[mode]
@@ -131,10 +131,10 @@ class MiniAssembler
         @normal_mode = true
         return
       else
-        address = parse_address(line)
         instruction, length = parse_instruction(line)
         return 'error' unless instruction
 
+        address = parse_address(line)
         replace_memory_range(address, address+length-1, instruction)
         @current_addr = address + length
         return disassemble_range(address, 1, length > 2).join
@@ -153,7 +153,7 @@ class MiniAssembler
     mnemonic = instruction[0].upcase
     raw_operand = instruction[1].to_s
 
-    opcode_data = select_opcode_data(mnemonic, raw_operand)
+    opcode_data = detect_opcode_data(mnemonic, raw_operand)
 
     return unless opcode_data
 
