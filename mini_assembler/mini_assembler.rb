@@ -4,6 +4,10 @@ require 'byebug'
 
 require_relative './regexes'
 
+Readline.completion_proc = proc do |input|
+  MiniAssembler.opcodes.map { |row| row['mnemonic'] }.select { |mnemonic| mnemonic.upcase.start_with?(input.upcase) }
+end
+
 class MiniAssembler
   include Regexes
 
@@ -32,12 +36,12 @@ class MiniAssembler
     replace_memory_range(addr, addr + bytes.size - 1, bytes)
   end
 
-  def opcodes
+  def self.opcodes
     @opcodes ||= CSV.parse(File.read(File.join(File.dirname(__FILE__), "/opcodes.csv")), headers: true, converters: %i[numeric])
   end
 
   def detect_opcode_data(mnemonic, operand)
-    opcodes.detect do |row|
+    MiniAssembler.opcodes.detect do |row|
       mode = row['mode'].to_sym
       regex = MiniAssembler::MODES_REGEXES[mode]
       row['mnemonic'] == mnemonic && regex =~ operand
@@ -204,7 +208,7 @@ class MiniAssembler
       break unless byte
       opcode = byte.to_i(16)
 
-      opcode_data = opcodes.detect do |row|
+      opcode_data = MiniAssembler.opcodes.detect do |row|
         if row['m']
           accumulator_flag = force_length ? 0 : @accumulator_flag
           row['opcode'] == opcode && row['m'] == accumulator_flag
