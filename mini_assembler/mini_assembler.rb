@@ -1,4 +1,4 @@
-require 'yaml'
+require 'csv'
 require 'readline'
 require 'byebug'
 
@@ -28,8 +28,15 @@ class MiniAssembler
   end
 
   def opcodes
-    # write spec to check integrity of this file
-    @opcodes = YAML.load_file File.join(File.dirname(__FILE__), "/opcodes/opcodes.yml")
+    @opcodes ||= CSV.parse(File.read(File.join(File.dirname(__FILE__), "/opcodes.csv")), headers: true, converters: %i[numeric])
+  end
+
+  def select_opcode_data(mnemonic, operand)
+    opcodes.detect do |row|
+      mode = row['mode'].to_sym
+      regex = MiniAssembler::MODES_REGEXES[mode]
+      row['mnemonic'] == mnemonic && regex =~ operand
+    end
   end
 
   def full_address(address)
@@ -144,45 +151,33 @@ class MiniAssembler
     current_address = parse_address(line)
     instruction = line.split(':').last.split(' ')
     mnemonic = instruction[0].upcase
-    param = instruction[1].to_s
+    raw_operand = instruction[1].to_s
 
-    opcodes_list = opcodes[mnemonic.to_sym]
-    return [nil, nil] unless opcodes_list&.any?
+    opcode_data = select_opcode_data(mnemonic, raw_operand)
 
-    mode = parse_mode(opcodes_list, param)
+    return unless opcode_data
 
-    return [nil, nil] unless mode&.any?
-    opcode_info = opcodes_list[mode[0]]
-    opcode = opcode_info[0]
-    length = opcode_info[1].to_i
+    opcode = opcode_data['opcode'].to_s(16).rjust(2, '0')
+    mode = opcode_data['mode'].to_sym
+    length = opcode_data['length']
 
-    if mode[1]
-      mode_param = mode[1]
-      if %i[rel rell].include? mode[0]
-        relative_addr = mode_param - current_address - length
+    operand_matches = MiniAssembler::MODES_REGEXES[mode].match(raw_operand)
+    operand = operand_matches[1]&.to_i(16)
+
+    if operand
+      if %i[rel rell].include? mode
+        relative_addr = operand - current_address - length
         relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
 
         param_bytes = relative_addr.to_s(16).rjust(2*(length-1), '0').scan(/.{2}/).reverse.join
       else
-        param_bytes = mode_param.to_s(16).rjust(2*(length-1), '0').scan(/.{2}/).reverse.join
+        param_bytes = operand.to_s(16).rjust(2*(length-1), '0').scan(/.{2}/).reverse.join
       end
     end
 
     encoded_result = "#{opcode}#{param_bytes}"
 
     return [encoded_result.scan(/.{2}/), length]
-  end
-
-  def parse_mode(available_modes, param)
-    available_modes.keys.map do |m|
-      if matches = MiniAssembler::MODES_REGEXES[m].match(param)
-        if matches.length > 1
-          [m, matches[1].to_i(16)]
-        else
-          [m, nil]
-        end
-      end
-    end.compact.first
   end
 
   def disassemble_range(start, count, force_length = false)

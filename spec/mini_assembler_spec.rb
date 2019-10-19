@@ -2,7 +2,7 @@ require 'spec_helper'
 require_relative '../mini_assembler/mini_assembler'
 
 describe MiniAssembler do
-  let(:mini_asm) { MiniAssembler.new }
+  let(:mini_asm) { MiniAssembler.new('demo.smc') }
 
   describe '#parse_address' do
     subject { mini_asm.parse_address(line) }
@@ -38,7 +38,7 @@ describe MiniAssembler do
       let(:line) { 'lda $1234' }
 
       it do
-        expect(subject).to eq [['AD','34','12'], 3]
+        expect(subject).to eq [['ad','34','12'], 3]
       end
     end
 
@@ -46,7 +46,7 @@ describe MiniAssembler do
       let(:line) { '300:xce' }
 
       it do
-        expect(subject).to eq [['FB'], 1]
+        expect(subject).to eq [['fb'], 1]
       end
     end
 
