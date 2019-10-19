@@ -131,10 +131,9 @@ class MiniAssembler
         @normal_mode = true
         return
       else
-        instruction, length = parse_instruction(line)
+        instruction, length, address = parse_instruction(line)
         return 'error' unless instruction
 
-        address = parse_address(line)
         replace_memory_range(address, address+length-1, instruction)
         @current_addr = address + length
         return disassemble_range(address, 1, length > 2).join
@@ -177,7 +176,7 @@ class MiniAssembler
 
     encoded_result = "#{opcode}#{param_bytes}"
 
-    return [encoded_result.scan(/.{2}/), length]
+    return [encoded_result.scan(/.{2}/), length, current_address]
   end
 
   def disassemble_range(start, count, force_length = false)
