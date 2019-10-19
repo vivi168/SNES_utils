@@ -3,11 +3,9 @@ require 'readline'
 require 'byebug'
 
 require_relative './regexes'
-require_relative './opcodes'
 
 class MiniAssembler
   include Regexes
-  include Opcodes
 
   def initialize(file)
     @file = File.open(file)
