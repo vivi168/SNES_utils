@@ -176,7 +176,7 @@ class MiniAssembler
     if mode == :bm
       operand = "#{operand_matches[1]}#{operand_matches[2]}".to_i(16)
     else
-    operand = operand_matches[1]&.to_i(16)
+      operand = operand_matches[1]&.to_i(16)
     end
 
     if operand
@@ -205,9 +205,11 @@ class MiniAssembler
 
       opcode_data = opcodes.detect do |row|
         if row['m']
-          row['opcode'] == opcode && row['m'] == @accumulator_flag
+          accumulator_flag = force_length ? 0 : @accumulator_flag
+          row['opcode'] == opcode && row['m'] == accumulator_flag
         elsif row['x']
-          row['opcode'] == opcode && row['x'] == @index_flag
+          index_flag = force_length ? 0 : @index_flag
+          row['opcode'] == opcode && row['x'] == index_flag
         else
           row['opcode'] == opcode
         end
