@@ -11,7 +11,7 @@ end
 class MiniAssembler
   include Regexes
 
-  def initialize(file)
+  def initialize(file = nil)
     if file && File.file?(file)
       @file = File.open(file)
       @memory = @file.each_byte.map { |b| hex(b) }
