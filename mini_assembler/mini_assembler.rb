@@ -12,8 +12,12 @@ class MiniAssembler
   include Regexes
 
   def initialize(file)
-    @file = File.open(file)
-    @memory = @file.each_byte.map { |b| hex(b) }
+    if file && File.file?(file)
+      @file = File.open(file)
+      @memory = @file.each_byte.map { |b| hex(b) }
+    else
+      @memory = []
+    end
 
     @normal_mode = true
 
