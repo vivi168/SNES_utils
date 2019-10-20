@@ -32,6 +32,8 @@ class MiniAssembler
   end
 
   def write(filename = 'out.smc')
+    filename = filename.empty? ? 'out.smc' : filename
+
     File.open(filename, 'w+b') do |file|
       file.write([@memory.map { |i| i ? i : '00' }.join].pack('H*'))
     end
