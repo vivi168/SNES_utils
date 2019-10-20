@@ -27,6 +27,15 @@ class MiniAssembler
     @index_flag = 1
   end
 
+  def run
+    while line = getline
+      result = parse_line(line.strip.chomp)
+      puts result if result
+    end
+
+    puts
+  end
+
   def hex(num, rjust_len = 2)
     num.to_s(16).rjust(rjust_len, '0').upcase
   end
@@ -89,7 +98,7 @@ class MiniAssembler
 
   def getline
     prompt = @normal_mode ? "(#{@accumulator_flag}=m #{@index_flag}=x)*" : "(#{address_human})!"
-    Readline.readline(prompt, true).strip.chomp
+    Readline.readline(prompt, true)
   end
 
   def parse_line(line)
