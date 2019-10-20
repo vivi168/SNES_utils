@@ -31,8 +31,8 @@ class MiniAssembler
     num.to_s(16).rjust(rjust_len, '0').upcase
   end
 
-  def write()
-    File.open('out.smc', 'w+b') do |file|
+  def write(filename = 'out.smc')
+    File.open(filename, 'w+b') do |file|
       file.write([@memory.map { |i| i ? i : '00' }.join].pack('H*'))
     end
   end
@@ -95,8 +95,9 @@ class MiniAssembler
       if line == '!'
         @normal_mode = false
         return
-      elsif line =='.write'
-        write
+      elsif matches = MiniAssembler::WRITE.match(line)
+        filename = matches[1].strip.chomp
+        write(filename)
         return 'written'
       elsif matches = MiniAssembler::INCBIN.match(line)
         start_addr = matches[1].to_i(16)

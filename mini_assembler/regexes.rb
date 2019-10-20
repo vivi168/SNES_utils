@@ -70,5 +70,6 @@ module Regexes
   DISASSEMBLE = /^(#{HEX_DIGIT}{1,4})l/i
   SWITCH_BANK = /^(#{HEX_DIGIT}{1,2})\/$/i
   FLIP_MX_REG = /^([01])=([xm])$/i
+  WRITE = /^\.write\s*(.*)$/i
   INCBIN = /^(#{HEX_DIGIT}{1,4}):\s*\.incbin\s+(.*)$/i
 end
