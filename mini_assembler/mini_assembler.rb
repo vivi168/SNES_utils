@@ -95,8 +95,8 @@ class MiniAssembler
         write
         return 'written'
       elsif matches = MiniAssembler::INCBIN.match(line)
-        filepath = matches[1]
-        start_addr = matches[2].to_i(16)
+        start_addr = matches[1].to_i(16)
+        filepath = matches[2].strip.chomp
         incbin(filepath, start_addr)
         return 'incbin'
       elsif MiniAssembler::BYTE_LOC =~ line
