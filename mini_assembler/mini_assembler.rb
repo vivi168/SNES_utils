@@ -251,6 +251,14 @@ class MiniAssembler
       hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
       prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
 
+      if 0xc2 == opcode
+        @index_flag = 0 if (operand & 0x10) == 0x10
+        @accumulator_flag = 0 if (operand & 0x20) == 0x20
+      elsif 0xe2 == opcode
+        @index_flag = 1 if (operand & 0x10) == 0x10
+        @accumulator_flag = 1 if (operand & 0x20) == 0x20
+      end
+
       if mode == :bm
         operand = operand.to_s(16).scan(/.{2}/).map { |op| op.to_i(16) }
       elsif %i[rel rell].include? mode
