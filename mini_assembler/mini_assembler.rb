@@ -25,6 +25,8 @@ class MiniAssembler
     @current_bank_no = 0
     @accumulator_flag = 1
     @index_flag = 1
+
+    @last_disassembled_addr = 0
   end
 
   def run
@@ -141,12 +143,13 @@ class MiniAssembler
         replace_memory_range(addr, addr + bytes.length - 1, bytes)
         return
       elsif matches = MiniAssembler::DISASSEMBLE.match(line)
-        start = matches[1].to_i(16)
+        start = matches[1].empty? ? @last_disassembled_addr : matches[1].to_i(16)
         return disassemble_range(start, 20).join("\n")
       elsif matches = MiniAssembler::SWITCH_BANK.match(line)
         target_bank_no = matches[1].to_i(16)
         @current_bank_no = target_bank_no
         @current_addr = @current_bank_no << 16
+        @last_disassembled_addr = 0
         return hex(@current_bank_no)
       elsif matches = MiniAssembler::FLIP_MX_REG.match(line)
         val = matches[1]
@@ -276,6 +279,7 @@ class MiniAssembler
       next_idx += length
     end
 
+    @last_disassembled_addr = next_idx
     return instructions
   end
 end
