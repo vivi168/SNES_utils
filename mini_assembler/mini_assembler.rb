@@ -5,7 +5,8 @@ require 'byebug'
 require_relative './definitions'
 
 Readline.completion_proc = proc do |input|
-  MiniAssembler.opcodes.map { |row| row[:mnemonic] }.select { |mnemonic| mnemonic.upcase.start_with?(input.upcase) }
+  MiniAssembler::OPCODES_DATA.map { |row| row[:mnemonic] }
+                             .select { |mnemonic| mnemonic.upcase.start_with?(input.upcase) }
 end
 
 class MiniAssembler
