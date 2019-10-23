@@ -2,14 +2,14 @@ require 'csv'
 require 'readline'
 require 'byebug'
 
-require_relative './regexes'
+require_relative './definitions'
 
 Readline.completion_proc = proc do |input|
-  MiniAssembler.opcodes.map { |row| row['mnemonic'] }.select { |mnemonic| mnemonic.upcase.start_with?(input.upcase) }
+  MiniAssembler.opcodes.map { |row| row[:mnemonic] }.select { |mnemonic| mnemonic.upcase.start_with?(input.upcase) }
 end
 
 class MiniAssembler
-  include Regexes
+  include Definitions
 
   def initialize(filename = nil)
     if filename && File.file?(filename)
@@ -61,28 +61,24 @@ class MiniAssembler
     bytes.size
   end
 
-  def self.opcodes
-    @opcodes ||= CSV.parse(File.read(File.join(File.dirname(__FILE__), "/opcodes.csv")), headers: true, converters: %i[numeric])
-  end
-
   def detect_opcode_data_from_mnemonic(mnemonic, operand)
-    MiniAssembler.opcodes.detect do |row|
-      mode = row['mode'].to_sym
+    MiniAssembler::OPCODES_DATA.detect do |row|
+      mode = row[:mode]
       regex = MiniAssembler::MODES_REGEXES[mode]
-      row['mnemonic'] == mnemonic && regex =~ operand
+      row[:mnemonic] == mnemonic && regex =~ operand
     end
   end
 
   def detect_opcode_data_from_opcode(opcode, force_length)
-    MiniAssembler.opcodes.detect do |row|
-      if row['m']
+    MiniAssembler::OPCODES_DATA.detect do |row|
+      if row[:m]
         accumulator_flag = force_length ? 0 : @accumulator_flag
-        row['opcode'] == opcode && row['m'] == accumulator_flag
-      elsif row['x']
+        row[:opcode] == opcode && row[:m] == accumulator_flag
+      elsif row[:x]
         index_flag = force_length ? 0 : @index_flag
-        row['opcode'] == opcode && row['x'] == index_flag
+        row[:opcode] == opcode && row[:x] == index_flag
       else
-        row['opcode'] == opcode
+        row[:opcode] == opcode
       end
     end
   end
@@ -216,9 +212,9 @@ class MiniAssembler
 
     return unless opcode_data
 
-    opcode = hex(opcode_data['opcode'])
-    mode = opcode_data['mode'].to_sym
-    length = opcode_data['length']
+    opcode = hex(opcode_data[:opcode])
+    mode = opcode_data[:mode]
+    length = opcode_data[:length]
 
     operand_matches = MiniAssembler::MODES_REGEXES[mode].match(raw_operand)
     if mode == :bm
@@ -266,9 +262,9 @@ class MiniAssembler
 
       opcode_data = detect_opcode_data_from_opcode(opcode, force_length)
 
-      mnemonic = opcode_data['mnemonic']
-      mode = opcode_data['mode'].to_sym
-      length = opcode_data['length']
+      mnemonic = opcode_data[:mnemonic]
+      mode = opcode_data[:mode]
+      length = opcode_data[:length]
 
       format = MiniAssembler::MODES_FORMATS[mode]
 
