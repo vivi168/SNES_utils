@@ -11,9 +11,9 @@ end
 class MiniAssembler
   include Regexes
 
-  def initialize(file = nil)
-    if file && File.file?(file)
-      file = File.open(file)
+  def initialize(filename = nil)
+    if filename && File.file?(filename)
+      file = File.open(filename)
       @memory = file.each_byte.map { |b| hex(b) }
     else
       @memory = []
@@ -50,8 +50,10 @@ class MiniAssembler
     end
   end
 
-  def incbin(filepath, addr)
-    file = File.open(filepath)
+  def incbin(filename, addr)
+    return 0 unless File.file?(filename)
+
+    file = File.open(filename)
     bytes = file.each_byte.map { |b| hex(b) }
 
     replace_memory_range(addr, addr + bytes.size - 1, bytes)
@@ -134,8 +136,8 @@ class MiniAssembler
         return 'written'
       elsif matches = MiniAssembler::INCBIN_REGEX.match(line)
         start_addr = matches[1].to_i(16)
-        filepath = matches[2].strip.chomp
-        nb_bytes = incbin(filepath, start_addr)
+        filename = matches[2].strip.chomp
+        nb_bytes = incbin(filename, start_addr)
 
         return "Inserted #{nb_bytes} bytes at #{address_human(start_addr)}"
       elsif MiniAssembler::BYTE_LOC_REGEX =~ line
