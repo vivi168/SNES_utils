@@ -128,19 +128,19 @@ class MiniAssembler
       if line == '!'
         @normal_mode = false
         return
-      elsif matches = MiniAssembler::WRITE.match(line)
+      elsif matches = MiniAssembler::WRITE_REGEX.match(line)
         filename = matches[1].strip.chomp
         write(filename)
         return 'written'
-      elsif matches = MiniAssembler::INCBIN.match(line)
+      elsif matches = MiniAssembler::INCBIN_REGEX.match(line)
         start_addr = matches[1].to_i(16)
         filepath = matches[2].strip.chomp
         nb_bytes = incbin(filepath, start_addr)
 
         return "Inserted #{nb_bytes} bytes at #{address_human(start_addr)}"
-      elsif MiniAssembler::BYTE_LOC =~ line
+      elsif MiniAssembler::BYTE_LOC_REGEX =~ line
         return memory_loc(line.to_i(16))
-      elsif matches = MiniAssembler::BYTE_RANGE.match(line)
+      elsif matches = MiniAssembler::BYTE_RANGE_REGEX.match(line)
         start_addr = matches[1].to_i(16)
         end_addr = matches[2].to_i(16)
 
@@ -158,21 +158,21 @@ class MiniAssembler
           end
           ["#{address_human(line_addr)}-", *row].join(' ')
         end.join("\n")
-      elsif matches = MiniAssembler::BYTE_SEQUENCE.match(line)
+      elsif matches = MiniAssembler::BYTE_SEQUENCE_REGEX.match(line)
         addr = matches[1].to_i(16)
         bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
         replace_memory_range(addr, addr + bytes.length - 1, bytes)
         return
-      elsif matches = MiniAssembler::DISASSEMBLE.match(line)
+      elsif matches = MiniAssembler::DISASSEMBLE_REGEX.match(line)
         start = matches[1].empty? ? @next_addr_to_list : matches[1].to_i(16)
         return disassemble_range(start, 20).join("\n")
-      elsif matches = MiniAssembler::SWITCH_BANK.match(line)
+      elsif matches = MiniAssembler::SWITCH_BANK_REGEX.match(line)
         target_bank_no = matches[1].to_i(16)
         @current_bank_no = target_bank_no
         @current_addr = @current_bank_no << 16
         @next_addr_to_list = 0
         return hex(@current_bank_no)
-      elsif matches = MiniAssembler::FLIP_MX_REG.match(line)
+      elsif matches = MiniAssembler::FLIP_MX_REG_REGEX.match(line)
         val = matches[1]
         reg = matches[2]
 
