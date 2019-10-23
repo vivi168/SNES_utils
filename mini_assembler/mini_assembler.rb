@@ -88,6 +88,8 @@ class MiniAssembler
     start_full_addr = full_address(start_addr)
     end_full_addr = full_address(end_addr)
 
+    return [] if start_full_addr > end_full_addr || start_full_addr >= @memory.length
+
     @memory[start_full_addr..end_full_addr]
   end
 
@@ -122,14 +124,14 @@ class MiniAssembler
       elsif matches = MiniAssembler::BYTE_RANGE.match(line)
         start_addr = matches[1].to_i(16)
         end_addr = matches[2].to_i(16)
-        end_addr = start_addr if end_addr < start_addr
-
-        # TODO check address is in current bank
 
         padding_count = start_addr % 8
         padding = (1..padding_count).map { |b| '  ' }
-        arr = memory_range(start_addr, end_addr).insert(8-padding_count, *padding).each_slice(8).to_a
-        return arr.each_with_index.map do |row, idx|
+        arr = memory_range(start_addr, end_addr)
+        return if arr.empty?
+
+        padded_arr = arr.insert(8-padding_count, *padding).each_slice(8).to_a
+        return padded_arr.each_with_index.map do |row, idx|
           if idx == 0
             line_addr = start_addr
           else
