@@ -63,11 +63,25 @@ class MiniAssembler
     @opcodes ||= CSV.parse(File.read(File.join(File.dirname(__FILE__), "/opcodes.csv")), headers: true, converters: %i[numeric])
   end
 
-  def detect_opcode_data(mnemonic, operand)
+  def detect_opcode_data_from_mnemonic(mnemonic, operand)
     MiniAssembler.opcodes.detect do |row|
       mode = row['mode'].to_sym
       regex = MiniAssembler::MODES_REGEXES[mode]
       row['mnemonic'] == mnemonic && regex =~ operand
+    end
+  end
+
+  def detect_opcode_data_from_opcode(opcode, force_length)
+    MiniAssembler.opcodes.detect do |row|
+      if row['m']
+        accumulator_flag = force_length ? 0 : @accumulator_flag
+        row['opcode'] == opcode && row['m'] == accumulator_flag
+      elsif row['x']
+        index_flag = force_length ? 0 : @index_flag
+        row['opcode'] == opcode && row['x'] == index_flag
+      else
+        row['opcode'] == opcode
+      end
     end
   end
 
@@ -196,7 +210,7 @@ class MiniAssembler
     mnemonic = instruction[0].upcase
     raw_operand = instruction[1].to_s
 
-    opcode_data = detect_opcode_data(mnemonic, raw_operand)
+    opcode_data = detect_opcode_data_from_mnemonic(mnemonic, raw_operand)
 
     return unless opcode_data
 
@@ -230,6 +244,16 @@ class MiniAssembler
     return [encoded_result.scan(/.{2}/), length, current_address]
   end
 
+  def auto_update_flags(opcode, operand)
+    if 0xc2 == opcode
+      @index_flag = 0 if (operand & 0x10) == 0x10
+      @accumulator_flag = 0 if (operand & 0x20) == 0x20
+    elsif 0xe2 == opcode
+      @index_flag = 1 if (operand & 0x10) == 0x10
+      @accumulator_flag = 1 if (operand & 0x20) == 0x20
+    end
+  end
+
   def disassemble_range(start, count, force_length = false)
     next_idx = start
     instructions = []
@@ -238,17 +262,7 @@ class MiniAssembler
       break unless byte
       opcode = byte.to_i(16)
 
-      opcode_data = MiniAssembler.opcodes.detect do |row|
-        if row['m']
-          accumulator_flag = force_length ? 0 : @accumulator_flag
-          row['opcode'] == opcode && row['m'] == accumulator_flag
-        elsif row['x']
-          index_flag = force_length ? 0 : @index_flag
-          row['opcode'] == opcode && row['x'] == index_flag
-        else
-          row['opcode'] == opcode
-        end
-      end
+      opcode_data = detect_opcode_data_from_opcode(opcode, force_length)
 
       mnemonic = opcode_data['mnemonic']
       mode = opcode_data['mode'].to_sym
@@ -261,13 +275,7 @@ class MiniAssembler
       hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
       prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
 
-      if 0xc2 == opcode
-        @index_flag = 0 if (operand & 0x10) == 0x10
-        @accumulator_flag = 0 if (operand & 0x20) == 0x20
-      elsif 0xe2 == opcode
-        @index_flag = 1 if (operand & 0x10) == 0x10
-        @accumulator_flag = 1 if (operand & 0x20) == 0x20
-      end
+      auto_update_flags(opcode, operand)
 
       if mode == :bm
         operand = operand.to_s(16).scan(/.{2}/).map { |op| op.to_i(16) }
