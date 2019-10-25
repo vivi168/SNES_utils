@@ -164,6 +164,8 @@ Switch to mini assembler mode.
 
 In this mode, any line you type is interpreted as 65816 instruction, and assembled at specified address, if any, or a next address (start at 0, reset to 0 when switching bank). Does not care for bank boundaries (will carry on to next bank).
 
+Immediate feedback is given by printing the disassembly of assembled instruction. In case instruction can't be assembled, an error message is printed.
+
 Syntax: `[xxxx:] xxx xxxx`
 
 To exit mini assembler mode, simply submit an empty line.
