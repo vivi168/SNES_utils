@@ -62,6 +62,36 @@ class MiniAssembler
     bytes.size
   end
 
+  def read(filename, addr)
+    return 0 unless File.file?(filename)
+
+    file = File.open(filename)
+
+    instructions = []
+
+    @current_addr = addr
+
+    file.each_with_index do |raw_line, line_no|
+      line = raw_line.split(';').first.strip.chomp
+      next if line.empty?
+
+      instruction, length, address = parse_instruction(line)
+      return "Error at line #{line_no + 1}" unless instruction
+
+      instructions << [instruction, length, address]
+      @current_addr = address + length
+    end
+
+    disassembled_instructions = []
+    instructions.map do |instruction_arr|
+      instruction, length, address = instruction_arr
+      replace_memory_range(address, address+length-1, instruction)
+      disassembled_instructions << disassemble_range(address, 1, length > 2).join
+    end
+
+    return disassembled_instructions
+  end
+
   def detect_opcode_data_from_mnemonic(mnemonic, operand)
     MiniAssembler::OPCODES_DATA.detect do |row|
       mode = row[:mode]
@@ -131,6 +161,10 @@ class MiniAssembler
         filename = matches[1].strip.chomp
         write(filename)
         return 'written'
+      elsif matches = MiniAssembler::READ_REGEX.match(line)
+        start_addr = matches[1].to_i(16)
+        filename = matches[2].strip.chomp
+        return read(filename, start_addr)
       elsif matches = MiniAssembler::INCBIN_REGEX.match(line)
         start_addr = matches[1].to_i(16)
         filename = matches[2].strip.chomp
