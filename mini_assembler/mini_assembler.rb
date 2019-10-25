@@ -49,6 +49,8 @@ class MiniAssembler
     File.open(filename, 'w+b') do |file|
       file.write([@memory.map { |i| i ? i : '00' }.join].pack('H*'))
     end
+
+    filename
   end
 
   def incbin(filename, addr)
@@ -157,8 +159,8 @@ class MiniAssembler
         return
       elsif matches = MiniAssembler::WRITE_REGEX.match(line)
         filename = matches[1].strip.chomp
-        write(filename)
-        return 'written'
+        out_filename = write(filename)
+        return "Written #{@memory.size} bytes to file #{out_filename}"
       elsif matches = MiniAssembler::READ_REGEX.match(line)
         filename = matches[1].strip.chomp
         return read(filename)
