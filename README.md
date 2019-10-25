@@ -1,7 +1,8 @@
 # SNES Utils
 
-* Given an input image, extract color palette and character data, in a file format readable by the SNES. (Read: that you can load into VRAM/CGRAM as is).
-* Given a TMX file (generated with Tiled), generate a tilemap loadable in the SNES vram.
+* `png2snes.rb`: Given an input image, extract color palette and character data, in a file format readable by the SNES. (Read: that you can load into VRAM/CGRAM as is).
+* `tmx2snes.rb`: Given a TMX file (generated with Tiled), generate a tilemap loadable in the SNES vram.
+* `call-151.rb`: System monitor/Mini Assembler clone. With it you can examine (hexdump) any area of a ROM, disassemble any range, inject data anywhere (either raw binary/hex or assemble 65816 instructions directly). You can even program a full game with it!
 
 Warning: Tileset should be 128 pixel wide for best usability.
 
