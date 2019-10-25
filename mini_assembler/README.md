@@ -171,6 +171,7 @@ To exit mini assembler mode, simply submit an empty line.
 Example:
 
 ```
+(1=m 1=x)*!
 (00/0000)!2000:sei
 00/2000: 78                    SEI
 (00/2001)!clc
@@ -179,4 +180,6 @@ Example:
 00/2002: FB                    XCE
 (00/2003)!lda #12
 00/2003: A9 12                 LDA #12
+(00/2005)!
+(1=m 1=x)*
 ```
