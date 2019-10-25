@@ -23,7 +23,7 @@ E9
 
 ### Examine range
 
-Syntax: xxxx.xxxx
+Syntax: `xxxx.xxxx`
 
 Let you examine a multiple bytes from and to specified addresses in current bank.
 
@@ -41,7 +41,7 @@ example:
 
 ### Disassemble from address
 
-Syntax: xxxxl
+Syntax: `xxxxl`
 
 Disassemble next 20 instructions starting at specified address. The adress of the next instruction after the last disassembled is remembered, and if no address is specified (typing `l` only), will disassemble from there. (Reset to 0 when switching bank).
 
@@ -59,7 +59,7 @@ example:
 
 ### Switch bank
 
-Syntax: xx/
+Syntax: `xx/`
 
 Switch current bank
 
@@ -71,7 +71,7 @@ Example:
 
 ### Flip flags
 
-Syntax: x=(m|x)
+Syntax: `x=(m|x)`
 
 Let you switch the accumulator and index register to 8 or 16 bits
 
@@ -87,7 +87,7 @@ Example:
 
 ### Insert
 
-Syntax: xxxx:xx xx xx xxxx
+Syntax: `xxxx:xx xx xx xxxx`
 
 Let you write a byte sequence at specified address. Overwrite or allocate existing data.
 
@@ -103,7 +103,7 @@ Example:
 
 ### Incbin
 
-Syntax: xxxx: .incbin filepath
+Syntax: `xxxx: .incbin filepath`
 
 Read a binary file and insert it as a byte sequence at specified address. Overwrite or allocate existing data.
 
@@ -120,7 +120,7 @@ Inserted 2048 bytes at 00/2000
 
 ### Read
 
-Syntax: .read filepath
+Syntax: `.read filepath`
 
 Read and attempt to assemble an asm file. Insert the result from current address (or at address specified in the asm file). Overwrite or allocate existing data.
 
@@ -136,13 +136,14 @@ Example:
 00/0001: 18                    CLC
 00/0002: FB                    XCE
 00/0003: E2 20                 SEP #20
-00/0005: A9 8F                 LDA #8F                                                                                  00/0007: 8D 00 21              STA 2100
+00/0005: A9 8F                 LDA #8F
+00/0007: 8D 00 21              STA 2100
 [...]
 ```
 
 ### Write
 
-Syntax: .write [filepath]
+Syntax: `.write [filepath]`
 
 Write the memory as raw bytes to a file. If no filepath is specified, write to a file named `out.smc`
 
@@ -155,7 +156,7 @@ Written 1048576 bytes to file hello.smc
 
 ### Mini Assembler
 
-Syntax: !
+Syntax: `!`
 
 Switch to mini assembler mode.
 
@@ -163,7 +164,7 @@ Switch to mini assembler mode.
 
 In this mode, any line you type is interpreted as 65816 instruction, and assembled at specified address, if any, or a next address (start at 0, reset to 0 when switching bank). Does not care for bank boundaries (will carry on to next bank).
 
-Syntax: [xxxx:] xxx xxxx
+Syntax: `[xxxx:] xxx xxxx`
 
 To exit mini assembler mode, simply submit an empty line.
 
