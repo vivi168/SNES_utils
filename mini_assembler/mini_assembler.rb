@@ -62,14 +62,12 @@ class MiniAssembler
     bytes.size
   end
 
-  def read(filename, addr)
+  def read(filename)
     return 0 unless File.file?(filename)
 
     file = File.open(filename)
 
     instructions = []
-
-    @current_addr = addr
 
     file.each_with_index do |raw_line, line_no|
       line = raw_line.split(';').first.strip.chomp
@@ -162,9 +160,8 @@ class MiniAssembler
         write(filename)
         return 'written'
       elsif matches = MiniAssembler::READ_REGEX.match(line)
-        start_addr = matches[1].to_i(16)
-        filename = matches[2].strip.chomp
-        return read(filename, start_addr)
+        filename = matches[1].strip.chomp
+        return read(filename)
       elsif matches = MiniAssembler::INCBIN_REGEX.match(line)
         start_addr = matches[1].to_i(16)
         filename = matches[2].strip.chomp
@@ -204,7 +201,7 @@ class MiniAssembler
         @current_bank_no = target_bank_no
         @current_addr = @current_bank_no << 16
         @next_addr_to_list = 0
-        return hex(@current_bank_no)
+        return
       elsif matches = MiniAssembler::FLIP_MX_REG_REGEX.match(line)
         val = matches[1]
         reg = matches[2]
