@@ -1,8 +1,8 @@
 require 'spec_helper'
-require_relative '../mini_assembler/mini_assembler'
+require 'snes_utils'
 
-describe MiniAssembler do
-  let(:mini_asm) { MiniAssembler.new }
+describe SnesUtils::MiniAssembler do
+  let(:mini_asm) { SnesUtils::MiniAssembler.new }
 
   describe '#parse_address' do
     subject { mini_asm.parse_address(line) }
