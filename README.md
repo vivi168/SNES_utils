@@ -17,10 +17,3 @@ $ mini_assembler [-f rom.smc]
 ## Demo
 
 For now, you need ca65 to build the demo. run `make`, it should produce `demo.smc`.
-
-# TODO
-
-* I should make a Gem, combining Png2Snes and Tmx2Snes
-* Chose output directory
-* Support 32x64, 64x32 and 64x64 tilemaps
-* Add a way to set the flip bits per tile (an additional CSV file?)
