@@ -57,12 +57,14 @@ module SnesUtils
       bytes.size
     end
 
-    def read(filename)
+    def read(filename, start_addr = nil)
       return 0 unless File.file?(filename)
 
       file = File.open(filename)
 
       instructions = []
+
+      @current_addr = start_addr if start_addr
 
       file.each_with_index do |raw_line, line_no|
         line = raw_line.split(';').first.strip.chomp
@@ -155,8 +157,9 @@ module SnesUtils
           out_filename = write(filename)
           return "Written #{@memory.size} bytes to file #{out_filename}"
         elsif matches = Definitions::READ_REGEX.match(line)
-          filename = matches[1].strip.chomp
-          return read(filename)
+          start_addr = matches[2]&.to_i(16)
+          filename = matches[3].strip.chomp
+          return read(filename, start_addr)
         elsif matches = Definitions::INCBIN_REGEX.match(line)
           start_addr = matches[1].to_i(16)
           filename = matches[2].strip.chomp

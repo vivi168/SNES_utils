@@ -43,7 +43,7 @@ module SnesUtils
     FLIP_MX_REG_REGEX = /^([01])=([xm])$/i
     WRITE_REGEX = /^\.write\s*(.*)$/i
     INCBIN_REGEX = /^(#{HEX_DIGIT}{1,4}):\s*\.incbin\s+(.*)$/i
-    READ_REGEX = /^\.read\s+(.*)$/i
+    READ_REGEX = /^((#{HEX_DIGIT}{1,4}):\s*)*\.read\s+(.*)$/i
 
     MODES_FORMATS = {
       acc:   "%s",
