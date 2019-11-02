@@ -50,6 +50,9 @@ nmi_stub:
     ;transfer tilemap data
     transfer_vram #$1000, #$02, #TILEMAP_START, #TILEMAP_SIZE
 
+    ldx #$0400
+    jsr copy_tilemap_column
+
     ; initial values
     ldx #$1000
     ldy #$800
@@ -71,7 +74,7 @@ nmi_stub:
     sta BGMODE
 
     ; set tilemap address
-    lda #$10
+    lda #$11
     sta BG1SC
 
     ; set tileset address for bg 1 and 2
@@ -193,25 +196,36 @@ read_data:
     ; TODO this is just a POC
     ; Need to place this in the movement algorithm
     ; to update the tilemap while moving left and right
-    stx VMADDL
 
-    rep #$20 ; A 16
+    sep #$20 ; A 8
+    lda #$81
+    sta VMAINC
+
+    rep #$30 ; A 16 I 16
+    txa
+    adc #$1000 ; target address in VRAM (in word)
+    sta VMADDL
+
+    ldx #0000
 
     tyx
-    ldy #$80 ; column size, $80
+    ldy #$1c ; column height
 copy_column:
-    lda $029040, x ; target tilemap address in ROM
+    lda $029840, x ; target tilemap address in ROM
     sta $2118
 
     txa
     clc
-    adc #$40
+    adc #$40 ; increase rom address to next column
     tax
 
     dey
     bne copy_column
 
     sep #$20 ; A 8
+
+    lda #$80
+    sta VMAINC
 
     plp
     rts
