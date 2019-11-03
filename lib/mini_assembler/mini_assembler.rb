@@ -21,6 +21,8 @@ module SnesUtils
       @index_flag = 1
 
       @next_addr_to_list = 0
+
+      @label_registry = {}
     end
 
     def run
@@ -60,19 +62,24 @@ module SnesUtils
     def read(filename)
       return 0 unless File.file?(filename)
 
-      file = File.open(filename)
+      @label_registry = {}
 
+      current_addr = @current_addr
       instructions = []
 
-      file.each_with_index do |raw_line, line_no|
-        line = raw_line.split(';').first.strip.chomp
-        next if line.empty?
+      2.times do |i|
+        @current_addr = current_addr
+        instructions = []
+        File.open(filename).each_with_index do |raw_line, line_no|
+          line = raw_line.split(';').first.strip.chomp
+          next if line.empty?
 
-        instruction, length, address = parse_instruction(line)
-        return "Error at line #{line_no + 1}" unless instruction
+          instruction, length, address = parse_instruction(line, register_label=(i == 0), resolve_label=(i==1))
+          return "Error at line #{line_no + 1}" unless instruction
 
-        instructions << [instruction, length, address]
-        @current_addr = address + length
+          instructions << [instruction, length, address]
+          @current_addr = address + length
+        end
       end
 
       disassembled_instructions = []
@@ -224,16 +231,29 @@ module SnesUtils
       end
     end
 
-    def parse_address(line)
+    def parse_address(line, register_label = false)
       return @current_addr if line.index(':').nil?
-      line.split(':').first.to_i(16)
+
+      address = line.split(':').first.strip.chomp
+      return address.to_i(16) unless address.start_with?('@')
+
+      @label_registry[address] = hex(@current_addr, 4)
+      return @current_addr
     end
 
-    def parse_instruction(line)
-      current_address = parse_address(line)
+    def parse_instruction(line, register_label = false, resolve_label = false)
+      current_address = parse_address(line, register_label)
       instruction = line.split(':').last.split(' ')
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
+
+      if register_label and raw_operand.start_with?('@')
+        raw_operand = hex(@current_addr, 4)
+      end
+
+      if resolve_label and raw_operand.start_with?('@')
+        raw_operand = @label_registry[raw_operand]
+      end
 
       opcode_data = detect_opcode_data_from_mnemonic(mnemonic, raw_operand)
 
