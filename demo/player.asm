@@ -179,6 +179,58 @@ update:
     clc
     adc BGH_SCRL
     sta BGH_SCRL
+    lda PREV_PLAYER_X
+
+    lsr
+    lsr
+    lsr
+    tax
+    asl
+    tay
     sep #$20
+
+    jsr copy_tilemap_column
+
+    sep #$20
+    rts
+.endproc
+
+.proc copy_tilemap_column
+    php
+    ; TODO this is just a POC
+    ; Need to place this in the movement algorithm
+    ; to update the tilemap while moving left and right
+
+    sep #$20 ; A 8
+    lda #$81
+    sta VMAINC
+
+    rep #$30 ; A 16 I 16
+    txa
+    adc #$1000 ; target address in VRAM (in word)
+    sta VMADDL
+
+    tyx
+    ; ldx #0000
+
+    ldy #$1c ; column height
+copy_column:
+    lda $2a040, x ; target tilemap address in ROM
+    sta $2118
+
+    txa
+    clc
+    adc #$40 ; increase rom address to next column
+    tax
+
+    dey
+    bne copy_column
+
+    sep #$20 ; A 8
+
+    lda #$80
+    sta VMAINC
+
+    plp
     rts
 .endproc

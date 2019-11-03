@@ -144,17 +144,6 @@ nmi_stub:
 move_right:
     jsr player_move_right
 
-    rep #$20
-    lda PLAYER_X
-    lsr
-    lsr
-    tay
-    lsr
-    tax
-    sep #$20
-
-    jsr copy_tilemap_column
-
     bra update
 
 move_left:
@@ -202,42 +191,3 @@ read_data:
     rts
 .endproc
 
-.proc copy_tilemap_column
-    php
-    ; TODO this is just a POC
-    ; Need to place this in the movement algorithm
-    ; to update the tilemap while moving left and right
-
-    sep #$20 ; A 8
-    lda #$81
-    sta VMAINC
-
-    rep #$30 ; A 16 I 16
-    txa
-    adc #$1000 ; target address in VRAM (in word)
-    sta VMADDL
-
-    tyx
-    ; ldx #0000
-
-    ldy #$1c ; column height
-copy_column:
-    lda $2a040, x ; target tilemap address in ROM
-    sta $2118
-
-    txa
-    clc
-    adc #$40 ; increase rom address to next column
-    tax
-
-    dey
-    bne copy_column
-
-    sep #$20 ; A 8
-
-    lda #$80
-    sta VMAINC
-
-    plp
-    rts
-.endproc
