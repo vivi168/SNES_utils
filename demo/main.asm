@@ -49,9 +49,8 @@ nmi_stub:
     transfer_vram #$0000, #$02, #BG_START, #BG_SIZE
     ;transfer tilemap data
     transfer_vram #$1000, #$02, #TILEMAP_START, #TILEMAP_SIZE
-
-    ldx #$0400
-    jsr copy_tilemap_column
+    transfer_vram #$1400, #$02, #TILEMAP2_START, #TILEMAP_SIZE
+    transfer_vram #$1800, #$02, #TILEMAP3_START, #TILEMAP_SIZE
 
     ; initial values
     ldx #$1000
@@ -144,6 +143,18 @@ nmi_stub:
 ; may need to optimize this
 move_right:
     jsr player_move_right
+
+    rep #$20
+    lda PLAYER_X
+    lsr
+    lsr
+    tay
+    lsr
+    tax
+    sep #$20
+
+    jsr copy_tilemap_column
+
     bra update
 
 move_left:
@@ -206,12 +217,12 @@ read_data:
     adc #$1000 ; target address in VRAM (in word)
     sta VMADDL
 
-    ldx #0000
-
     tyx
+    ; ldx #0000
+
     ldy #$1c ; column height
 copy_column:
-    lda $029840, x ; target tilemap address in ROM
+    lda $2a040, x ; target tilemap address in ROM
     sta $2118
 
     txa
