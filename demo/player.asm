@@ -179,8 +179,10 @@ update:
     clc
     adc BGH_SCRL
     sta BGH_SCRL
-    lda PREV_PLAYER_X
 
+    lda PLAYER_X
+    sec
+    sbc #$80
     lsr
     lsr
     lsr
@@ -188,7 +190,6 @@ update:
     asl
     tay
     sep #$20
-
     jsr copy_tilemap_column
 
     sep #$20
