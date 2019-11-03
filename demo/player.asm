@@ -180,7 +180,7 @@ update:
     adc BGH_SCRL
     sta BGH_SCRL
 
-    lda PLAYER_X
+    lda PREV_PLAYER_X
     sec
     sbc #$80
     lsr
