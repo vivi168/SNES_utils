@@ -13,6 +13,8 @@ module SnesUtils
         @memory = []
       end
 
+      @mode = :wdc65816
+
       @normal_mode = true
 
       @current_addr = 0
@@ -156,6 +158,12 @@ module SnesUtils
         if line == '!'
           @normal_mode = false
           return
+        elsif line == '.spc700'
+          @mode = :spc700
+          return 'spc700'
+        elsif line == '.65816'
+          @mode = :wdc65816
+          return '65816'
         elsif matches = Definitions::WRITE_REGEX.match(line)
           filename = matches[1].strip.chomp
           out_filename = write(filename)
@@ -196,7 +204,11 @@ module SnesUtils
           return
         elsif matches = Definitions::DISASSEMBLE_REGEX.match(line)
           start = matches[1].empty? ? @next_addr_to_list : matches[1].to_i(16)
-          return disassemble_range_spc700(start, 20).join("\n")
+          if @mode == :spc700
+            return disassemble_range_spc700(start, 20).join("\n")
+          else
+            return disassemble_range(start, 20).join("\n")
+          end
         elsif matches = Definitions::SWITCH_BANK_REGEX.match(line)
           target_bank_no = matches[1].to_i(16)
           @current_bank_no = target_bank_no
