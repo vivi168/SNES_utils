@@ -1,6 +1,6 @@
 module SnesUtils
   Readline.completion_proc = proc do |input|
-    Definitions::OPCODES_DATA.map { |row| row[:mnemonic] }
+    Wdc65816::Definitions::OPCODES_DATA.map { |row| row[:mnemonic] }
                                .select { |mnemonic| mnemonic.upcase.start_with?(input.upcase) }
   end
 
@@ -86,15 +86,15 @@ module SnesUtils
     end
 
     def detect_opcode_data_from_mnemonic(mnemonic, operand)
-      Definitions::OPCODES_DATA.detect do |row|
+      Wdc65816::Definitions::OPCODES_DATA.detect do |row|
         mode = row[:mode]
-        regex = Definitions::MODES_REGEXES[mode]
+        regex = Wdc65816::Definitions::MODES_REGEXES[mode]
         row[:mnemonic] == mnemonic && regex =~ operand
       end
     end
 
     def detect_opcode_data_from_opcode(opcode, force_length)
-      Definitions::OPCODES_DATA.detect do |row|
+      Wdc65816::Definitions::OPCODES_DATA.detect do |row|
         if row[:m]
           accumulator_flag = force_length ? 0 : @accumulator_flag
           row[:opcode] == opcode && row[:m] == accumulator_flag
@@ -104,6 +104,12 @@ module SnesUtils
         else
           row[:opcode] == opcode
         end
+      end
+    end
+
+    def detect_opcode_data_from_opcode_spc700(opcode)
+      Spc700::Definitions::OPCODES_DATA.detect do |row|
+        row[:opcode] == opcode
       end
     end
 
@@ -190,7 +196,7 @@ module SnesUtils
           return
         elsif matches = Definitions::DISASSEMBLE_REGEX.match(line)
           start = matches[1].empty? ? @next_addr_to_list : matches[1].to_i(16)
-          return disassemble_range(start, 20).join("\n")
+          return disassemble_range_spc700(start, 20).join("\n")
         elsif matches = Definitions::SWITCH_BANK_REGEX.match(line)
           target_bank_no = matches[1].to_i(16)
           @current_bank_no = target_bank_no
@@ -243,7 +249,7 @@ module SnesUtils
       mode = opcode_data[:mode]
       length = opcode_data[:length]
 
-      operand_matches = Definitions::MODES_REGEXES[mode].match(raw_operand)
+      operand_matches = Wdc65816::Definitions::MODES_REGEXES[mode].match(raw_operand)
       if mode == :bm
         operand = "#{operand_matches[1]}#{operand_matches[2]}".to_i(16)
       else
@@ -293,7 +299,7 @@ module SnesUtils
         mode = opcode_data[:mode]
         length = opcode_data[:length]
 
-        format = Definitions::MODES_FORMATS[mode]
+        format = Wdc65816::Definitions::MODES_FORMATS[mode]
 
         operand = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
 
@@ -303,7 +309,7 @@ module SnesUtils
         auto_update_flags(opcode, operand)
 
         if mode == :bm
-          operand = operand.to_s(16).scan(/.{2}/).map { |op| op.to_i(16) }
+          operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
         elsif %i[rel rell].include? mode
           limit = mode == :rel ? 0x7f : 0x7fff
           offset = mode == :rel ? 0x100 : 0x10000
@@ -316,6 +322,68 @@ module SnesUtils
         end
 
         instructions << "#{prefix.ljust(30)} #{format % [mnemonic, *operand]}"
+        next_idx += length
+      end
+
+      @next_addr_to_list = next_idx
+      return instructions
+    end
+
+    def disassemble_range_spc700(start, count)
+      next_idx = start
+      instructions = []
+      count.times do
+        byte = memory_loc(next_idx)
+        break unless byte
+        opcode = byte.to_i(16)
+
+        opcode_data = detect_opcode_data_from_opcode_spc700(opcode)
+
+        mnemonic = opcode_data[:mnemonic]
+        mode = opcode_data[:mode]
+        length = opcode_data[:length]
+
+        format = Spc700::Definitions::MODES_FORMATS[mode]
+
+        operand = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
+
+        hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
+        prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
+
+        if Spc700::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include? mode
+          if Spc700::Definitions::BIT_INSTRUCTIONS.include? mode
+            m = operand >> 3
+            b = operand & 0b111
+            operand = [m, b]
+          else
+            operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
+            if Spc700::Definitions::REL_INSTRUCTIONS.include? mode
+              r = operand.first
+
+              limit = 0x7f
+              offset = 0x100
+              rjust_len = 2
+              relative_addr = r > limit ? r - offset : r
+              relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
+              absolute_addr = next_idx + length + relative_addr
+              absolute_addr += 0x100 if absolute_addr.negative?
+              operand = [operand.last, absolute_addr, relative_addr_s]
+            end
+          end
+        elsif Spc700::Definitions::SINGLE_OPERAND_INSTRUCTIONS.include? mode
+          if Spc700::Definitions::REL_INSTRUCTIONS.include? mode
+            limit = 0x7f
+            offset = 0x100
+            rjust_len = 2
+            relative_addr = operand > limit ? operand - offset : operand
+            relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
+            absolute_addr = next_idx + length + relative_addr
+            absolute_addr += 0x100 if absolute_addr.negative?
+            operand = [absolute_addr, relative_addr_s]
+          end
+        end
+
+        instructions << "#{prefix.ljust(30)} #{format % [mnemonic.ljust(5, ' '), *operand]}"
         next_idx += length
       end
 
