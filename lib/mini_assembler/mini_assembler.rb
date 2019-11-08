@@ -96,22 +96,20 @@ module SnesUtils
     end
 
     def detect_opcode_data_from_opcode(opcode, force_length)
-      Wdc65816::Definitions::OPCODES_DATA.detect do |row|
-        if row[:m]
-          accumulator_flag = force_length ? 0 : @accumulator_flag
-          row[:opcode] == opcode && row[:m] == accumulator_flag
-        elsif row[:x]
-          index_flag = force_length ? 0 : @index_flag
-          row[:opcode] == opcode && row[:x] == index_flag
-        else
+      SnesUtils.const_get(@mode.capitalize)::Definitions::OPCODES_DATA.detect do |row|
+        if @mode == :spc700
           row[:opcode] == opcode
+        else
+          if row[:m]
+            accumulator_flag = force_length ? 0 : @accumulator_flag
+            row[:opcode] == opcode && row[:m] == accumulator_flag
+          elsif row[:x]
+            index_flag = force_length ? 0 : @index_flag
+            row[:opcode] == opcode && row[:x] == index_flag
+          else
+            row[:opcode] == opcode
+          end
         end
-      end
-    end
-
-    def detect_opcode_data_from_opcode_spc700(opcode)
-      Spc700::Definitions::OPCODES_DATA.detect do |row|
-        row[:opcode] == opcode
       end
     end
 
@@ -204,11 +202,7 @@ module SnesUtils
           return
         elsif matches = Definitions::DISASSEMBLE_REGEX.match(line)
           start = matches[1].empty? ? @next_addr_to_list : matches[1].to_i(16)
-          if @mode == :spc700
-            return disassemble_range_spc700(start, 20).join("\n")
-          else
-            return disassemble_range(start, 20).join("\n")
-          end
+          return disassemble_range(start, 20).join("\n")
         elsif matches = Definitions::SWITCH_BANK_REGEX.match(line)
           target_bank_no = matches[1].to_i(16)
           @current_bank_no = target_bank_no
@@ -311,71 +305,44 @@ module SnesUtils
         mode = opcode_data[:mode]
         length = opcode_data[:length]
 
-        format = Wdc65816::Definitions::MODES_FORMATS[mode]
+        format = SnesUtils.const_get(@mode.capitalize)::Definitions::MODES_FORMATS[mode]
 
         operand = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
 
         hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
         prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
 
-        auto_update_flags(opcode, operand)
+        if @mode == :spc700
+          if SnesUtils.const_get(@mode.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include? mode
+            if SnesUtils.const_get(@mode.capitalize)::Definitions::BIT_INSTRUCTIONS.include? mode
+              m = operand >> 3
+              b = operand & 0b111
+              operand = [m, b]
+            else
+              operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
+              if SnesUtils.const_get(@mode.capitalize)::Definitions::REL_INSTRUCTIONS.include? mode
+                r = operand.first
+                r_operand = relative_operand(r, next_idx + length)
 
-        if mode == :bm
-          operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
-        elsif %i[rel rell].include? mode
-          limit = mode == :rel ? 0x7f : 0x7fff
-          offset = mode == :rel ? 0x100 : 0x10000
-          rjust_len = mode == :rel ? 2 : 4
-
-          operand = relative_operand(operand, next_idx + length, limit, offset, rjust_len)
-        end
-
-        instructions << "#{prefix.ljust(30)} #{format % [mnemonic, *operand]}"
-        next_idx += length
-      end
-
-      @next_addr_to_list = next_idx
-      return instructions
-    end
-
-    def disassemble_range_spc700(start, count)
-      next_idx = start
-      instructions = []
-      count.times do
-        byte = memory_loc(next_idx)
-        break unless byte
-        opcode = byte.to_i(16)
-
-        opcode_data = detect_opcode_data_from_opcode_spc700(opcode)
-
-        mnemonic = opcode_data[:mnemonic]
-        mode = opcode_data[:mode]
-        length = opcode_data[:length]
-
-        format = Spc700::Definitions::MODES_FORMATS[mode]
-
-        operand = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
-
-        hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
-        prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
-
-        if Spc700::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include? mode
-          if Spc700::Definitions::BIT_INSTRUCTIONS.include? mode
-            m = operand >> 3
-            b = operand & 0b111
-            operand = [m, b]
-          else
-            operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
-            if Spc700::Definitions::REL_INSTRUCTIONS.include? mode
-              r = operand.first
-              r_operand = relative_operand(r, next_idx + length)
-
-              operand = [operand.last, *r_operand]
+                operand = [operand.last, *r_operand]
+              end
+            end
+          elsif SnesUtils.const_get(@mode.capitalize)::Definitions::SINGLE_OPERAND_INSTRUCTIONS.include? mode
+            if SnesUtils.const_get(@mode.capitalize)::Definitions::REL_INSTRUCTIONS.include? mode
+              operand = relative_operand(operand, next_idx + length)
             end
           end
-        elsif Spc700::Definitions::SINGLE_OPERAND_INSTRUCTIONS.include? mode
-          if Spc700::Definitions::REL_INSTRUCTIONS.include? mode
-            operand = relative_operand(operand, next_idx + length)
+        else
+          auto_update_flags(opcode, operand)
+
+          if mode == :bm
+            operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
+          elsif %i[rel rell].include? mode
+            limit = mode == :rel ? 0x7f : 0x7fff
+            offset = mode == :rel ? 0x100 : 0x10000
+            rjust_len = mode == :rel ? 2 : 4
+
+            operand = relative_operand(operand, next_idx + length, limit, offset, rjust_len)
           end
         end
 
