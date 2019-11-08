@@ -6,7 +6,6 @@ module SnesUtils
       HEX8  = "\\$?(#{HEX_DIGIT}{1,2})"
       HEX16 = "\\$?(#{HEX_DIGIT}{3,4})"
 
-      STRING_OPERAND_INSTRUCTIONS = [:imp,:idxpacc,:idxidy,:idxacc,:t0,:t1,:t2,:t3,:t4,:t5,:t6,:t7,:t8,:t9,:t10,:t11,:t12,:t13,:t14,:t15,:acc,:accidx,:accidxp,:accx,:accy,:psw,:spx,:x,:xa,:xsp,:y,:yacc,:ya,:yax]
       SINGLE_OPERAND_INSTRUCTIONS = [:abs, :abspxa, :abspya, :absa, :absx, :absy, :absix, :dpixacc, :dpiyacc, :accabs, :accabsx, :accabsy, :accimp, :accdpix, :accdpiy, :accdp, :accdpx, :dp, :dppx, :dppxa, :dppxy, :dppyx, :dpa, :dpx, :dpy, :dpya, :dp0, :dp1, :dp2, :dp3, :dp4, :dp5, :dp6, :dp7, :rel, :upage, :xabs, :ximm, :xdp, :xdpy, :yabs, :yimm, :ydp, :ydpx, :yrel, :yadp]
       DOUBLE_OPERAND_INSTRUCTIONS = [:cnmb, :cmb, :dpxrel, :dpimm, :dprel, :dp0rel, :dp1rel, :dp2rel, :dp3rel, :dp4rel, :dp5rel, :dp6rel, :dp7rel, :ddds, :mb, :mbc]
       REL_INSTRUCTIONS = [:dpxrel, :dprel, :dp0rel, :dp1rel, :dp2rel, :dp3rel, :dp4rel, :dp5rel, :dp6rel, :dp7rel, :rel, :yrel]
