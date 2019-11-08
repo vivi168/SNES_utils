@@ -353,8 +353,7 @@ module SnesUtils
       relative_addr = operand > limit ? operand - offset : operand
       relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
       absolute_addr = next_idx + relative_addr
-      # TODO: check that offset is correct with negatives
-      absolute_addr += offset if absolute_addr.negative?
+      absolute_addr += 0x10000 if absolute_addr.negative?
 
       [absolute_addr, relative_addr_s]
     end
