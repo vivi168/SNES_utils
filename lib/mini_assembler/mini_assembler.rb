@@ -326,11 +326,8 @@ module SnesUtils
           limit = mode == :rel ? 0x7f : 0x7fff
           offset = mode == :rel ? 0x100 : 0x10000
           rjust_len = mode == :rel ? 2 : 4
-          relative_addr = operand > limit ? operand - offset : operand
-          relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
-          absolute_addr = next_idx + length + relative_addr
-          absolute_addr += 0x10000 if absolute_addr.negative?
-          operand = [absolute_addr, relative_addr_s]
+
+          operand = relative_operand(operand, next_idx + length, limit, offset, rjust_len)
         end
 
         instructions << "#{prefix.ljust(30)} #{format % [mnemonic, *operand]}"
@@ -371,36 +368,33 @@ module SnesUtils
             operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
             if Spc700::Definitions::REL_INSTRUCTIONS.include? mode
               r = operand.first
+              r_operand = relative_operand(r, next_idx + length)
 
-              limit = 0x7f
-              offset = 0x100
-              rjust_len = 2
-              relative_addr = r > limit ? r - offset : r
-              relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
-              absolute_addr = next_idx + length + relative_addr
-              absolute_addr += 0x100 if absolute_addr.negative?
-              operand = [operand.last, absolute_addr, relative_addr_s]
+              operand = [operand.last, *r_operand]
             end
           end
         elsif Spc700::Definitions::SINGLE_OPERAND_INSTRUCTIONS.include? mode
           if Spc700::Definitions::REL_INSTRUCTIONS.include? mode
-            limit = 0x7f
-            offset = 0x100
-            rjust_len = 2
-            relative_addr = operand > limit ? operand - offset : operand
-            relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
-            absolute_addr = next_idx + length + relative_addr
-            absolute_addr += 0x100 if absolute_addr.negative?
-            operand = [absolute_addr, relative_addr_s]
+            operand = relative_operand(operand, next_idx + length)
           end
         end
 
-        instructions << "#{prefix.ljust(30)} #{format % [mnemonic.ljust(5, ' '), *operand]}"
+        instructions << "#{prefix.ljust(30)} #{format % [mnemonic, *operand]}"
         next_idx += length
       end
 
       @next_addr_to_list = next_idx
       return instructions
+    end
+
+    def relative_operand(operand, next_idx, limit = 0x7f, offset = 0x100, rjust_len = 2)
+      relative_addr = operand > limit ? operand - offset : operand
+      relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
+      absolute_addr = next_idx + relative_addr
+      # TODO: check that offset is correct with negatives
+      absolute_addr += offset if absolute_addr.negative?
+
+      [absolute_addr, relative_addr_s]
     end
   end
 end
