@@ -13,7 +13,7 @@ module SnesUtils
         @memory = []
       end
 
-      @mode = :wdc65816
+      @cpu = :wdc65816
 
       @normal_mode = true
 
@@ -96,8 +96,8 @@ module SnesUtils
     end
 
     def detect_opcode_data_from_opcode(opcode, force_length)
-      SnesUtils.const_get(@mode.capitalize)::Definitions::OPCODES_DATA.detect do |row|
-        if @mode == :spc700
+      SnesUtils.const_get(@cpu.capitalize)::Definitions::OPCODES_DATA.detect do |row|
+        if @cpu == :spc700
           row[:opcode] == opcode
         else
           if row[:m]
@@ -157,10 +157,10 @@ module SnesUtils
           @normal_mode = false
           return
         elsif line == '.spc700'
-          @mode = :spc700
+          @cpu = :spc700
           return 'spc700'
         elsif line == '.65816'
-          @mode = :wdc65816
+          @cpu = :wdc65816
           return '65816'
         elsif matches = Definitions::WRITE_REGEX.match(line)
           filename = matches[1].strip.chomp
@@ -305,32 +305,32 @@ module SnesUtils
         mode = opcode_data[:mode]
         length = opcode_data[:length]
 
-        format = SnesUtils.const_get(@mode.capitalize)::Definitions::MODES_FORMATS[mode]
+        format = SnesUtils.const_get(@cpu.capitalize)::Definitions::MODES_FORMATS[mode]
 
         operand = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
 
         hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
         prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
 
-        auto_update_flags(opcode, operand) if @mode == :wdc65816
+        auto_update_flags(opcode, operand) if @cpu == :wdc65816
 
-        if SnesUtils.const_get(@mode.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include? mode
-          if SnesUtils.const_get(@mode.capitalize)::Definitions::BIT_INSTRUCTIONS.include? mode
+        if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include? mode
+          if SnesUtils.const_get(@cpu.capitalize)::Definitions::BIT_INSTRUCTIONS.include? mode
             m = operand >> 3
             b = operand & 0b111
             operand = [m, b]
           else
             operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
-            if SnesUtils.const_get(@mode.capitalize)::Definitions::REL_INSTRUCTIONS.include? mode
+            if SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include? mode
               r = operand.first
               r_operand = relative_operand(r, next_idx + length)
 
               operand = [operand.last, *r_operand]
             end
           end
-        elsif SnesUtils.const_get(@mode.capitalize)::Definitions::SINGLE_OPERAND_INSTRUCTIONS.include? mode
-          if SnesUtils.const_get(@mode.capitalize)::Definitions::REL_INSTRUCTIONS.include? mode
-            if %i[rel rell].include?(mode) && @mode == :wdc65816
+        elsif SnesUtils.const_get(@cpu.capitalize)::Definitions::SINGLE_OPERAND_INSTRUCTIONS.include? mode
+          if SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include? mode
+            if @cpu == :wdc65816 && %i[rel rell].include?(mode)
               limit = mode == :rel ? 0x7f : 0x7fff
               offset = mode == :rel ? 0x100 : 0x10000
               rjust_len = mode == :rel ? 2 : 4
