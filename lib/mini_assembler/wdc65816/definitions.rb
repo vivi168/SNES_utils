@@ -6,6 +6,11 @@ module SnesUtils
       HEX16 = "\\$?(#{HEX_DIGIT}{3,4})"
       HEX24 = "\\$?(#{HEX_DIGIT}{5,6})"
 
+      SINGLE_OPERAND_INSTRUCTIONS = [:imm, :iml, :imm8, :imm16, :sr, :dp, :dpx, :dpy, :idp, :idx, :idy, :idl, :idly, :isy, :abs, :abx, :aby, :abl, :alx, :ind, :iax, :ial, :rel, :rell]
+      DOUBLE_OPERAND_INSTRUCTIONS = [:bm]
+      REL_INSTRUCTIONS = [:rel, :rell]
+      BIT_INSTRUCTIONS = []
+
       MODES_REGEXES = {
         acc:   /^$/,
         imp:   /^$/,

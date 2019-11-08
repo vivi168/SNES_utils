@@ -312,39 +312,35 @@ module SnesUtils
         hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
         prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
 
-        if @mode == :spc700
-          if SnesUtils.const_get(@mode.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include? mode
-            if SnesUtils.const_get(@mode.capitalize)::Definitions::BIT_INSTRUCTIONS.include? mode
-              m = operand >> 3
-              b = operand & 0b111
-              operand = [m, b]
-            else
-              operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
-              if SnesUtils.const_get(@mode.capitalize)::Definitions::REL_INSTRUCTIONS.include? mode
-                r = operand.first
-                r_operand = relative_operand(r, next_idx + length)
+        auto_update_flags(opcode, operand) if @mode == :wdc65816
 
-                operand = [operand.last, *r_operand]
-              end
-            end
-          elsif SnesUtils.const_get(@mode.capitalize)::Definitions::SINGLE_OPERAND_INSTRUCTIONS.include? mode
+        if SnesUtils.const_get(@mode.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include? mode
+          if SnesUtils.const_get(@mode.capitalize)::Definitions::BIT_INSTRUCTIONS.include? mode
+            m = operand >> 3
+            b = operand & 0b111
+            operand = [m, b]
+          else
+            operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
             if SnesUtils.const_get(@mode.capitalize)::Definitions::REL_INSTRUCTIONS.include? mode
+              r = operand.first
+              r_operand = relative_operand(r, next_idx + length)
+
+              operand = [operand.last, *r_operand]
+            end
+          end
+        elsif SnesUtils.const_get(@mode.capitalize)::Definitions::SINGLE_OPERAND_INSTRUCTIONS.include? mode
+          if SnesUtils.const_get(@mode.capitalize)::Definitions::REL_INSTRUCTIONS.include? mode
+            if %i[rel rell].include?(mode) && @mode == :wdc65816
+              limit = mode == :rel ? 0x7f : 0x7fff
+              offset = mode == :rel ? 0x100 : 0x10000
+              rjust_len = mode == :rel ? 2 : 4
+              operand = relative_operand(operand, next_idx + length, limit, offset, rjust_len)
+            else
               operand = relative_operand(operand, next_idx + length)
             end
           end
-        else
-          auto_update_flags(opcode, operand)
-
-          if mode == :bm
-            operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
-          elsif %i[rel rell].include? mode
-            limit = mode == :rel ? 0x7f : 0x7fff
-            offset = mode == :rel ? 0x100 : 0x10000
-            rjust_len = mode == :rel ? 2 : 4
-
-            operand = relative_operand(operand, next_idx + length, limit, offset, rjust_len)
-          end
         end
+
 
         instructions << "#{prefix.ljust(30)} #{format % [mnemonic, *operand]}"
         next_idx += length
