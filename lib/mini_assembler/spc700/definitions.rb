@@ -111,7 +111,7 @@ module SnesUtils
       }
 
       MODES_FORMATS = {
-        imp:      "%-5s",
+        imp:      "%s",
         abs:      "%-5s !%04X",
         abspxa:   "%-5s !%04X+X,A",
         abspya:   "%-5s !%04X+Y,A",

@@ -84,4 +84,26 @@ describe SnesUtils::MiniAssembler do
       end
     end
   end
+
+  describe '#disassemble_range' do
+    subject { mini_asm.disassemble_range(0, count) }
+
+    let(:count) { 1 }
+
+    before { mini_asm.instance_variable_set(:@memory, memory) }
+
+    context 'when cpu is 65816' do
+      let(:memory) { ['82', '99', '00'] }
+
+      it { expect(subject).to eq ['00/0000: 82 99 00              BRL 009C {+0099}'] }
+    end
+
+    context 'when cpu is spc700' do
+      let(:memory) { ['00'] }
+
+      before { mini_asm.instance_variable_set(:@cpu, :spc700) }
+
+      it { expect(subject).to eq ['00/0000: 00                    NOP'] }
+    end
+  end
 end
