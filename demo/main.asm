@@ -40,6 +40,8 @@ nmi_stub:
     ldx #$00
     stx PLAYER_X
     jsr update_sprite_x
+    stz FPS_COUNT
+    stz SEC_COUNT
 
     ; once that's done, load our sprite data
     jsr init_oam_buffer
@@ -111,6 +113,14 @@ nmi_stub:
 .proc nmi_int
     ; read NMI status, acknowledge NMI
     lda RDNMI
+
+    inc FPS_COUNT
+    lda FPS_COUNT
+    cmp #$3c
+    bne return
+    stz FPS_COUNT
+    inc SEC_COUNT
+return:
 
     ; TODO: maybe don't transfer full OAM Buffer each time
     ; but only modified data

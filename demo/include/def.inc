@@ -2,7 +2,9 @@
 .define DEF_INC
 
 ; RAM addresses
-SPRITE_X      = $0000
+FPS_COUNT = $0000
+SEC_COUNT = FPS_COUNT + 1
+SPRITE_X      = SEC_COUNT + 1
 PREV_SPRITE_X = SPRITE_X      + 2
 BGH_SCRL      = PREV_SPRITE_X + 2
 BGH_SCRH      = BGH_SCRL      + 1
