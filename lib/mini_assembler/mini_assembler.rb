@@ -88,9 +88,9 @@ module SnesUtils
     end
 
     def detect_opcode_data_from_mnemonic(mnemonic, operand)
-      Wdc65816::Definitions::OPCODES_DATA.detect do |row|
+      SnesUtils.const_get(@cpu.capitalize)::Definitions::OPCODES_DATA.detect do |row|
         mode = row[:mode]
-        regex = Wdc65816::Definitions::MODES_REGEXES[mode]
+        regex = SnesUtils.const_get(@cpu.capitalize)::Definitions::MODES_REGEXES[mode]
         row[:mnemonic] == mnemonic && regex =~ operand
       end
     end
@@ -255,22 +255,49 @@ module SnesUtils
       mode = opcode_data[:mode]
       length = opcode_data[:length]
 
-      operand_matches = Wdc65816::Definitions::MODES_REGEXES[mode].match(raw_operand)
-      if mode == :bm
-        operand = "#{operand_matches[1]}#{operand_matches[2]}".to_i(16)
+      operand_matches = SnesUtils.const_get(@cpu.capitalize)::Definitions::MODES_REGEXES[mode].match(raw_operand)
+      
+      if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
+        if SnesUtils.const_get(@cpu.capitalize)::Definitions::BIT_INSTRUCTIONS.include?(mode)
+          m = operand_matches[1].to_i(16)
+          return if m > 0x1fff
+          b = operand_matches[2].to_i(16)
+          return if b > 7
+
+          operand = m << 3 | 5
+        else
+          if SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(mode)
+            operand = [operand_matches[1], operand_matches[2]].map { |o| o.to_i(16) }
+          else
+            operand = "#{operand_matches[1]}#{operand_matches[2]}".to_i(16)
+          end
+        end
       else
         operand = operand_matches[1]&.to_i(16)
       end
 
       if operand
-        if %i[rel rell].include? mode
-          relative_addr = operand - current_address - length
-          return if mode == :rel && (relative_addr < -128 || relative_addr > 127)
-          return if mode == :rell && (relative_addr < -32768 || relative_addr > 32767)
+        if SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(mode)
+          if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
+            relative_addr = operand[1] - current_address - length
+          else
+            relative_addr = operand - current_address - length
+          end
+          
+          if @cpu == :wdc65816
+            return if mode == :rel && (relative_addr < -128 || relative_addr > 127)
+            return if mode == :rell && (relative_addr < -32768 || relative_addr > 32767)
+          else
+            return if (relative_addr < -128 || relative_addr > 127)
+          end
 
-          relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
-
-          param_bytes = hex(relative_addr, 2*(length-1)).scan(/.{2}/).reverse.join
+          if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
+            relative_addr = 0x100 + relative_addr if relative_addr < 0
+            param_bytes = "#{hex(operand[0])}#{hex(relative_addr)}"
+          else
+            relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
+            param_bytes = hex(relative_addr, 2*(length-1)).scan(/.{2}/).reverse.join
+          end
         else
           param_bytes = hex(operand, 2*(length-1)).scan(/.{2}/).reverse.join
         end

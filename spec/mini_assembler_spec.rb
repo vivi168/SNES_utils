@@ -58,6 +58,14 @@ describe SnesUtils::MiniAssembler do
       end
     end
 
+    context 'bm' do
+      let(:line) { 'MVN $12,$34' }
+
+      it do
+        expect(subject).to eq [['54', '34', '12'], 3, 0]
+      end
+    end
+
     describe 'relative addressing' do
       context '8 bit rel postivie' do
         let(:line) { '300:BMI 305' }
