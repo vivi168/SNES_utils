@@ -280,21 +280,20 @@ module SnesUtils
         if SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(mode)
           if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
             relative_addr = operand[1] - current_address - length
-          else
-            relative_addr = operand - current_address - length
-          end
-          
-          if @cpu == :wdc65816
-            return if mode == :rel && (relative_addr < -128 || relative_addr > 127)
-            return if mode == :rell && (relative_addr < -32768 || relative_addr > 32767)
-          else
-            return if (relative_addr < -128 || relative_addr > 127)
-          end
 
-          if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
+            return if (relative_addr < -128 || relative_addr > 127)
+
             relative_addr = 0x100 + relative_addr if relative_addr < 0
             param_bytes = "#{hex(operand[0])}#{hex(relative_addr)}"
           else
+            relative_addr = operand - current_address - length
+
+            if @cpu == :wdc65816 && mode == :rell
+              return if (relative_addr < -32768 || relative_addr > 32767)
+            else
+              return if (relative_addr < -128 || relative_addr > 127)
+            end
+
             relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
             param_bytes = hex(relative_addr, 2*(length-1)).scan(/.{2}/).reverse.join
           end
