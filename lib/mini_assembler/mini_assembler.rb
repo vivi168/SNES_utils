@@ -66,6 +66,8 @@ module SnesUtils
 
       current_addr = start_addr || @current_addr
       instructions = []
+      raw_bytes = []
+      incbin_files = []
 
       2.times do |i|
         @current_addr = current_addr
@@ -73,6 +75,25 @@ module SnesUtils
         File.open(filename).each_with_index do |raw_line, line_no|
           line = raw_line.split(';').first.strip.chomp
           next if line.empty?
+
+          if matches = Definitions::BYTE_SEQUENCE_REGEX.match(line)
+            if i == 1
+              addr = matches[1].to_i(16)
+              bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
+              raw_bytes << [addr, bytes]
+            end
+
+            next
+          elsif matches = Definitions::INCBIN_REGEX.match(line)
+            if i == 1
+              addr = matches[1].to_i(16)
+              filename = matches[2].strip.chomp
+
+              incbin_files << [addr, filename]
+            end
+
+            next
+          end
 
           instruction, length, address = parse_instruction(line, register_label=(i == 0), resolve_label=(i==1))
           return "Error at line #{line_no + 1}" unless instruction
@@ -87,6 +108,16 @@ module SnesUtils
         instruction, length, address = instruction_arr
         replace_memory_range(address, address+length-1, instruction)
         disassembled_instructions << disassemble_range(address, 1, length > 2).join
+      end
+
+      raw_bytes.each do |raw_byte|
+        addr, bytes = raw_byte
+        replace_memory_range(addr, addr + bytes.length - 1, bytes)
+      end
+
+      incbin_files.each do |file|
+        addr, filename = file
+        incbin(filename, addr)
       end
 
       return disassembled_instructions
