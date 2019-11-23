@@ -23,6 +23,8 @@ module SnesUtils
       @index_flag = 1
 
       @next_addr_to_list = 0
+
+      @label_registry = {}
     end
 
     def run
@@ -59,22 +61,48 @@ module SnesUtils
       bytes.size
     end
 
-    def read(filename)
+    def read(filename, start_addr = nil)
       return 0 unless File.file?(filename)
 
-      file = File.open(filename)
+      @label_registry = {}
 
+      current_addr = start_addr || @current_addr
       instructions = []
+      raw_bytes = []
+      incbin_files = []
 
-      file.each_with_index do |raw_line, line_no|
-        line = raw_line.split(';').first.strip.chomp
-        next if line.empty?
+      2.times do |i|
+        @current_addr = current_addr
+        instructions = []
+        File.open(filename).each_with_index do |raw_line, line_no|
+          line = raw_line.split(';').first.strip.chomp
+          next if line.empty?
 
-        instruction, length, address = parse_instruction(line)
-        return "Error at line #{line_no + 1}" unless instruction
+          if matches = Definitions::BYTE_SEQUENCE_REGEX.match(line)
+            if i == 1
+              addr = matches[1].to_i(16)
+              bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
+              raw_bytes << [addr, bytes]
+            end
 
-        instructions << [instruction, length, address]
-        @current_addr = address + length
+            next
+          elsif matches = Definitions::INCBIN_REGEX.match(line)
+            if i == 1
+              addr = matches[1].to_i(16)
+              filename = matches[2].strip.chomp
+
+              incbin_files << [addr, filename]
+            end
+
+            next
+          end
+
+          instruction, length, address = parse_instruction(line, register_label=(i == 0), resolve_label=(i==1))
+          return "Error at line #{line_no + 1}" unless instruction
+
+          instructions << [instruction, length, address]
+          @current_addr = address + length
+        end
       end
 
       disassembled_instructions = []
@@ -82,6 +110,16 @@ module SnesUtils
         instruction, length, address = instruction_arr
         replace_memory_range(address, address+length-1, instruction)
         disassembled_instructions << disassemble_range(address, 1, length > 2).join
+      end
+
+      raw_bytes.each do |raw_byte|
+        addr, bytes = raw_byte
+        replace_memory_range(addr, addr + bytes.length - 1, bytes)
+      end
+
+      incbin_files.each do |file|
+        addr, filename = file
+        incbin(filename, addr)
       end
 
       return disassembled_instructions
@@ -167,8 +205,9 @@ module SnesUtils
           out_filename = write(filename)
           return "Written #{@memory.size} bytes to file #{out_filename}"
         elsif matches = Definitions::READ_REGEX.match(line)
-          filename = matches[1].strip.chomp
-          return read(filename)
+          start_addr = matches[2]&.to_i(16)
+          filename = matches[3].strip.chomp
+          return read(filename, start_addr)
         elsif matches = Definitions::INCBIN_REGEX.match(line)
           start_addr = matches[1].to_i(16)
           filename = matches[2].strip.chomp
@@ -236,16 +275,29 @@ module SnesUtils
       end
     end
 
-    def parse_address(line)
+    def parse_address(line, register_label = false)
       return @current_addr if line.index(':').nil?
-      line.split(':').first.to_i(16)
+
+      address = line.split(':').first.strip.chomp
+      return address.to_i(16) unless address.start_with?('@')
+
+      @label_registry[address] = hex(@current_addr, 4)
+      return @current_addr
     end
 
-    def parse_instruction(line)
-      current_address = parse_address(line)
+    def parse_instruction(line, register_label = false, resolve_label = false)
+      current_address = parse_address(line, register_label)
       instruction = line.split(':').last.split(' ')
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
+
+      if register_label and raw_operand.start_with?('@')
+        raw_operand = hex(@current_addr, 4)
+      end
+
+      if resolve_label and raw_operand.start_with?('@')
+        raw_operand = @label_registry[raw_operand]
+      end
 
       opcode_data = detect_opcode_data_from_mnemonic(mnemonic, raw_operand)
 
