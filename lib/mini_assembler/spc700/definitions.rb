@@ -412,7 +412,7 @@ module SnesUtils
                       { opcode: 0x4D, mnemonic: "PUSH", mode: :x, length: 1},
                       { opcode: 0x6D, mnemonic: "PUSH", mode: :y, length: 1},
                       { opcode: 0x6F, mnemonic: "RET", mode: :imp, length: 1},
-                      { opcode: 0x7F, mnemonic: "RET1", mode: :imp, length: 1},
+                      { opcode: 0x7F, mnemonic: "RETI", mode: :imp, length: 1},
                       { opcode: 0x3C, mnemonic: "ROL", mode: :acc, length: 1},
                       { opcode: 0x2B, mnemonic: "ROL", mode: :dp, length: 2},
                       { opcode: 0x3B, mnemonic: "ROL", mode: :dppx, length: 2},

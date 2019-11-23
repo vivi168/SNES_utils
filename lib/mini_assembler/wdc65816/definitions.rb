@@ -48,7 +48,7 @@ module SnesUtils
         iml:   "%s %02X",
         imm8:  "%s #%02X",
         imm16: "%s #%04X",
-        sr:    "%s #%02X,S",
+        sr:    "%s %02X,S",
         dp:    "%s %02X",
         dpx:   "%s %02X,X",
         dpy:   "%s %02X,Y",
