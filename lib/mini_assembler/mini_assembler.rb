@@ -71,12 +71,22 @@ module SnesUtils
       raw_bytes = []
       incbin_files = []
 
+      cpu = @cpu
+
       2.times do |i|
         @current_addr = current_addr
         instructions = []
         File.open(filename).each_with_index do |raw_line, line_no|
           line = raw_line.split(';').first.strip.chomp
           next if line.empty?
+
+          if line == '.spc700'
+            @cpu = :spc700
+            next
+          elsif line == '.65816'
+            @cpu = :wdc65816
+            next
+          end
 
           if matches = Definitions::BYTE_SEQUENCE_REGEX.match(line)
             if i == 1
@@ -105,24 +115,26 @@ module SnesUtils
         end
       end
 
-      disassembled_instructions = []
+      @cpu = cpu
+
+      total_bytes_read = 0
+
       instructions.map do |instruction_arr|
         instruction, length, address = instruction_arr
-        replace_memory_range(address, address+length-1, instruction)
-        disassembled_instructions << disassemble_range(address, 1, length > 2).join
+        total_bytes_read += replace_memory_range(address, address+length-1, instruction)
       end
 
       raw_bytes.each do |raw_byte|
         addr, bytes = raw_byte
-        replace_memory_range(addr, addr + bytes.length - 1, bytes)
+        total_bytes_read += replace_memory_range(addr, addr + bytes.length - 1, bytes)
       end
 
       incbin_files.each do |file|
         addr, filename = file
-        incbin(filename, addr)
+        total_bytes_read += incbin(filename, addr)
       end
 
-      return disassembled_instructions
+      return total_bytes_read
     end
 
     def detect_opcode_data_from_mnemonic(mnemonic, operand)
@@ -181,7 +193,7 @@ module SnesUtils
 
       @memory[start_full_addr..end_full_addr] = bytes
 
-      true
+      bytes.size
     end
 
     def getline
@@ -207,7 +219,9 @@ module SnesUtils
         elsif matches = Definitions::READ_REGEX.match(line)
           start_addr = matches[2]&.to_i(16)
           filename = matches[3].strip.chomp
-          return read(filename, start_addr)
+          nb_bytes =  read(filename, start_addr)
+
+          return "Read #{nb_bytes} bytes"
         elsif matches = Definitions::INCBIN_REGEX.match(line)
           start_addr = matches[1].to_i(16)
           filename = matches[2].strip.chomp
