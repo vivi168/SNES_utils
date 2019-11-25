@@ -61,6 +61,15 @@ module SnesUtils
       bytes.size
     end
 
+    def assemble_file(filename, outfile = 'out.smc')
+      return 0 unless File.file?(filename)
+
+      res = read(filename)
+      write(outfile)
+
+      return res
+    end
+
     def read(filename, start_addr = nil)
       return 0 unless File.file?(filename)
 
@@ -134,7 +143,7 @@ module SnesUtils
         total_bytes_read += incbin(filename, addr)
       end
 
-      return total_bytes_read
+      return "Read #{total_bytes_read} bytes"
     end
 
     def detect_opcode_data_from_mnemonic(mnemonic, operand)
@@ -219,9 +228,8 @@ module SnesUtils
         elsif matches = Definitions::READ_REGEX.match(line)
           start_addr = matches[2]&.to_i(16)
           filename = matches[3].strip.chomp
-          nb_bytes =  read(filename, start_addr)
 
-          return "Read #{nb_bytes} bytes"
+          return read(filename, start_addr)
         elsif matches = Definitions::INCBIN_REGEX.match(line)
           start_addr = matches[1].to_i(16)
           filename = matches[2].strip.chomp
