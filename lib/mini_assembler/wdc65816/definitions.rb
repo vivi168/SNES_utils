@@ -44,7 +44,7 @@ module SnesUtils
       MODES_FORMATS = {
         acc:   "%s",
         imp:   "%s",
-        imm:   "%s #%02X",
+        imm:   "%s %02X",
         iml:   "%s %02X",
         imm8:  "%s #%02X",
         imm16: "%s #%04X",
