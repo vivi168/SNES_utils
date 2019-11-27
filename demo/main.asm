@@ -40,6 +40,8 @@ nmi_stub:
     ldx #$00
     stx PLAYER_X
     jsr update_sprite_x
+    stz FPS_COUNT
+    stz SEC_COUNT
 
     ; once that's done, load our sprite data
     jsr init_oam_buffer
@@ -49,6 +51,8 @@ nmi_stub:
     transfer_vram #$0000, #$02, #BG_START, #BG_SIZE
     ;transfer tilemap data
     transfer_vram #$1000, #$02, #TILEMAP_START, #TILEMAP_SIZE
+    transfer_vram #$1400, #$02, #TILEMAP2_START, #TILEMAP_SIZE
+    transfer_vram #$1800, #$02, #TILEMAP3_START, #TILEMAP_SIZE
 
     ; initial values
     ldx #$1000
@@ -71,7 +75,7 @@ nmi_stub:
     sta BGMODE
 
     ; set tilemap address
-    lda #$10
+    lda #$11
     sta BG1SC
 
     ; set tileset address for bg 1 and 2
@@ -110,6 +114,14 @@ nmi_stub:
     ; read NMI status, acknowledge NMI
     lda RDNMI
 
+    inc FPS_COUNT
+    lda FPS_COUNT
+    cmp #$3c
+    bne return
+    stz FPS_COUNT
+    inc SEC_COUNT
+return:
+
     ; TODO: maybe don't transfer full OAM Buffer each time
     ; but only modified data
     transfer_oam_buffer
@@ -141,6 +153,7 @@ nmi_stub:
 ; may need to optimize this
 move_right:
     jsr player_move_right
+
     bra update
 
 move_left:
@@ -188,31 +201,3 @@ read_data:
     rts
 .endproc
 
-.proc copy_tilemap_column
-    php
-    ; TODO this is just a POC
-    ; Need to place this in the movement algorithm
-    ; to update the tilemap while moving left and right
-    stx VMADDL
-
-    rep #$20 ; A 16
-
-    tyx
-    ldy #$80 ; column size, $80
-copy_column:
-    lda $029040, x ; target tilemap address in ROM
-    sta $2118
-
-    txa
-    clc
-    adc #$40
-    tax
-
-    dey
-    bne copy_column
-
-    sep #$20 ; A 8
-
-    plp
-    rts
-.endproc
