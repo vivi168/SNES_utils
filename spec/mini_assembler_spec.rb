@@ -114,4 +114,23 @@ describe SnesUtils::MiniAssembler do
       it { expect(subject).to eq ['00/0000: 00                    NOP'] }
     end
   end
+
+  describe '#read' do
+    let(:file) { 'spec/fixtures/test.asm' }
+    before { mini_asm.read(file) }
+    let(:memory) do
+      ["A9", "12", "78", "18", "C9", "14", "3A", "D0",
+       "FD", "00", "00", "80", "02", "42", "12", "AD",
+       "34", "12", "80", "F2", nil,  nil,  nil,  nil,
+       nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil,
+       "E4", "12", "4F", "12", "50", "FC", "53", "12",
+       "F9",  nil,  nil,  nil,  nil,  nil,  nil,  nil,
+       "11", "22", "33", "44", "55", "66", "77", "88",
+       "DE", "AF", "FA", "CE", "DE", "CA", "FE", "12"]
+    end
+
+    it 'sets memory correctly' do
+      expect(mini_asm.instance_variable_get(:@memory)).to eq memory
+    end
+  end
 end
