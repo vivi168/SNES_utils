@@ -40,11 +40,11 @@ module SnesUtils
         t15:      /^15$/i, # 15
         absix:    /^\[#{HEX16}\+x\]$/i,    # [!a+X]
         dpixacc:  /^\[#{HEX8}\+x\],a$/i, # [d+X], A
-        dpiyacc:  /^\[#{HEX8}\]+y$/i,    # [d]+Y, A
+        dpiyacc:  /^\[#{HEX8}\]\+y,a$/i,    # [d]+Y, A
         acc:      /^a$/i,                    # A
         accabs:   /^a,#{HEX16}$/i,        # A, !a
-        accabsx:  /^a,#{HEX16}+x$/i,     # A, !a+X
-        accabsy:  /^a,#{HEX16}+y$/i,     # A, !a+Y
+        accabsx:  /^a,#{HEX16}\+x$/i,     # A, !a+X
+        accabsy:  /^a,#{HEX16}\+y$/i,     # A, !a+Y
         accimp:   /^a,##{HEX8}$/i,        # A, #i
         accidx:   /^a,\(x\)$/i,           # A, (X)
         accidxp:  /^a,\(x\)\+$/i,        # A, (X)+
