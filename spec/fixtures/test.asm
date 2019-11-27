@@ -29,4 +29,5 @@
 0020:   mov a,12
 @rure:  pcall 12
         bvc @rure
-        bbc 12.2,0022
+        bbc 12.2,@rure
+        mov 11<d>,22<s>

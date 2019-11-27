@@ -124,7 +124,7 @@ describe SnesUtils::MiniAssembler do
        "34", "12", "80", "F2", nil,  nil,  nil,  nil,
        nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil,
        "E4", "12", "4F", "12", "50", "FC", "53", "12",
-       "F9",  nil,  nil,  nil,  nil,  nil,  nil,  nil,
+       "F9",  "FA", "22", "11",  nil,  nil,  nil,  nil,
        "11", "22", "33", "44", "55", "66", "77", "88",
        "DE", "AF", "FA", "CE", "DE", "CA", "FE", "12"]
     end

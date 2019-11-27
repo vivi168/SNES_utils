@@ -313,12 +313,26 @@ module SnesUtils
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
 
-      if register_label and raw_operand.start_with?('@')
-        raw_operand = hex(@current_addr, 4)
+      if register_label and raw_operand.include?('@')
+        raw_operands = raw_operand.split(',')
+        raw_operands.each_with_index do |op, idx|
+          if op.start_with?('@')
+            raw_operands[idx] = hex(@current_addr, 4)
+          end
+        end
+
+        raw_operand = raw_operands.join(',')
       end
 
-      if resolve_label and raw_operand.start_with?('@')
-        raw_operand = @label_registry[raw_operand]
+      if resolve_label and raw_operand.include?('@')
+        raw_operands = raw_operand.split(',')
+        raw_operands.each_with_index do |op, idx|
+          if op.start_with?('@')
+            raw_operands[idx] = @label_registry[op]
+          end
+        end
+
+        raw_operand = raw_operands.join(',')
       end
 
       opcode_data = detect_opcode_data_from_mnemonic(mnemonic, raw_operand)
@@ -330,7 +344,7 @@ module SnesUtils
       length = opcode_data[:length]
 
       operand_matches = SnesUtils.const_get(@cpu.capitalize)::Definitions::MODES_REGEXES[mode].match(raw_operand)
-      
+
       if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
         if SnesUtils.const_get(@cpu.capitalize)::Definitions::BIT_INSTRUCTIONS.include?(mode)
           m = operand_matches[1].to_i(16)
