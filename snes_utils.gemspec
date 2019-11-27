@@ -9,7 +9,7 @@ Gem::Specification.new do |s|
   s.email       = 'vivienbihl@gmail.com'
   s.files       = ['lib/snes_utils.rb',
                    'lib/mini_assembler/mini_assembler.rb', 'lib/mini_assembler/definitions.rb',
-                   'lib/mini_assembler/w65816/definitions.rb',
+                   'lib/mini_assembler/wdc65816/definitions.rb',
                    'lib/mini_assembler/spc700/definitions.rb',
                    'lib/png2snes/png2snes.rb', 'lib/tmx2snes/tmx2snes.rb']
   s.homepage    = 'https://rubygems.org/gems/snes_utils'
