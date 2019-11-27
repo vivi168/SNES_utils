@@ -58,6 +58,14 @@ describe SnesUtils::MiniAssembler do
       end
     end
 
+    context 'bm' do
+      let(:line) { 'MVN $12,$34' }
+
+      it do
+        expect(subject).to eq [['54', '34', '12'], 3, 0]
+      end
+    end
+
     describe 'relative addressing' do
       context '8 bit rel postivie' do
         let(:line) { '300:BMI 305' }
@@ -82,6 +90,47 @@ describe SnesUtils::MiniAssembler do
 
         it { expect(subject).to eq [['62', 'B8', 'FF'], 3, 0x3bf] }
       end
+    end
+  end
+
+  describe '#disassemble_range' do
+    subject { mini_asm.disassemble_range(0, count) }
+
+    let(:count) { 1 }
+
+    before { mini_asm.instance_variable_set(:@memory, memory) }
+
+    context 'when cpu is 65816' do
+      let(:memory) { ['82', '99', '00'] }
+
+      it { expect(subject).to eq ['00/0000: 82 99 00              BRL 009C {+0099}'] }
+    end
+
+    context 'when cpu is spc700' do
+      let(:memory) { ['00'] }
+
+      before { mini_asm.instance_variable_set(:@cpu, :spc700) }
+
+      it { expect(subject).to eq ['00/0000: 00                    NOP'] }
+    end
+  end
+
+  describe '#read' do
+    let(:file) { 'spec/fixtures/test.asm' }
+    before { mini_asm.read(file) }
+    let(:memory) do
+      ["A9", "12", "78", "18", "C9", "14", "3A", "D0",
+       "FD", "00", "00", "80", "02", "42", "12", "AD",
+       "34", "12", "80", "F2", nil,  nil,  nil,  nil,
+       nil,  nil,  nil,  nil,  nil,  nil,  nil,  nil,
+       "E4", "12", "4F", "12", "50", "FC", "53", "12",
+       "F9",  "FA", "22", "11",  nil,  nil,  nil,  nil,
+       "11", "22", "33", "44", "55", "66", "77", "88",
+       "DE", "AF", "FA", "CE", "DE", "CA", "FE", "12"]
+    end
+
+    it 'sets memory correctly' do
+      expect(mini_asm.instance_variable_get(:@memory)).to eq memory
     end
   end
 end

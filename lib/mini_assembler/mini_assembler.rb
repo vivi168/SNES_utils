@@ -1,6 +1,6 @@
 module SnesUtils
   Readline.completion_proc = proc do |input|
-    Definitions::OPCODES_DATA.map { |row| row[:mnemonic] }
+    Wdc65816::Definitions::OPCODES_DATA.map { |row| row[:mnemonic] }
                                .select { |mnemonic| mnemonic.upcase.start_with?(input.upcase) }
   end
 
@@ -13,6 +13,8 @@ module SnesUtils
         @memory = []
       end
 
+      @cpu = :wdc65816
+
       @normal_mode = true
 
       @current_addr = 0
@@ -21,6 +23,8 @@ module SnesUtils
       @index_flag = 1
 
       @next_addr_to_list = 0
+
+      @label_registry = {}
     end
 
     def run
@@ -57,52 +61,113 @@ module SnesUtils
       bytes.size
     end
 
-    def read(filename)
+    def assemble_file(filename, outfile = 'out.smc')
       return 0 unless File.file?(filename)
 
-      file = File.open(filename)
+      res = read(filename)
+      write(outfile)
 
+      return res
+    end
+
+    def read(filename, start_addr = nil)
+      return 0 unless File.file?(filename)
+
+      @label_registry = {}
+
+      current_addr = start_addr || @current_addr
       instructions = []
+      raw_bytes = []
+      incbin_files = []
 
-      file.each_with_index do |raw_line, line_no|
-        line = raw_line.split(';').first.strip.chomp
-        next if line.empty?
+      cpu = @cpu
 
-        instruction, length, address = parse_instruction(line)
-        return "Error at line #{line_no + 1}" unless instruction
+      2.times do |i|
+        @current_addr = current_addr
+        instructions = []
+        File.open(filename).each_with_index do |raw_line, line_no|
+          line = raw_line.split(';').first.strip.chomp
+          next if line.empty?
 
-        instructions << [instruction, length, address]
-        @current_addr = address + length
+          if line == '.spc700'
+            @cpu = :spc700
+            next
+          elsif line == '.65816'
+            @cpu = :wdc65816
+            next
+          end
+
+          if matches = Definitions::BYTE_SEQUENCE_REGEX.match(line)
+            if i == 1
+              addr = matches[1].to_i(16)
+              bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
+              raw_bytes << [addr, bytes]
+            end
+
+            next
+          elsif matches = Definitions::INCBIN_REGEX.match(line)
+            if i == 1
+              addr = matches[1].to_i(16)
+              filename = matches[2].strip.chomp
+
+              incbin_files << [addr, filename]
+            end
+
+            next
+          end
+
+          instruction, length, address = parse_instruction(line, register_label=(i == 0), resolve_label=(i==1))
+          return "Error at line #{line_no + 1}" unless instruction
+
+          instructions << [instruction, length, address]
+          @current_addr = address + length
+        end
       end
 
-      disassembled_instructions = []
+      @cpu = cpu
+
+      total_bytes_read = 0
+
       instructions.map do |instruction_arr|
         instruction, length, address = instruction_arr
-        replace_memory_range(address, address+length-1, instruction)
-        disassembled_instructions << disassemble_range(address, 1, length > 2).join
+        total_bytes_read += replace_memory_range(address, address+length-1, instruction)
       end
 
-      return disassembled_instructions
+      raw_bytes.each do |raw_byte|
+        addr, bytes = raw_byte
+        total_bytes_read += replace_memory_range(addr, addr + bytes.length - 1, bytes)
+      end
+
+      incbin_files.each do |file|
+        addr, filename = file
+        total_bytes_read += incbin(filename, addr)
+      end
+
+      return "Read #{total_bytes_read} bytes"
     end
 
     def detect_opcode_data_from_mnemonic(mnemonic, operand)
-      Definitions::OPCODES_DATA.detect do |row|
+      SnesUtils.const_get(@cpu.capitalize)::Definitions::OPCODES_DATA.detect do |row|
         mode = row[:mode]
-        regex = Definitions::MODES_REGEXES[mode]
+        regex = SnesUtils.const_get(@cpu.capitalize)::Definitions::MODES_REGEXES[mode]
         row[:mnemonic] == mnemonic && regex =~ operand
       end
     end
 
     def detect_opcode_data_from_opcode(opcode, force_length)
-      Definitions::OPCODES_DATA.detect do |row|
-        if row[:m]
-          accumulator_flag = force_length ? 0 : @accumulator_flag
-          row[:opcode] == opcode && row[:m] == accumulator_flag
-        elsif row[:x]
-          index_flag = force_length ? 0 : @index_flag
-          row[:opcode] == opcode && row[:x] == index_flag
-        else
+      SnesUtils.const_get(@cpu.capitalize)::Definitions::OPCODES_DATA.detect do |row|
+        if @cpu == :spc700
           row[:opcode] == opcode
+        else
+          if row[:m]
+            accumulator_flag = force_length ? 0 : @accumulator_flag
+            row[:opcode] == opcode && row[:m] == accumulator_flag
+          elsif row[:x]
+            index_flag = force_length ? 0 : @index_flag
+            row[:opcode] == opcode && row[:x] == index_flag
+          else
+            row[:opcode] == opcode
+          end
         end
       end
     end
@@ -137,7 +202,7 @@ module SnesUtils
 
       @memory[start_full_addr..end_full_addr] = bytes
 
-      true
+      bytes.size
     end
 
     def getline
@@ -150,13 +215,21 @@ module SnesUtils
         if line == '!'
           @normal_mode = false
           return
+        elsif line == '.spc700'
+          @cpu = :spc700
+          return 'spc700'
+        elsif line == '.65816'
+          @cpu = :wdc65816
+          return '65816'
         elsif matches = Definitions::WRITE_REGEX.match(line)
           filename = matches[1].strip.chomp
           out_filename = write(filename)
           return "Written #{@memory.size} bytes to file #{out_filename}"
         elsif matches = Definitions::READ_REGEX.match(line)
-          filename = matches[1].strip.chomp
-          return read(filename)
+          start_addr = matches[2]&.to_i(16)
+          filename = matches[3].strip.chomp
+
+          return read(filename, start_addr)
         elsif matches = Definitions::INCBIN_REGEX.match(line)
           start_addr = matches[1].to_i(16)
           filename = matches[2].strip.chomp
@@ -224,16 +297,43 @@ module SnesUtils
       end
     end
 
-    def parse_address(line)
+    def parse_address(line, register_label = false)
       return @current_addr if line.index(':').nil?
-      line.split(':').first.to_i(16)
+
+      address = line.split(':').first.strip.chomp
+      return address.to_i(16) unless address.start_with?('@')
+
+      @label_registry[address] = hex(@current_addr, 4)
+      return @current_addr
     end
 
-    def parse_instruction(line)
-      current_address = parse_address(line)
+    def parse_instruction(line, register_label = false, resolve_label = false)
+      current_address = parse_address(line, register_label)
       instruction = line.split(':').last.split(' ')
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
+
+      if register_label and raw_operand.include?('@')
+        raw_operands = raw_operand.split(',')
+        raw_operands.each_with_index do |op, idx|
+          if op.start_with?('@')
+            raw_operands[idx] = hex(@current_addr, 4)
+          end
+        end
+
+        raw_operand = raw_operands.join(',')
+      end
+
+      if resolve_label and raw_operand.include?('@')
+        raw_operands = raw_operand.split(',')
+        raw_operands.each_with_index do |op, idx|
+          if op.start_with?('@')
+            raw_operands[idx] = @label_registry[op]
+          end
+        end
+
+        raw_operand = raw_operands.join(',')
+      end
 
       opcode_data = detect_opcode_data_from_mnemonic(mnemonic, raw_operand)
 
@@ -243,22 +343,48 @@ module SnesUtils
       mode = opcode_data[:mode]
       length = opcode_data[:length]
 
-      operand_matches = Definitions::MODES_REGEXES[mode].match(raw_operand)
-      if mode == :bm
-        operand = "#{operand_matches[1]}#{operand_matches[2]}".to_i(16)
+      operand_matches = SnesUtils.const_get(@cpu.capitalize)::Definitions::MODES_REGEXES[mode].match(raw_operand)
+
+      if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
+        if SnesUtils.const_get(@cpu.capitalize)::Definitions::BIT_INSTRUCTIONS.include?(mode)
+          m = operand_matches[1].to_i(16)
+          return if m > 0x1fff
+          b = operand_matches[2].to_i(16)
+          return if b > 7
+
+          operand = m << 3 | 5
+        else
+          if SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(mode)
+            operand = [operand_matches[1], operand_matches[2]].map { |o| o.to_i(16) }
+          else
+            operand = "#{operand_matches[1]}#{operand_matches[2]}".to_i(16)
+          end
+        end
       else
         operand = operand_matches[1]&.to_i(16)
       end
 
       if operand
-        if %i[rel rell].include? mode
-          relative_addr = operand - current_address - length
-          return if mode == :rel && (relative_addr < -128 || relative_addr > 127)
-          return if mode == :rell && (relative_addr < -32768 || relative_addr > 32767)
+        if SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(mode)
+          if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
+            relative_addr = operand[1] - current_address - length
 
-          relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
+            return if (relative_addr < -128 || relative_addr > 127)
 
-          param_bytes = hex(relative_addr, 2*(length-1)).scan(/.{2}/).reverse.join
+            relative_addr = 0x100 + relative_addr if relative_addr < 0
+            param_bytes = "#{hex(operand[0])}#{hex(relative_addr)}"
+          else
+            relative_addr = operand - current_address - length
+
+            if @cpu == :wdc65816 && mode == :rell
+              return if (relative_addr < -32768 || relative_addr > 32767)
+            else
+              return if (relative_addr < -128 || relative_addr > 127)
+            end
+
+            relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
+            param_bytes = hex(relative_addr, 2*(length-1)).scan(/.{2}/).reverse.join
+          end
         else
           param_bytes = hex(operand, 2*(length-1)).scan(/.{2}/).reverse.join
         end
@@ -293,26 +419,40 @@ module SnesUtils
         mode = opcode_data[:mode]
         length = opcode_data[:length]
 
-        format = Definitions::MODES_FORMATS[mode]
+        format = SnesUtils.const_get(@cpu.capitalize)::Definitions::MODES_FORMATS[mode]
 
         operand = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
 
         hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
         prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
 
-        auto_update_flags(opcode, operand)
+        auto_update_flags(opcode, operand) if @cpu == :wdc65816
 
-        if mode == :bm
-          operand = operand.to_s(16).scan(/.{2}/).map { |op| op.to_i(16) }
-        elsif %i[rel rell].include? mode
-          limit = mode == :rel ? 0x7f : 0x7fff
-          offset = mode == :rel ? 0x100 : 0x10000
-          rjust_len = mode == :rel ? 2 : 4
-          relative_addr = operand > limit ? operand - offset : operand
-          relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
-          absolute_addr = next_idx + length + relative_addr
-          absolute_addr += 0x10000 if absolute_addr.negative?
-          operand = [absolute_addr, relative_addr_s]
+        if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
+          if SnesUtils.const_get(@cpu.capitalize)::Definitions::BIT_INSTRUCTIONS.include?(mode)
+            m = operand >> 3
+            b = operand & 0b111
+            operand = [m, b]
+          else
+            operand = hex(operand, 4).scan(/.{2}/).map { |op| op.to_i(16) }
+            if @cpu == :spc700 && SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(mode)
+              r = operand.first
+              r_operand = relative_operand(r, next_idx + length)
+
+              operand = [operand.last, *r_operand]
+            end
+          end
+        elsif SnesUtils.const_get(@cpu.capitalize)::Definitions::SINGLE_OPERAND_INSTRUCTIONS.include?(mode)
+          if SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(mode)
+            if @cpu == :wdc65816 && SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(mode)
+              limit = mode == :rel ? 0x7f : 0x7fff
+              offset = mode == :rel ? 0x100 : 0x10000
+              rjust_len = mode == :rel ? 2 : 4
+              operand = relative_operand(operand, next_idx + length, limit, offset, rjust_len)
+            else
+              operand = relative_operand(operand, next_idx + length)
+            end
+          end
         end
 
         instructions << "#{prefix.ljust(30)} #{format % [mnemonic, *operand]}"
@@ -321,6 +461,15 @@ module SnesUtils
 
       @next_addr_to_list = next_idx
       return instructions
+    end
+
+    def relative_operand(operand, next_idx, limit = 0x7f, offset = 0x100, rjust_len = 2)
+      relative_addr = operand > limit ? operand - offset : operand
+      relative_addr_s = "#{relative_addr.positive? ? '+' : '-'}#{hex(relative_addr.abs, rjust_len)}"
+      absolute_addr = next_idx + relative_addr
+      absolute_addr += 0x10000 if absolute_addr.negative?
+
+      [absolute_addr, relative_addr_s]
     end
   end
 end

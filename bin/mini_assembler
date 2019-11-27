@@ -5,6 +5,16 @@ require 'snes_utils'
 
 options = {}
 OptionParser.new do |opts|
+  opts.on("-h", "--help", "Prints this help") do
+    puts opts
+    exit
+  end
+
+  opts.on('-a', '--assemble FILENAME', 'ASM file') do |option|
+    puts SnesUtils::MiniAssembler.new().assemble_file(option)
+    exit
+  end
+
   opts.on('-f', '--file FILENAME', 'ROM file') { |o| options[:filename] = o }
 end.parse!
 
