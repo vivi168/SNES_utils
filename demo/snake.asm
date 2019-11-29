@@ -21,7 +21,7 @@
                 lda #8f
                 sta 2100        ; INIDISP
 
-                jmp @clear
+                jsr 8500        ; @clear_registers
 
 ;**************************************
 ; Main Register Settings
@@ -45,6 +45,7 @@
 
                 ; OAM / VRAM init here
                 ; TODO
+                jsr 8300        ; @oam_buf_init
 
                 ; release forced blanking, set screen to full brightness
                 lda #0f
@@ -54,7 +55,7 @@
                 lda #81
                 sta 4200        ; NMITIMEN
 
-                jmp @gameloop
+                jmp 8200        ; @gameloop
 
 ;**************************************
 ; NMI @ 8100
@@ -67,13 +68,50 @@
 ; Game loop
 ;**************************************
 
-@gameloop:      jmp @gameloop
+0200:           jmp 8200        ; @gameloop
+
+;**************************************
+; Init OAM Dummy Buffer WRAM
+;
+; def oam_buf_init()
+;**************************************
+; $OAM_buffer_start @ 7e2000
+
+0300:           php             ; @oam_buf_init
+                sep #20
+                rep #10
+                lda #01
+@set_x_lsb:     sta 7e2000,x
+                inx
+                inx
+                inx
+                inx
+                cpx #0200       ; $OAML_SIZE
+                bne @set_x_lsb
+
+                lda #55         ; 1010101
+@set_x_msb:     sta 7e2000,x
+                inx
+                sta 7e2000,x
+                inx
+                cpx #0220       ; $OAM_SIZE
+                bne @set_x_msb
+
+                plp
+                rts
+
+;**************************************
+; DMA Transfer
+; def dma_transfer()
+;**************************************
+
+0400:           rts
 
 ;**************************************
 ; Clear each Registers
 ;**************************************
 
-@clear:         stz 2101
+0500:           stz 2101        ; @clear_registers
                 stz 2102
                 stz 2103
                 stz 2105
