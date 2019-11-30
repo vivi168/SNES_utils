@@ -17,6 +17,9 @@
                 sep #20         ; M8
                 rep #10         ; X16
 
+                ldx #1fff
+                txs             ; set stack pointer to 1fff
+
                 ; Forced Blank
                 lda #8f
                 sta 2100        ; INIDISP
@@ -46,6 +49,7 @@
                 ; OAM / VRAM init here
                 ; TODO
                 jsr 8300        ; @oam_buf_init
+                jsr 8400        ; @oam_dma_transfer
 
                 ; release forced blanking, set screen to full brightness
                 lda #0f
@@ -74,13 +78,14 @@
 ; Init OAM Dummy Buffer WRAM
 ;
 ; def oam_buf_init()
-;**************************************
 ; $OAM_buffer_start @ 7e2000
+;**************************************
 
-0300:           php             ; @oam_buf_init
+0300:           php
                 sep #20
                 rep #10
                 lda #01
+                ldx #0000
 @set_x_lsb:     sta 7e2000,x
                 inx
                 inx
@@ -101,11 +106,34 @@
                 rts
 
 ;**************************************
-; DMA Transfer
-; def dma_transfer()
+; OAM buffer - DMA Transfer
+; def oam_dma_transfer()
+; m8 x16
 ;**************************************
 
-0400:           rts
+0400:           ldx #0000
+                stx 2102        ; OAMDADDL
+
+                lda #04         ; OAMDATA 21*04*
+                sta 4301        ; BBAD0
+
+                ; from 7e/2000
+                ldx #2000
+                stx 4302        ; A1T0L
+                lda #7e
+                sta 4304        ; A1T0B
+
+                ; transfer 220 bytes
+                ldx #0220
+                stx 4305        ; DAS0L
+
+                ; DMA params: A to B
+                lda #00
+                sta 4300        ; DMAP0
+                ; initiate DMA via channel 0 (LSB = channel 0, MSB channel 7)
+                lda #01
+                sta 420b        ; MDMAEN
+                rts
 
 ;**************************************
 ; Clear each Registers
