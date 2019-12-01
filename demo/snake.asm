@@ -6,11 +6,12 @@
 
 .65816
 
-8000:           .incbin assets/snake-bg.bin             ; 0x100
-8100:           .incbin assets/snake-sprites.bin        ; 0x180
-8280:           .incbin assets/snake-bg-pal.bin         ; 0x20
-82a0:           .incbin assets/snake-sprites-pal.bin    ; 0x20
-82c0:           .incbin assets/snake.map                ; 0x800
+8000:           .incbin assets/snake-bg.bin             ; 0x800
+8800:           .incbin assets/snake-sprites.bin        ; 0x800
+9000:           .incbin assets/snake-bg-pal.bin         ; 0x20
+9020:           .incbin assets/snake-sprites-pal.bin    ; 0x20
+9040:           .incbin assets/snake.map                ; 0x800
+9840:           .incbin assets/random.bin               ; 0x800
 
 ;**************************************
 ; Reset @ 8000
@@ -56,7 +57,8 @@
                 ; OAM / VRAM init here
                 ;**************************************
                 ; init a dummy buffer in WRAM
-                ; jsr 8300        ; @oam_buf_init
+                jsr 8300        ; @oam_buf_init
+                ; TODO: init apple and head positions/sprite name here
                 ; transfer it to OAMRAM
                 jsr 8400        ; @oam_dma_transfer
 
@@ -66,24 +68,44 @@
                 pea 8000        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
-                pea 0100        ; bytes_to_trasnfer
+                pea 0800        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy tilemap to VRAM
                 tsx             ; save stack pointer
                 pea 1000        ; vram_dest_addr
-                pea 82c0        ; rom_src_addr
+                pea 9040        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
+                ; Copy sprite to VRAM
+                tsx             ; save stack pointer
+                pea 6000        ; vram_dest_addr
+                pea 8800        ; rom_src_addr
+                lda #81         ; rom_src_bank
+                pha
+                pea 0300        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
 
-                ; Copy palette to CGRAM
+                ; Copy BG palette to CGRAM
                 tsx             ; save stack pointer
                 lda #00
                 pha             ; cgram_dest_addr
-                pea 8280        ; rom_src_addr
+                pea 9000        ; rom_src_addr
+                lda #81
+                pha             ; rom_src_bank
+                lda #20
+                pha             ; bytes_to_trasnfer
+                jsr 8460        ; @cgram_dma_transfer
+                txs             ; restore stack pointer
+                ; Copy sprite palette to CGRAM
+                tsx             ; save stack pointer
+                lda #80
+                pha             ; cgram_dest_addr
+                pea 9020        ; rom_src_addr
                 lda #81
                 pha             ; rom_src_bank
                 lda #20
