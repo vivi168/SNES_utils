@@ -1,5 +1,6 @@
 .DS_Store
 *.bin
+!demo/assets/random.bin
 *.o
 *.smc
 *.vra
