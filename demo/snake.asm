@@ -6,9 +6,11 @@
 
 .65816
 
-8000:		.incbin assets/background.bin
-8800:		.incbin assets/background-pal.bin
-8820:		.incbin assets/test.map
+8000:		.incbin assets/snake-bg.bin             ; 0x100
+8100:       .incbin assets/snake-sprites.bin        ; 0x180
+8280:		.incbin assets/snake-bg-pal.bin         ; 0x20
+82a0:		.incbin assets/snake-sprites-pal.bin    ; 0x20
+82c0:		.incbin assets/snake.map                ; 0x800
 
 ;**************************************
 ; Reset @ 8000
@@ -64,13 +66,13 @@
                 pea 8000        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
-                pea 0800        ; bytes_to_trasnfer
+                pea 0100        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy tilemap to VRAM
                 tsx             ; save stack pointer
                 pea 1000        ; vram_dest_addr
-                pea 8820        ; rom_src_addr
+                pea 82c0        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
@@ -81,7 +83,7 @@
                 tsx             ; save stack pointer
                 lda #00
                 pha             ; cgram_dest_addr
-                pea 8800        ; rom_src_addr
+                pea 8280        ; rom_src_addr
                 lda #81
                 pha             ; rom_src_bank
                 lda #20
