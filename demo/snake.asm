@@ -6,11 +6,11 @@
 
 .65816
 
-8000:		.incbin assets/snake-bg.bin             ; 0x100
-8100:       .incbin assets/snake-sprites.bin        ; 0x180
-8280:		.incbin assets/snake-bg-pal.bin         ; 0x20
-82a0:		.incbin assets/snake-sprites-pal.bin    ; 0x20
-82c0:		.incbin assets/snake.map                ; 0x800
+8000:           .incbin assets/snake-bg.bin             ; 0x100
+8100:           .incbin assets/snake-sprites.bin        ; 0x180
+8280:           .incbin assets/snake-bg-pal.bin         ; 0x20
+82a0:           .incbin assets/snake-sprites-pal.bin    ; 0x20
+82c0:           .incbin assets/snake.map                ; 0x800
 
 ;**************************************
 ; Reset @ 8000
