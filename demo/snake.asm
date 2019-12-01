@@ -6,6 +6,10 @@
 
 .65816
 
+8000:		.incbin assets/background.bin
+8800:		.incbin assets/background-pal.bin
+8820:		.incbin assets/test.map
+
 ;**************************************
 ; Reset @ 8000
 ;**************************************
@@ -36,7 +40,7 @@
                 lda #01
                 sta 2105        ; BGMODE
 
-                lda #11
+                lda #10
                 sta 2107        ; BG1SC
 
                 lda #00
@@ -46,10 +50,44 @@
                 lda #11
                 sta 212c        ; TM
 
+                ;**************************************
                 ; OAM / VRAM init here
-                ; TODO
-                jsr 8300        ; @oam_buf_init
+                ;**************************************
+                ; init a dummy buffer in WRAM
+                ; jsr 8300        ; @oam_buf_init
+                ; transfer it to OAMRAM
                 jsr 8400        ; @oam_dma_transfer
+
+                ; Copy tiles to VRAM
+                tsx             ; save stack pointer
+                pea 0000        ; vram_dest_addr
+                pea 8000        ; rom_src_addr
+                lda #81         ; rom_src_bank
+                pha
+                pea 0800        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
+                ; Copy tilemap to VRAM
+                tsx             ; save stack pointer
+                pea 1000        ; vram_dest_addr
+                pea 8820        ; rom_src_addr
+                lda #81         ; rom_src_bank
+                pha
+                pea 0800        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
+
+                ; Copy palette to CGRAM
+                tsx             ; save stack pointer
+                lda #00
+                pha             ; cgram_dest_addr
+                pea 8800        ; rom_src_addr
+                lda #81
+                pha             ; rom_src_bank
+                lda #20
+                pha             ; bytes_to_trasnfer
+                jsr 8460        ; @cgram_dma_transfer
+                txs             ; restore stack pointer
 
                 ; release forced blanking, set screen to full brightness
                 lda #0f
@@ -133,6 +171,78 @@
                 ; initiate DMA via channel 0 (LSB = channel 0, MSB channel 7)
                 lda #01
                 sta 420b        ; MDMAEN
+                rts
+
+;**************************************
+; VRAM - DMA Transfer
+; def vram_dma_transfer(btt=07, rom_src_bank=09,
+;                       rom_src_addr=0a, vram_dest_addr=0c)
+; m8 x16
+;**************************************
+
+0430:           phx             ; save stack pointer
+                phd             ; save direct page
+                tsc
+                tcd             ; direct page = stack pointer
+
+                ldx 0c          ; $vram_dest_addr
+                stx 2116        ; VMADDL
+
+                lda #18         ; VMDATAL 21*18*
+                sta 4301
+
+                ldx 0a          ; $rom_src_addr
+                stx 4302
+                lda 09          ; $rom_src_bank
+                sta 4304
+
+                ldx 07          ; $bytes_to_transfer
+                stx 4305
+
+                lda #01
+                sta 4300
+
+                lda #01
+                sta 420b
+
+                pld             ; restore direct page
+                plx             ; restore stack pointer
+                rts
+
+;**************************************
+; CGRAM - DMA Transfer
+; def cgram_dma_transfer(btt=07, rom_src_bank=08,
+;                        rom_src_addr=09, cgram_dest_addr=0b)
+; m8 x16
+;**************************************
+
+0460:           phx             ; save stack pointer
+                phd             ; save direct page
+                tsc
+                tcd             ; direct page = stack pointer
+
+                lda 0b
+                sta 2121
+
+                lda #22
+                sta 4301
+
+                ldx 09
+                stx 4302
+                lda 08
+                sta 4304
+
+                lda 07
+                sta 4305
+
+                lda #00
+                sta 4300
+
+                lda #01
+                sta 420b
+
+                pld
+                plx
                 rts
 
 ;**************************************
