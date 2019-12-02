@@ -37,8 +37,8 @@
 ; Main Register Settings
 ;**************************************
 
-                lda #63
-                sta 2101        ; OBSEL
+                lda #61
+                sta 2101        ; OBSEL (1 = index in VRAM in 8K word steps)
 
                 lda #01
                 sta 2105        ; BGMODE
@@ -130,7 +130,7 @@
                 txs             ; restore stack pointer
                 ; Copy sprite to VRAM
                 tsx             ; save stack pointer
-                pea 6000        ; vram_dest_addr
+                pea 2000        ; vram_dest_addr
                 pea 8800        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
