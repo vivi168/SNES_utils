@@ -38,7 +38,7 @@
 ;**************************************
 
                 lda #63
-                sta 2101        ; OBJSEL
+                sta 2101        ; OBSEL
 
                 lda #01
                 sta 2105        ; BGMODE
@@ -58,8 +58,54 @@
                 ;**************************************
                 ; init a dummy buffer in WRAM
                 jsr 8300        ; @oam_buf_init
-                ; TODO: init apple and head positions/sprite name here
-                ; transfer it to OAMRAM
+                ; Init apple and head positions/sprite name here
+                ; Snake head, first sprite in OAM (name 2, second sprite in rom)
+                ldx #0000
+                lda #50
+                sta 7e2000,x    ; X pos (lsb)
+                inx
+                lda #5f
+                sta 7e2000,x    ; Y pos
+                inx
+                lda #02
+                sta 7e2000,x    ; name lsb
+                inx
+                lda #30
+                sta 7e2000,x    ; flip/prio/color/name msb
+                inx
+                ; Snake tail, second sprite in OAM (name 4)
+                lda #20
+                sta 7e2000,x    ; X pos (lsb)
+                inx
+                lda #5f
+                sta 7e2000,x    ; Y pos
+                inx
+                lda #04
+                sta 7e2000,x    ; name lsb
+                inx
+                lda #30
+                sta 7e2000,x    ; flip/prio/color/name msb
+                inx
+                ; Apple, third sprite in OAM (name 0).
+                ; must be last to appear beneath snake head
+                ; TODO routine to generate random X and Y pos
+                lda #10
+                sta 7e2000,x    ; X pos (lsb)
+                inx
+                lda #20
+                sta 7e2000,x    ; Y pos
+                inx
+                lda #00
+                sta 7e2000,x    ; name lsb
+                inx
+                lda #00         ; low priority
+                sta 7e2000,x    ; flip/prio/color/name msb
+                inx
+
+                lda #40
+                sta 7e2200      ; X pos msb and size for first 4 sprites
+
+                ; transfer buffer to OAMRAM
                 jsr 8400        ; @oam_dma_transfer
 
                 ; Copy tiles to VRAM
@@ -72,6 +118,8 @@
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy tilemap to VRAM
+                ; TODO instead create a buffer in wram
+                ; with initial snake body position
                 tsx             ; save stack pointer
                 pea 1000        ; vram_dest_addr
                 pea 9040        ; rom_src_addr
@@ -140,7 +188,7 @@
 ; Init OAM Dummy Buffer WRAM
 ;
 ; def oam_buf_init()
-; $OAM_buffer_start @ 7e2000
+; $oam_buffer_start = 7e2000
 ;**************************************
 
 0300:           php
