@@ -14,6 +14,38 @@
 9840:           .incbin assets/random.bin               ; 0x800
 
 ;**************************************
+; WRAM addresses
+;**************************************
+; all coord are stored as map coordinate ([0,15], [0,13])
+; map coord = random coord >> 4
+; 7e0000: frame counter
+; 7e0001: random seed
+; 7e0002: random x pointer
+; 7e0003: random y pointer
+; 7e0004: apple x coord
+; 7e0005: apple y coord
+; 7e0006: body size
+; 7e0007: head x coord
+; 7e0008: head y coord
+; 7e0009: tail x coord
+; 7e000a: tail y coord
+; 7e000b; last move counter
+; 7e000c: base speed
+; 7e000d: base velocity
+; 7e000e: x velocity
+; 7e000f: y velocity
+; 7e0010: score L
+; 7e0011: score H
+
+; 7e0200: snake body x coord
+; 7e0300: snake body y coord
+
+; coord converted from map coord to screen coord
+; screen coord = map coord << 4
+; 7e2000: oam buffer
+; 7e2300: snake body tile buffer
+
+;**************************************
 ; Reset @ 8000
 ;**************************************
 
@@ -105,6 +137,9 @@
                 lda #40
                 sta 7e2200      ; X pos msb and size for first 4 sprites
 
+                ;**************************************
+                ; DMA transfers
+                ;**************************************
                 ; transfer buffer to OAMRAM
                 jsr 8400        ; @oam_dma_transfer
 
@@ -161,6 +196,9 @@
                 jsr 8460        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
 
+;**************************************
+; Final setting before starting gameloop
+;**************************************
                 ; release forced blanking, set screen to full brightness
                 lda #0f
                 sta 2100        ; INIDISP
