@@ -36,10 +36,13 @@
 ; 7e000f: y velocity
 ; 7e0010: score L
 ; 7e0011: score H
+; 7e0012: seed read?
 
 ; 7e0100: JOY1_RAW
-; 7e0102: JOY1_PRESS
-; 7e0104: JOY1_HELD
+; 7e0102: JOY1_PRESSL
+; 7e0103: JOY1_PRESSH
+; 7e0104: JOY1_HELDL
+; 7e0105: JOY1_HELDH
 
 ; 7e0200: snake body x coord
 ; 7e0300: snake body y coord
@@ -217,7 +220,6 @@
                 lda #81
                 sta 4200        ; NMITIMEN
 
-                brk 90
                 jmp 9000        ; @gameloop
 
 ;**************************************
@@ -382,26 +384,26 @@
 
                 rep #30         ; m16, x16
 
-                ldx 0100        ; read previous frame raw input (JOY1_RAW)
+                ldx 0100        ; read previous frame raw input (JOY1_RAWL)
                 lda 4218        ; read current frame raw input (JOY1L)
                 sta 0100        ; save it
                 txa             ; move previous frame raw input to A
                 eor 0100        ; XOR previous with current, get changes. Held and unpressed become 0
                 and 0100        ; AND previous with current, only pressed left to 1
-                sta 0102        ; store pressed (JOY1_PRESS)
+                sta 0102        ; store pressed (JOY1_PRESSL)
                 txa             ; move previous frame raw input to A
                 and 0100        ; AND with current, only held are left to 1
-                sta 0104        ; stored held (JOY1_HELD)
+                sta 0104        ; stored held (JOY1_HELDL)
 
                 plp
                 rts
 
 ;**************************************
 ; Clear each Registers
+; def clear_registers()
 ;**************************************
 
-0f00:           stz 2101        ; @clear_registers
-                brk 00
+0f00:           stz 2101
                 stz 2102
                 stz 2103
                 stz 2105
@@ -481,6 +483,11 @@
                 stz 420b
                 stz 420c
                 stz 420d
+
+                ; clear custom registers
+                stz 0000        ; clear frame counter
+                stz 0001        ; clear random seed
+                stz 0012        ; clear seed read?
 
                 rts
 
