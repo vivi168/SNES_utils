@@ -37,6 +37,10 @@
 ; 7e0010: score L
 ; 7e0011: score H
 
+; 7e0100: JOY1_RAW
+; 7e0102: JOY1_PRESS
+; 7e0104: JOY1_HELD
+
 ; 7e0200: snake body x coord
 ; 7e0300: snake body y coord
 
@@ -225,6 +229,7 @@
 ;**************************************
 
 0200:           lda 4210        ; RDNMI
+                jsr 8500        ; read joypad
                 rti
 
 ;**************************************
@@ -364,6 +369,31 @@
 
                 pld
                 plx
+                rts
+
+;**************************************
+; Read Joy Pad 1
+; def read_joy_pad_1()
+;**************************************
+0500:           php
+@read_data:     lda 4212        ; read joypad status (HVBJOY)
+                and #01
+                bne @read_data  ; read done when 0
+
+                rep #30         ; m16, x16
+
+                ldx 0100        ; read previous frame raw input (JOY1_RAW)
+                lda 4218        ; read current frame raw input (JOY1L)
+                sta 0100        ; save it
+                txa             ; move previous frame raw input to A
+                eor 0100        ; XOR previous with current, get changes. Held and unpressed become 0
+                and 0100        ; AND previous with current, only pressed left to 1
+                sta 0102        ; store pressed (JOY1_PRESS)
+                txa             ; move previous frame raw input to A
+                and 0100        ; AND with current, only held are left to 1
+                sta 0104        ; stored held (JOY1_HELD)
+
+                plp
                 rts
 
 ;**************************************
