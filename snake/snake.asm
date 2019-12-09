@@ -248,6 +248,7 @@
 
 ;**************************************
 ; Init the random seed.
+; Set initial x and y pointer
 ; def init_random_seed()
 ;**************************************
 2000:           lda 0012        ; check if seed was read
@@ -256,6 +257,10 @@
                 bne @save_2000
                 inc             ; ensure non zero result
 @save_2000:     sta 0001        ; save it as a random seed
+
+                sta 0002        ; initial x pointer = seed
+                dec
+                sta 0003        ; initial y pointer = seed - 1
 
 @rts_2000:      lda #01         ; seed was read (1)
                 sta 0012
