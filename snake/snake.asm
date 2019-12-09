@@ -231,14 +231,41 @@
 ;**************************************
 
 0200:           lda 4210        ; RDNMI
+                inc 0000        ; increase frame counter
                 jsr 8500        ; read joypad
                 rti
 
 ;**************************************
 ; Game loop
+; def game_loop()
 ;**************************************
 
-1000:           jmp 9000        ; @gameloop
+1000:           lda 0103        ; JOY1_PRESSH
+                and #10         ; if start is pressed
+                beq @continue
+                jsr a000        ; then init random seed
+@continue:      jmp 9000        ; @gameloop
+
+;**************************************
+; Init the random seed.
+; def init_random_seed()
+;**************************************
+2000:           lda 0012        ; check if seed was read
+                bne @rts_2000   ; if non zero, it was read
+                lda 0000        ; else, load frame counter
+                bne @save_2000
+                inc             ; ensure non zero result
+@save_2000:     sta 0001        ; save it as a random seed
+
+@rts_2000:      lda #01         ; seed was read (1)
+                sta 0012
+                rts
+
+;**************************************
+; Get next pseudo random apple coordinate
+; def random_apple_coordinates()
+;**************************************
+2100:           rts
 
 ;**************************************
 ; Init OAM Dummy Buffer WRAM
