@@ -44,6 +44,12 @@
 ; screen coord = map coord << 4
 ; 7e2000: oam buffer
 ; 7e2300: snake body tile buffer
+;**************************************
+; ROUTINES LOCATION
+;**************************************
+; game engine routines are in first page
+; game logic routines are in second page
+
 
 ;**************************************
 ; Reset @ 8000
