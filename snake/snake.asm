@@ -63,7 +63,7 @@
                 lda #8f
                 sta 2100        ; INIDISP
 
-                jsr 8500        ; @clear_registers
+                jsr 8f00        ; @clear_registers
 
 ;**************************************
 ; Main Register Settings
@@ -364,7 +364,8 @@
 ; Clear each Registers
 ;**************************************
 
-0500:           stz 2101        ; @clear_registers
+0f00:           stz 2101        ; @clear_registers
+                brk 00
                 stz 2102
                 stz 2103
                 stz 2105
