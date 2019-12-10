@@ -270,7 +270,24 @@
 ; Get next pseudo random apple coordinate
 ; def random_apple_coordinates()
 ;**************************************
-2100:           rts
+2100:           php
+                sep #30         ; m8 x8
+
+                ldx 0002        ; load x pointer
+                lda 819840,x    ; load corresponding value
+                sta 0004        ; save it to apple x coord
+                inx
+                stx 0002        ; next x pointer = x pointer + 1
+
+                ldx 0003        ; load y pointer
+                lda 819840,x    ; load corresponding value
+                sta 0005        ; save it to apple y coord
+                dex
+                stx 0003        ; next y pointer = y pointer - 1
+
+                plp
+                rts
+
 
 ;**************************************
 ; Init OAM Dummy Buffer WRAM
