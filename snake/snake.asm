@@ -223,9 +223,9 @@
                 jmp 9000        ; @gameloop
 
 ;**************************************
-; BRK @ 8100
+; BRK @ 8150
 ;**************************************
-0100:           rti
+0150:           rti
 ;**************************************
 ; NMI @ 8200
 ;**************************************
@@ -249,7 +249,7 @@
 ;**************************************
 ; Init the random seed.
 ; Set initial x and y pointer
-; def init_random_seed()
+; def init_random_seed() (@a000)
 ;**************************************
 2000:           lda 0012        ; check if seed was read
                 bne @rts_2000   ; if non zero, it was read
@@ -268,9 +268,9 @@
 
 ;**************************************
 ; Get next pseudo random apple coordinate
-; def random_apple_coordinates()
+; def random_apple_coordinates() (@a050)
 ;**************************************
-2100:           php
+2050:           php
                 sep #30         ; m8 x8
 
                 ldx 0002        ; load x pointer
@@ -286,6 +286,30 @@
                 stx 0003        ; next y pointer = y pointer - 1
 
                 plp
+                rts
+
+
+;**************************************
+; def points_collide?(x1=07, y1=08,
+;                     x2=09, y2=0a) @a100
+; result in A
+;**************************************
+2100:           phx
+                phd
+                tsc
+                tcd
+
+                ldx 07
+                cpx 09
+                bne @not_colliding
+
+                lda #01         ; collide
+                bra @return_2100
+
+@not_colliding: lda #00         ; does not collide
+
+@return_2100:   pld
+                plx
                 rts
 
 
@@ -590,7 +614,7 @@
 
 ; 65816 mode
 7fe4: 00 00 ; COP
-7fe6: 00 81 ; BRK
+7fe6: 50 81 ; BRK
 7fe8: 00 00
 7fea: 00 82 ; NMI
 7fec: 00 00
