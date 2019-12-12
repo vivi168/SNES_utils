@@ -50,6 +50,12 @@
 ; coord converted from map coord to screen coord
 ; screen coord = map coord << 4
 ; 7e2000: oam buffer
+; map coord to VRAM tile index:
+; 16x16 tile is composed of 4 8x8 tiles:
+; 0|1 => tile 0 = (x << 2) + (y << 7), tile 1 = tile 0 + 2
+; -+-
+; 2|3 => tile 2 = tile 0 + 0x40, tile 3 = tile 2 + 2
+;
 ; 7e2300: snake body tile buffer
 ;**************************************
 ; ROUTINES LOCATION
@@ -560,6 +566,8 @@
                 ; clear custom registers
                 stz 0000        ; clear frame counter
                 stz 0001        ; clear random seed
+                lda #02
+                sta 0006        ; init body size
                 stz 0012        ; clear seed read?
 
                 rts
