@@ -275,6 +275,7 @@
 ;**************************************
 ; Get next pseudo random apple coordinate
 ; def random_apple_coordinates() (@a050)
+; TODO: do not place apple on snake
 ;**************************************
 2050:           php
                 sep #30         ; m8 x8
@@ -297,10 +298,10 @@
 
 ;**************************************
 ; def points_collide?(x1=07, y1=08,
-;                     x2=09, y2=0a) @a100
+;                     x2=09, y2=0a) @a800
 ; result in A
 ;**************************************
-2100:           phx
+2800:           phx
                 phd
                 tsc
                 tcd
@@ -318,6 +319,106 @@
                 plx
                 rts
 
+;**************************************
+; def map_to_screen_coord(point=07)
+; result in A
+; @a850
+;**************************************
+2850:           phx
+                phd
+                tsc
+                tcd
+
+                lda 07
+                asl
+                asl
+                asl
+                asl
+
+                pld
+                plx
+                rts
+
+
+;**************************************
+; def update_oam_buffer_from_map_coord()
+; this routine update head/tail and
+; apple oam buffer entries from their
+; map coord @aa20
+; TODO surely there must be a way to make a loop
+;**************************************
+; coord pairs (RAM map coord/OAM buffer screen coord)
+2a00: 07 00 00 20 7e 08 00 01 20 7e ; head 0007,8 > 7e2000,1
+2a0a: 09 00 04 20 7e 0a 00 05 20 7e ; tail 0009,a > 7e2004,5
+2a14: 04 00 08 20 7e 05 00 09 20 7e ; apple 0004,5 > 7e0008,9
+
+2a20:           phd
+                php
+
+                rep #30         ; m 16 x 16
+                lda #aa00       ; index DP @ coord pairs array
+                tcd
+                sep #20         ; m 8
+
+                ; head x
+                lda (00)
+                tsx
+                pha
+                jsr a850        ; map_to_screen_coord
+                txs
+                sta [02]      ; save it to oam
+
+                ; head y
+                lda (05)
+                tsx
+                pha
+                jsr a850        ; map_to_screen_coord
+                txs
+                sta [07]      ; save it to oam
+
+                ; tail x
+                lda (0a)
+                tsx
+                pha
+                jsr a850        ; map_to_screen_coord
+                txs
+                sta [0c]      ; save it to oam
+
+                ; tail y
+                lda (0f)
+                tsx
+                pha
+                jsr a850        ; map_to_screen_coord
+                txs
+                sta [11]      ; save it to oam
+
+                ; apple x
+                lda (14)
+                tsx
+                pha
+                jsr a850        ; map_to_screen_coord
+                txs
+                sta [16]      ; save it to oam
+
+                ; tail y
+                lda (19)
+                tsx
+                pha
+                jsr a850        ; map_to_screen_coord
+                txs
+                sta [1b]      ; save it to oam
+
+                plp
+                pld
+                rts
+
+;**************************************
+; def update_vram_buffer_from_map_coord()
+; this routine update snake body
+; vram buffer entries from their
+; map coord @b000
+;**************************************
+3000:           rts
 
 ;**************************************
 ; Init OAM Dummy Buffer WRAM
