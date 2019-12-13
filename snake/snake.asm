@@ -324,19 +324,17 @@
 ; result in A
 ; @a850
 ;**************************************
-2850:           phx
-                phd
+2850:           phd
                 tsc
                 tcd
 
-                lda 07
+                lda 05
                 asl
                 asl
                 asl
                 asl
 
                 pld
-                plx
                 rts
 
 
@@ -348,66 +346,38 @@
 ; TODO surely there must be a way to make a loop
 ;**************************************
 ; coord pairs (RAM map coord/OAM buffer screen coord)
-2a00: 07 00 00 20 7e 08 00 01 20 7e ; head 0007,8 > 7e2000,1
-2a0a: 09 00 04 20 7e 0a 00 05 20 7e ; tail 0009,a > 7e2004,5
-2a14: 04 00 08 20 7e 05 00 09 20 7e ; apple 0004,5 > 7e0008,9
+2a00: 07 00 00 20 08 00 01 20 ; head 7e0007,8 > 7e2000,1
+2a08: 09 00 04 20 0a 00 05 20 ; tail 7e0009,a > 7e2004,5
+2a10: 04 00 08 20 05 00 09 20 ; apple 7e0004,5 > 7e2008,9
 
 2a20:           phd
                 php
+                phb
 
                 rep #30         ; m 16 x 16
                 lda #aa00       ; index DP @ coord pairs array
                 tcd
                 sep #20         ; m 8
 
-                ; head x
-                lda (00)
-                tsx
+                lda #7e
+                pha
+                plb             ; dbr = 7e
+                ldy #0006
+                ldx #0000
+
+@loop_2a20:     lda (00,x)      ; load map coord
                 pha
                 jsr a850        ; map_to_screen_coord
-                txs
-                sta [02]      ; save it to oam
+                sta (02,x)      ; save it to oam
+                pla
+                inx
+                inx
+                inx
+                inx
+                dey
+                bne @loop_2a20
 
-                ; head y
-                lda (05)
-                tsx
-                pha
-                jsr a850        ; map_to_screen_coord
-                txs
-                sta [07]      ; save it to oam
-
-                ; tail x
-                lda (0a)
-                tsx
-                pha
-                jsr a850        ; map_to_screen_coord
-                txs
-                sta [0c]      ; save it to oam
-
-                ; tail y
-                lda (0f)
-                tsx
-                pha
-                jsr a850        ; map_to_screen_coord
-                txs
-                sta [11]      ; save it to oam
-
-                ; apple x
-                lda (14)
-                tsx
-                pha
-                jsr a850        ; map_to_screen_coord
-                txs
-                sta [16]      ; save it to oam
-
-                ; tail y
-                lda (19)
-                tsx
-                pha
-                jsr a850        ; map_to_screen_coord
-                txs
-                sta [1b]      ; save it to oam
-
+                plb
                 plp
                 pld
                 rts
