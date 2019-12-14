@@ -459,12 +459,32 @@
                 bra @return_2a60
 
 @move_up:       nop
+                lda 000f        ; don't allow switching direction in same axis
+                bne @return_2a60
+                lda #ff
+                stz 000e
+                sta 000f
                 bra @return_2a60
 @move_down:     nop
+                lda 000f
+                bne @return_2a60
+                lda #01
+                stz 000e
+                sta 000f
                 bra @return_2a60
 @move_left:     nop
+                lda 000e
+                bne @return_2a60
+                lda #ff
+                sta 000e
+                stz 000f
                 bra @return_2a60
 @move_right:    nop
+                lda 000e
+                bne @return_2a60
+                lda #01
+                sta 000e
+                stz 000f
                 bra @return_2a60
 
 @return_2a60:   rts
@@ -729,8 +749,6 @@
                 lda #02
                 sta 0006        ; init body size
                 stz 0012        ; clear seed read?
-                lda #01
-                sta 000d
 
                 stz 000b        ; move counter
                 lda #04
