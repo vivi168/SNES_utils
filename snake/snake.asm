@@ -82,7 +82,8 @@
                 lda #8f
                 sta 2100        ; INIDISP
 
-                jsr 8f00        ; @clear_registers
+                jsr 8e00        ; @clear_registers
+                jsr 8ed0
 
 ;**************************************
 ; Main Register Settings
@@ -240,25 +241,31 @@
 
 0200:           lda 4210        ; RDNMI
                 inc 0000        ; increase frame counter
+                inc 000b        ; increase snake should move?
                 ; TODO increase last move by 1
                 ; update oam
+                jsr 8400        ; @oam_dma_transfer
                 ; update vram
+                ; TODO
                 jsr 8500        ; read joypad
                 rti
 
 ;**************************************
-; Game loop
-; def game_loop()
+; Logo screen loop (wait for user to press enter)
+; def logo_loop()
 ;**************************************
 
-1000:           lda 0103        ; JOY1_PRESSH
+1000:           wai
+                lda 0103        ; JOY1_PRESSH
                 and #10         ; if start is pressed
                 beq @continue
                 jsr a000        ; then init random seed
                 ;then generate apple position
+                jsr a050
                 ; then update oam buffer
+                jsr aa20
                 ;jump to game loop
-
+                jmp 9050
 
 ; TODO: start menu loop, game loop. in menu loop only check for start.
 ; in game loop check for DPAD. change velocity, then
@@ -266,7 +273,14 @@
 ; if start is pressed in gameloop, jump to pause loop.
 ; if start is pressed in pause loop, jump to gameloop
 
-@continue:      jmp 9000        ; @gameloop
+@continue:      jmp 9000        ; @logo_loop()
+
+;**************************************
+; def game_loop()
+;**************************************
+1050:           wai
+                jsr aa60        ; handle key
+                jmp 9050
 
 ;**************************************
 ; Init the random seed.
@@ -298,13 +312,24 @@
 
                 ldx 0002        ; load x pointer
                 lda 819840,x    ; load corresponding value
+                lsr
+                lsr
+                lsr
+                lsr
                 sta 0004        ; save it to apple x coord
                 inx
                 stx 0002        ; next x pointer = x pointer + 1
 
                 ldx 0003        ; load y pointer
                 lda 819840,x    ; load corresponding value
-                sta 0005        ; save it to apple y coord
+                lsr
+                lsr
+                lsr
+                lsr
+                cmp #0d
+                bcc @save_y_appl
+                lda #0d         ; screen is only 224px high (13 tiles)
+@save_y_appl:   sta 0005        ; save it to apple y coord
                 dex
                 stx 0003        ; next y pointer = y pointer - 1
 
@@ -402,6 +427,47 @@
                 plp
                 pld
                 rts
+
+;**************************************
+;       handle player input
+; def handle_input()
+; @aa60
+; up 8
+; down 4
+; left 2
+; right 1
+;**************************************
+
+2a60:           lda 0103        ; JOY1_PRESSH
+
+                tax
+                and #08
+                bne @move_up
+
+                txa
+                and #04
+                bne @move_down
+
+                txa
+                and #02
+                bne @move_left
+
+                txa
+                and #01
+                bne @move_right
+
+                bra @return_2a60
+
+@move_up:       nop
+                bra @return_2a60
+@move_down:     nop
+                bra @return_2a60
+@move_left:     nop
+                bra @return_2a60
+@move_right:    nop
+                bra @return_2a60
+
+@return_2a60:   rts
 
 ;**************************************
 ; def update_vram_buffer_from_map_coord()
@@ -574,7 +640,7 @@
 ; def clear_registers()
 ;**************************************
 
-0f00:           stz 2101
+0e00:           stz 2101
                 stz 2102
                 stz 2103
                 stz 2105
@@ -655,12 +721,26 @@
                 stz 420c
                 stz 420d
 
+                rts
+
                 ; clear custom registers
-                stz 0000        ; clear frame counter
+0ed0:           stz 0000        ; clear frame counter
                 stz 0001        ; clear random seed
                 lda #02
                 sta 0006        ; init body size
                 stz 0012        ; clear seed read?
+                lda #01
+                sta 000d
+
+                stz 000b        ; move counter
+                lda #04
+                sta 000c        ; base speed
+                lda #01
+                sta 000d        ; base velocity
+                stz 000e        ; x vel
+                stz 000f        ; y vel
+                stz 0010        ; score L
+                stz 0011        ; score H
 
                 ; initialize head/tail position
                 lda #05         ; head x
