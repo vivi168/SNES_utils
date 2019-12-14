@@ -156,6 +156,8 @@
                 lda #40
                 sta 7e2200      ; X pos msb and size for first 4 sprites
 
+                jsr aa20
+
                 ;**************************************
                 ; DMA transfers
                 ;**************************************
@@ -238,6 +240,9 @@
 
 0200:           lda 4210        ; RDNMI
                 inc 0000        ; increase frame counter
+                ; TODO increase last move by 1
+                ; update oam
+                ; update vram
                 jsr 8500        ; read joypad
                 rti
 
@@ -250,6 +255,17 @@
                 and #10         ; if start is pressed
                 beq @continue
                 jsr a000        ; then init random seed
+                ;then generate apple position
+                ; then update oam buffer
+                ;jump to game loop
+
+
+; TODO: start menu loop, game loop. in menu loop only check for start.
+; in game loop check for DPAD. change velocity, then
+; TODO: change snake head position every 10-speed frames
+; if start is pressed in gameloop, jump to pause loop.
+; if start is pressed in pause loop, jump to gameloop
+
 @continue:      jmp 9000        ; @gameloop
 
 ;**************************************
@@ -365,7 +381,7 @@
                 ldy #0006
                 ldx #0000
 
-@loop_2a20:     lda (00,x)      ; load map coord
+@loop_2a20:     lda (00,x)      ; load sprite map coord
                 pha
                 jsr a850        ; map_to_screen_coord
                 sta (02,x)      ; save it to oam
@@ -376,6 +392,11 @@
                 inx
                 dey
                 bne @loop_2a20
+
+                ; sprites are not vertically aligned with background
+                dec 2001
+                dec 2005
+                dec 2009
 
                 plb
                 plp
@@ -640,6 +661,20 @@
                 lda #02
                 sta 0006        ; init body size
                 stz 0012        ; clear seed read?
+
+                ; initialize head/tail position
+                lda #05         ; head x
+                sta 0007
+                lda #02         ; tail x
+                sta 0009
+                lda #06         ; head/tail y
+                sta 0008
+                sta 000a
+
+                ; TODO, apple coords should be initialized
+                ; randomly when first pressing start
+                stz 0004
+                stz 0005
 
                 rts
 
