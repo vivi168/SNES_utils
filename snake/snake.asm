@@ -267,16 +267,16 @@
                 ;jump to game loop
                 jmp 9050
 
-; TODO: start menu loop, game loop. in menu loop only check for start.
-; in game loop check for DPAD. change velocity, then
-; TODO: change snake head position every 10-speed frames
-; if start is pressed in gameloop, jump to pause loop.
-; if start is pressed in pause loop, jump to gameloop
-
 @continue:      jmp 9000        ; @logo_loop()
 
 ;**************************************
 ; def game_loop()
+; in game loop check for DPAD. change velocity, then
+; TODO: change snake head position every 10-speed frames
+; check wall colision/body collision with head => game over
+; check apple colision with head, score increase
+; TODO if start is pressed in gameloop, jump to pause loop.
+; TODO if start is pressed in pause loop, jump to gameloop
 ;**************************************
 1050:           wai
                 jsr aa60        ; handle key
