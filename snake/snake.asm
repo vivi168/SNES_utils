@@ -280,6 +280,31 @@
 ;**************************************
 1050:           wai
                 jsr aa60        ; handle key
+
+                lda 000b
+                cmp 000c        ; skip if move counter < speed?
+                bcc @continue_gl
+
+                ; head x += xvel
+                clc
+                lda 0007
+                adc 000e
+                sta 0007
+                ; head y += yvel
+                clc
+                lda 0008
+                adc 000f
+                sta 0008
+
+                ; reset move counter
+                stz 000b
+
+@continue_gl:   nop
+                ; TODO check if collide with apple
+                ; TODO check if collide with wall
+                ; TODO check if collide with body
+                jsr aa20
+
                 jmp 9050
 
 ;**************************************
@@ -488,6 +513,16 @@
                 bra @return_2a60
 
 @return_2a60:   rts
+
+
+;**************************************
+; TODO: routine to update head flip
+;**************************************
+
+;**************************************
+; TODO: routine to update tail flip
+;**************************************
+
 
 ;**************************************
 ; def update_vram_buffer_from_map_coord()
@@ -751,7 +786,7 @@
                 stz 0012        ; clear seed read?
 
                 stz 000b        ; move counter
-                lda #04
+                lda #20
                 sta 000c        ; base speed
                 lda #01
                 sta 000d        ; base velocity
