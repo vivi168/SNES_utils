@@ -319,10 +319,8 @@
 
 @continue_gl:   nop
                 jsr b050        ; check if collide with apple
-                ; TODO check if collide with wall
-                jsr b090
-                ; TODO check if collide with body
-                jsr b200
+                jsr b090        ; check if collide with wall
+                jsr b200        ; check if collide with body
 
                 jsr aa20        ; update oam buffer
                 jsr b500        ; update background buffer as well
@@ -353,11 +351,11 @@
 ;**************************************
 ; def random_apple_coordinates()
 ; Get next pseudo random apple coordinate
-; TODO: do not place apple on snake
 ; @a050
 ;**************************************
 2050:           php
-                sep #30         ; m8 x8
+
+@next_appl:     sep #30         ; m8 x8
 
                 ldx 0002        ; load x pointer
                 lda 819840,x    ; load corresponding value
@@ -381,6 +379,20 @@
 @save_y_appl:   sta 0005        ; save it to apple y coord
                 dex
                 stx 0003        ; next y pointer = y pointer - 1
+
+                rep #10
+
+                ; check if apple is on head
+                ldx 0004
+                cpx 0007
+                beq @next_appl
+
+                ; check if apple is on body
+                phx
+                jsr b100
+                plx
+                cmp #01
+                beq @next_appl
 
                 plp
                 rts
@@ -788,8 +800,6 @@
                 dec
                 asl
                 tax
-
-                brk 00
 
                 lda 7e0009      ; compare with tail
                 cmp 08
