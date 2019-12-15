@@ -654,7 +654,17 @@
 
                 jsr a050        ; next apple coord
                 inc 0010        ; increase score
-                ; TODO add body part
+
+                ; increase body size and init new body part coords
+                lda 0006        ; load body size
+                inc 0006        ; increase it
+                rep #30
+                and #00ff
+                asl             ; body coord index from body size
+                tax
+
+                lda 0009        ; get tail xy
+                sta 7e0200,x    ; init a new body coord entry
 
 @ret_3050:      nop
                 plp
@@ -725,7 +735,6 @@
 
                 ; HERE: clear tile at tail location
                 ; TODO: should propably make a routine to convert xy to tile index
-                brk 00
 
                 lda 0009
                 tay
@@ -762,8 +771,6 @@
                 dex
                 dex
                 sta 7e2300,x    ; tile 3 = tile 4 - 2 (tile 1 + 0x40)
-
-                brk 00
 
                 plp
                 rts
@@ -1045,7 +1052,7 @@
                 stz 0012        ; clear seed read?
 
                 stz 000b        ; move counter
-                lda #20
+                lda #10
                 sta 000c        ; base speed
                 lda #01
                 sta 000d        ; base velocity
