@@ -318,7 +318,7 @@
                 stz 000b
 
 @continue_gl:   nop
-                ; TODO check if collide with apple
+                jsr b050        ; check if collide with apple
                 ; TODO check if collide with wall
                 ; TODO check if collide with body
 
@@ -631,11 +631,28 @@
                 rts
 
 ;**************************************
+; check apple collision +
 ; increase body size + append a body part
 ; @b050
 ;**************************************
 3050:           php
 
+                tsx
+                ldy 0004        ; apple x,y
+                phy
+                ldy 0007        ; head x,y
+                phy
+                jsr a800
+                txs
+
+                cmp #01
+                bne @ret_3050
+
+                jsr a050        ; next apple coord
+                inc 0010        ; increase score
+                ; TODO add body part
+
+@ret_3050:      nop
                 plp
                 rts
 
