@@ -653,7 +653,6 @@
                 bne @ret_3050
 
                 jsr a050        ; next apple coord
-                inc 0010        ; increase score
 
                 ; increase body size and init new body part coords
                 lda 0006        ; load body size
@@ -665,6 +664,9 @@
 
                 lda 0009        ; get tail xy
                 sta 7e0200,x    ; init a new body coord entry
+
+                ; TODO: take speed into account to compute score
+                inc 0010        ; increase score
 
 @ret_3050:      nop
                 plp
