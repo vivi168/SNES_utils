@@ -320,6 +320,7 @@
 @continue_gl:   nop
                 jsr b050        ; check if collide with apple
                 ; TODO check if collide with wall
+                jsr b090
                 ; TODO check if collide with body
 
                 jsr aa20        ; update oam buffer
@@ -373,9 +374,9 @@
                 lsr
                 lsr
                 lsr
-                cmp #0d
+                cmp #0d         ; $SCREEN_W - 1
                 bcc @save_y_appl
-                lda #0d         ; screen is only 224px high (13 tiles)
+                lda #0d         ; screen is only 224px high (14 tiles)
 @save_y_appl:   sta 0005        ; save it to apple y coord
                 dex
                 stx 0003        ; next y pointer = y pointer - 1
@@ -630,7 +631,6 @@
 
                 ; body.x < tail.x
 @bx_lt_tx:      nop
-                brk 00
                 lda 7e2007
                 and #3f
                 ora #40
@@ -743,6 +743,38 @@
 @ret_3050:      nop
                 plp
                 rts
+
+;**************************************
+; def check_wall_collision()
+; @b090
+;**************************************
+3090:           nop
+                brk 00
+                lda 0007        ; head x
+                cmp #00
+                bcc @reset
+                cmp #10         ; $SCREEN_W
+                bcs @reset
+
+                ; left edge < x < right edge
+                lda 0008
+                cmp #00
+                bcc @reset
+                cmp #0e         ; $SCREEN_H
+                bcs @reset
+
+                ; top edge < y < bottom edge
+                rts
+
+@reset:         nop
+                jmp 8000
+@no_reset:      nop
+                rts
+
+;**************************************
+; def check_eat_self()
+; TODO
+;**************************************
 
 ;**************************************
 ; def update_vram_buffer_from_map_coord()
