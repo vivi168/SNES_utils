@@ -44,8 +44,7 @@
 ; 7e0104: JOY1_HELDL
 ; 7e0105: JOY1_HELDH
 
-; 7e0200: snake body x coord
-; 7e0300: snake body y coord
+; 7e0200: snake body xy coord
 
 ; coord converted from map coord to screen coord
 ; screen coord = map coord << 4
@@ -110,6 +109,7 @@
                 ;**************************************
                 ; init a dummy buffer in WRAM
                 jsr 8300        ; @oam_buf_init
+                jsr 8550        ; @reset WRAM tilemap buffer
                 ; Init apple and head positions/sprite name here
                 ; Snake head, first sprite in OAM (name 2, second sprite in rom)
                 ldx #0000
@@ -157,7 +157,7 @@
                 lda #40
                 sta 7e2200      ; X pos msb and size for first 4 sprites
 
-                jsr aa20
+                jsr aa20        ; @update_oam_buffer_from_map_coord()
 
                 ;**************************************
                 ; DMA transfers
@@ -174,13 +174,11 @@
                 pea 0800        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
-                ; Copy tilemap to VRAM
-                ; TODO instead create a buffer in wram
-                ; with initial snake body position
+                ; Copy WRAM tilemap buffer to VRAM
                 tsx             ; save stack pointer
                 pea 1000        ; vram_dest_addr
-                pea 9040        ; rom_src_addr
-                lda #81         ; rom_src_bank
+                pea 2300        ; rom_src_addr
+                lda #7e         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
@@ -284,6 +282,10 @@
                 lda 000b
                 cmp 000c        ; skip if move counter < speed?
                 bcc @continue_gl
+                ldx 000e        ; skip if velocity is 0
+                beq @continue_gl
+
+                jsr b000 ; update body + tail coords
 
                 ; head x += xvel
                 clc
@@ -303,7 +305,9 @@
                 ; TODO check if collide with apple
                 ; TODO check if collide with wall
                 ; TODO check if collide with body
-                jsr aa20
+
+                jsr aa20 ; update oam buffer
+                ; TODO update background buffer as well
 
                 jmp 9050
 
@@ -525,12 +529,50 @@
 
 
 ;**************************************
-; def update_vram_buffer_from_map_coord()
-; this routine update snake body
-; vram buffer entries from their
-; map coord @b000
+; def update_snake_body_parts()
+; this routine update snake body (7e0200)
+; and tail, after a head movement
+; @b000
 ;**************************************
-3000:           rts
+3000:           nop
+                php
+
+                lda 0006        ; load body size
+                rep #30
+                and #00ff       ; discord accumulator high byte
+                dec
+                asl             ; each coord entry is 2 bytes
+                tax
+
+                brk 00
+
+                lda 7e0200,x
+                sta 0009
+
+@update_body_x: nop
+                txy
+                dex
+                dex
+                lda 7e0200,x
+                tyx
+                sta 7e0200,x
+                dex
+                dex
+                bne @update_body_x
+
+                lda 0007
+                sta 7e0200
+
+                plp
+                rts
+
+;**************************************
+; def update_vram_buffer_from_map_coord()
+; this routine update tilemap WRAM buffer
+; from snake body array located at 7e0200
+; @b500
+;**************************************
+3500:           rts
 
 ;**************************************
 ; Init OAM Dummy Buffer WRAM
@@ -690,6 +732,20 @@
                 plp
                 rts
 
+
+;**************************************
+;       reset tilemap buffer
+;**************************************
+0550:           ldx #0000
+                lda #00
+
+@reset_tm:      nop
+                sta 7e2300,x
+                inx
+                cpx #0800
+                bne @reset_tm
+                rts
+
 ;**************************************
 ; Clear each Registers
 ; def clear_registers()
@@ -803,6 +859,14 @@
                 lda #06         ; head/tail y
                 sta 0008
                 sta 000a
+                ; first two body parts y
+                sta 7e0201
+                sta 7e0203
+                ; first two body part x
+                lda #04
+                sta 7e0200
+                lda #03
+                sta 7e0202
 
                 ; TODO, apple coords should be initialized
                 ; randomly when first pressing start
