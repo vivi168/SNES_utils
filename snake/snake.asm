@@ -145,7 +145,6 @@
                 inx
                 ; Apple, third sprite in OAM (name 0).
                 ; must be last to appear beneath snake head
-                ; TODO routine to generate random X and Y pos
                 lda #10
                 sta 7e2000,x    ; X pos (lsb)
                 inx
@@ -263,8 +262,9 @@
                 rti
 
 ;**************************************
-; Logo screen loop (wait for user to press enter)
 ; def logo_loop()
+; Logo screen loop (wait for user to press enter)
+; @9000
 ;**************************************
 
 1000:           wai
@@ -284,11 +284,11 @@
 ;**************************************
 ; def game_loop()
 ; in game loop check for DPAD. change velocity, then
-; TODO: change snake head position every 10-speed frames
 ; check wall colision/body collision with head => game over
 ; check apple colision with head, score increase
 ; TODO if start is pressed in gameloop, jump to pause loop.
 ; TODO if start is pressed in pause loop, jump to gameloop
+; @9050
 ;**************************************
 1050:           wai
                 jsr aa60        ; handle key
@@ -328,9 +328,10 @@
                 jmp 9050
 
 ;**************************************
+; def init_random_seed()
 ; Init the random seed.
 ; Set initial x and y pointer
-; def init_random_seed() (@a000)
+; @a000
 ;**************************************
 2000:           lda 0012        ; check if seed was read
                 bne @rts_2000   ; if non zero, it was read
@@ -348,8 +349,8 @@
                 rts
 
 ;**************************************
-; Get next pseudo random apple coordinate
 ; def random_apple_coordinates()
+; Get next pseudo random apple coordinate
 ; TODO: do not place apple on snake
 ; @a050
 ;**************************************
@@ -430,8 +431,8 @@
 ; def update_oam_buffer_from_map_coord()
 ; this routine update head/tail and
 ; apple oam buffer entries from their
-; map coord @aa20
-; TODO surely there must be a way to make a loop
+; map coord
+; @aa20
 ;**************************************
 ; coord pairs (RAM map coord/OAM buffer screen coord)
 2a00: 07 00 00 20 08 00 01 20 ; head 7e0007,8 > 7e2000,1
@@ -768,10 +769,10 @@
                 rts
 
 ;**************************************
-; Init OAM Dummy Buffer WRAM
-;
 ; def oam_buf_init()
+; Init OAM Dummy Buffer WRAM
 ; $oam_buffer_start = 7e2000
+; @8300
 ;**************************************
 
 0300:           php
@@ -799,9 +800,10 @@
                 rts
 
 ;**************************************
-; OAM buffer - DMA Transfer
 ; def oam_dma_transfer()
+; OAM buffer - DMA Transfer
 ; m8 x16
+; @8400
 ;**************************************
 
 0400:           ldx #0000
@@ -829,10 +831,11 @@
                 rts
 
 ;**************************************
-; VRAM - DMA Transfer
 ; def vram_dma_transfer(btt=07, rom_src_bank=09,
 ;                       rom_src_addr=0a, vram_dest_addr=0c)
+; VRAM - DMA Transfer
 ; m8 x16
+; @8430
 ;**************************************
 
 0430:           phx             ; save stack pointer
@@ -865,10 +868,11 @@
                 rts
 
 ;**************************************
-; CGRAM - DMA Transfer
 ; def cgram_dma_transfer(btt=07, rom_src_bank=08,
 ;                        rom_src_addr=09, cgram_dest_addr=0b)
+; CGRAM - DMA Transfer
 ; m8 x16
+; @8460
 ;**************************************
 
 0460:           phx             ; save stack pointer
@@ -901,8 +905,9 @@
                 rts
 
 ;**************************************
-; Read Joy Pad 1
 ; def read_joy_pad_1()
+; Read Joy Pad 1
+; @8500
 ;**************************************
 0500:           php
 @read_data:     lda 4212        ; read joypad status (HVBJOY)
@@ -927,7 +932,8 @@
 
 
 ;**************************************
-;       reset tilemap buffer
+; def reset_tilemap_buffer()
+; @8550
 ;**************************************
 0550:           ldx #0000
                 lda #00
@@ -940,8 +946,9 @@
                 rts
 
 ;**************************************
-; Clear each Registers
 ; def clear_registers()
+; Clear each Registers
+; @8e00
 ;**************************************
 
 0e00:           stz 2101
@@ -1027,7 +1034,10 @@
 
                 rts
 
-                ; clear custom registers
+;**************************************
+; def clear_custom_registers()
+; @8e00
+;**************************************
 0ed0:           stz 0000        ; clear frame counter
                 stz 0001        ; clear random seed
                 lda #02
@@ -1061,8 +1071,7 @@
                 lda #03
                 sta 7e0202
 
-                ; TODO, apple coords should be initialized
-                ; randomly when first pressing start
+                ; initial apple coordinates
                 stz 0004
                 stz 0005
 
