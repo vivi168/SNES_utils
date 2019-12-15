@@ -322,8 +322,8 @@
                 ; TODO check if collide with wall
                 ; TODO check if collide with body
 
-                jsr aa20 ; update oam buffer
-                jsr b500 ; update background buffer as well
+                jsr aa20        ; update oam buffer
+                jsr b500        ; update background buffer as well
 
                 jmp 9050
 
@@ -349,8 +349,9 @@
 
 ;**************************************
 ; Get next pseudo random apple coordinate
-; def random_apple_coordinates() (@a050)
+; def random_apple_coordinates()
 ; TODO: do not place apple on snake
+; @a050
 ;**************************************
 2050:           php
                 sep #30         ; m8 x8
@@ -384,8 +385,9 @@
 
 ;**************************************
 ; def points_collide?(x1=07, y1=08,
-;                     x2=09, y2=0a) @a800
+;                     x2=09, y2=0a)
 ; result in A
+; @a800
 ;**************************************
 2800:           phx
                 phd
@@ -474,13 +476,13 @@
                 rts
 
 ;**************************************
-;       handle player input
 ; def handle_input()
-; @aa60
+; handle player input
 ; up 8
 ; down 4
 ; left 2
 ; right 1
+; @aa60
 ;**************************************
 
 2a60:           lda 0103        ; JOY1_PRESSH
@@ -631,6 +633,7 @@
                 rts
 
 ;**************************************
+; def eat_apple()
 ; check apple collision +
 ; increase body size + append a body part
 ; @b050
