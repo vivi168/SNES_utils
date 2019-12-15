@@ -38,6 +38,11 @@
 ; 7e0011: score H
 ; 7e0012: seed read?
 
+; 7e0013: body size buffer
+; 7e0014: body size buffer
+; 7e0015: tile coord buffer
+; 7e0016: tile coord buffer
+
 ; 7e0100: JOY1_RAW
 ; 7e0102: JOY1_PRESSL
 ; 7e0103: JOY1_PRESSH
@@ -158,6 +163,7 @@
                 sta 7e2200      ; X pos msb and size for first 4 sprites
 
                 jsr aa20        ; @update_oam_buffer_from_map_coord()
+                jsr b500
 
                 ;**************************************
                 ; DMA transfers
@@ -240,11 +246,19 @@
 0200:           lda 4210        ; RDNMI
                 inc 0000        ; increase frame counter
                 inc 000b        ; increase snake should move?
-                ; TODO increase last move by 1
+
                 ; update oam
                 jsr 8400        ; @oam_dma_transfer
                 ; update vram
-                ; TODO
+                tsx             ; save stack pointer
+                pea 1000        ; vram_dest_addr
+                pea 2300        ; rom_src_addr
+                lda #7e         ; rom_src_bank
+                pha
+                pea 0800        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
+
                 jsr 8500        ; read joypad
                 rti
 
@@ -260,7 +274,7 @@
                 jsr a000        ; then init random seed
                 ;then generate apple position
                 jsr a050
-                ; then update oam buffer
+                ; then update oam buffer to reflect new apple coord
                 jsr aa20
                 ;jump to game loop
                 jmp 9050
@@ -307,7 +321,7 @@
                 ; TODO check if collide with body
 
                 jsr aa20 ; update oam buffer
-                ; TODO update background buffer as well
+                jsr b500 ; update background buffer as well
 
                 jmp 9050
 
@@ -522,7 +536,8 @@
 ;**************************************
 ; TODO: routine to update head flip
 ;**************************************
-
+2ad0:           nop
+                rts
 ;**************************************
 ; TODO: routine to update tail flip
 ;**************************************
@@ -534,18 +549,16 @@
 ; and tail, after a head movement
 ; @b000
 ;**************************************
-3000:           nop
-                php
+3000:           php
 
                 lda 0006        ; load body size
                 rep #30
-                and #00ff       ; discord accumulator high byte
+                and #00ff       ; discard accumulator high byte
                 dec
                 asl             ; each coord entry is 2 bytes
                 tax
 
-                brk 00
-
+                ; tail takes place of last body part
                 lda 7e0200,x
                 sta 0009
 
@@ -560,8 +573,18 @@
                 dex
                 bne @update_body_x
 
+                ; first body part takes place of head
                 lda 0007
                 sta 7e0200
+
+                plp
+                rts
+
+;**************************************
+; increase body size + append a body part
+; @b050
+;**************************************
+3050:           php
 
                 plp
                 rts
@@ -572,7 +595,107 @@
 ; from snake body array located at 7e0200
 ; @b500
 ;**************************************
-3500:           rts
+3500:           php
+
+                ldx #0000
+
+                lda 0006
+                rep #30
+                and #00ff
+                asl
+                sta 0013
+
+@cp_tm_vram:    nop
+                ; update x
+                lda 7e0200,x
+                tay
+
+                and #00ff
+                asl
+                asl
+                sta 0015
+                tya
+                xba
+                and #00ff
+                asl
+                asl
+                asl
+                asl
+                asl
+                asl
+                asl
+                clc
+                adc 0015
+                sta 0015
+
+                txy
+                ldx 0015
+                lda #0001
+                sta 7e2300,x    ; tile 1 = x << 2 + y << 7
+                inx
+                inx
+                sta 7e2300,x    ; tile 2 = tile 1 + 2
+                txa
+                clc
+                adc #0040
+                tax
+                lda #0001
+                sta 7e2300,x    ; tile 4 = tile 2 + 0x40
+                dex
+                dex
+                sta 7e2300,x    ; tile 3 = tile 4 - 2 (tile 1 + 0x40)
+
+                tyx
+
+                inx
+                inx
+                cpx 0013
+                bne @cp_tm_vram
+
+                ; HERE: clear tile at tail location
+                ; TODO: should propably make a routine to convert xy to tile index
+                brk 00
+
+                lda 0009
+                tay
+                and #00ff
+                asl
+                asl
+                sta 0015
+                tya
+                xba
+                and #00ff
+                asl
+                asl
+                asl
+                asl
+                asl
+                asl
+                asl
+                clc
+                adc 0015
+                sta 0015
+
+                ldx 0015
+                lda #0000
+                sta 7e2300,x    ; tile 1 = x << 2 + y << 7
+                inx
+                inx
+                sta 7e2300,x    ; tile 2 = tile 1 + 2
+                txa
+                clc
+                adc #0040
+                tax
+                lda #0000
+                sta 7e2300,x    ; tile 4 = tile 2 + 0x40
+                dex
+                dex
+                sta 7e2300,x    ; tile 3 = tile 4 - 2 (tile 1 + 0x40)
+
+                brk 00
+
+                plp
+                rts
 
 ;**************************************
 ; Init OAM Dummy Buffer WRAM
