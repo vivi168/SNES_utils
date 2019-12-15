@@ -594,7 +594,8 @@
 @ret_2ad0:      rts
 ;**************************************
 ; def update_tail_direction()
-; TODO: routine to update tail flip
+; TODO: refactor. Can spare cycles by
+; better branching organization
 ; @ab30
 ;**************************************
 2b30:           php
