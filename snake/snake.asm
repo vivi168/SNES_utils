@@ -501,7 +501,7 @@
                 and #01
                 bne @move_right
 
-                bra @return_2a60
+                rts
 
 @move_up:       nop
                 lda 000f        ; don't allow switching direction in same axis
@@ -509,28 +509,27 @@
                 lda #ff
                 stz 000e
                 sta 000f
-                bra @return_2a60
+                rts
 @move_down:     nop
                 lda 000f
                 bne @return_2a60
                 lda #01
                 stz 000e
                 sta 000f
-                bra @return_2a60
+                rts
 @move_left:     nop
                 lda 000e
                 bne @return_2a60
                 lda #ff
                 sta 000e
                 stz 000f
-                bra @return_2a60
+                rts
 @move_right:    nop
                 lda 000e
                 bne @return_2a60
                 lda #01
                 sta 000e
                 stz 000f
-                bra @return_2a60
 
 @return_2a60:   rts
 
@@ -556,12 +555,13 @@
                 and #3f
                 ora #40
                 sta 7e2003
-                bra @ret_2ad0
+                rts
+
 @skip_head_hf:  nop
                 lda 7e2003
                 and #3f
                 sta 7e2003
-                bra @ret_2ad0
+                rts
 
 @check_h_vert:  nop
                 lda 000f        ; yvel
@@ -577,7 +577,7 @@
                 and #3f
                 ora #80
                 sta 7e2003
-                bra @ret_2ad0
+                rts
 
 @skip_head_vf:  lda 7e2003
                 and #3f
