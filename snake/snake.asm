@@ -130,14 +130,14 @@
                 lda #30
                 sta 7e2000,x    ; flip/prio/color/name msb
                 inx
-                ; Snake tail, second sprite in OAM (name 4)
+                ; Snake tail, third sprite in OAM (name 6)
                 lda #20
                 sta 7e2000,x    ; X pos (lsb)
                 inx
                 lda #5f
                 sta 7e2000,x    ; Y pos
                 inx
-                lda #04
+                lda #06
                 sta 7e2000,x    ; name lsb
                 inx
                 lda #30
@@ -195,7 +195,7 @@
                 pea 8800        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
-                pea 0300        ; bytes_to_trasnfer
+                pea 0800        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
 
