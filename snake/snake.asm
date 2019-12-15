@@ -300,6 +300,8 @@
                 beq @continue_gl
 
                 jsr b000 ; update body + tail coords
+                jsr aad0 ; update_head_direction()
+                jsr ab30 ; update_tail_direction()
 
                 ; head x += xvel
                 clc
@@ -534,14 +536,62 @@
 
 
 ;**************************************
-; TODO: routine to update head flip
+; def update_head_direction()
+; TODO maybe refactor, bit ugly?
+; @aad0
 ;**************************************
 2ad0:           nop
-                rts
-;**************************************
-; TODO: routine to update tail flip
-;**************************************
 
+                lda 000e        ; xvel
+                beq @check_h_vert
+
+                lda #02
+                sta 7e2002
+
+                lda 000e        ; xvel
+                cmp #ff
+                bne @skip_head_hf
+
+                lda 7e2003
+                and #3f
+                ora #40
+                sta 7e2003
+                bra @ret_2ad0
+@skip_head_hf:  nop
+                lda 7e2003
+                and #3f
+                sta 7e2003
+                bra @ret_2ad0
+
+@check_h_vert:  nop
+                lda 000f        ; yvel
+                beq @ret_2ad0
+
+                lda #04
+                sta 7e2002
+
+                lda 000f        ; yvel
+                cmp #01
+                bne @skip_head_vf
+                lda 7e2003
+                and #3f
+                ora #80
+                sta 7e2003
+                bra @ret_2ad0
+
+@skip_head_vf:  lda 7e2003
+                and #3f
+                sta 7e2003
+
+@ret_2ad0:      rts
+;**************************************
+; def update_tail_direction()
+; TODO: routine to update tail flip
+; @ab30
+;**************************************
+2b30:           nop
+
+                rts
 
 ;**************************************
 ; def update_snake_body_parts()
