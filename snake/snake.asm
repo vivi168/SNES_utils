@@ -546,20 +546,22 @@
 
                 lda 000e        ; xvel
                 beq @check_h_vert
-
+                ; head xvel != 0, flip accordingly
                 lda #02
-                sta 7e2002
+                sta 7e2002      ; set horizontal sprite
 
                 lda 000e        ; xvel
                 cmp #ff
                 bne @skip_head_hf
 
+                ; head xvel < 0, flip tile
                 lda 7e2003
                 and #3f
                 ora #40
                 sta 7e2003
                 rts
 
+                ; head xvel > 0, reset tile flip
 @skip_head_hf:  nop
                 lda 7e2003
                 and #3f
@@ -569,19 +571,22 @@
 @check_h_vert:  nop
                 lda 000f        ; yvel
                 beq @ret_2ad0
+                ; head yvel != 0, proceed
 
                 lda #04
-                sta 7e2002
+                sta 7e2002      ; set vertical sprite
 
                 lda 000f        ; yvel
                 cmp #01
                 bne @skip_head_vf
+                ; head yvel > 0, flip tile
                 lda 7e2003
                 and #3f
                 ora #80
                 sta 7e2003
                 rts
 
+                ; head yvel < 0, reset tile flip
 @skip_head_vf:  lda 7e2003
                 and #3f
                 sta 7e2003
