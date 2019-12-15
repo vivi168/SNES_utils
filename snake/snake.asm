@@ -322,6 +322,7 @@
                 ; TODO check if collide with wall
                 jsr b090
                 ; TODO check if collide with body
+                jsr b200
 
                 jsr aa20        ; update oam buffer
                 jsr b500        ; update background buffer as well
@@ -607,7 +608,6 @@
                 dec
                 asl
                 tax
-                sta 0015        ; save
 
                 sep #20
 
@@ -749,7 +749,6 @@
 ; @b090
 ;**************************************
 3090:           nop
-                brk 00
                 lda 0007        ; head x
                 cmp #00
                 bcc @reset
@@ -772,9 +771,71 @@
                 rts
 
 ;**************************************
-; def check_eat_self()
-; TODO
+; def collides_with_body(xy=08)
+; check if a xy pair collides with a body xy pair
+; result in A
+; @b100
 ;**************************************
+3100:           phx
+                phd             ; save direct page
+                php
+                tsc
+                tcd             ; direct page = stack pointer
+
+                lda 7e0006
+                rep #30
+                and #00ff
+                dec
+                asl
+                tax
+
+                brk 00
+
+                lda 7e0009      ; compare with tail
+                cmp 08
+                beq @collides
+
+                ; compare with body loop
+@check_colli:   nop
+
+                lda 7e0200,x
+                cmp 08          ; compare param xy to body xy
+                beq @collides
+
+                dex
+                dex
+                bpl @check_colli
+
+                lda #0000
+                bra @ret_3100
+
+@collides:      nop
+                lda #0001
+
+@ret_3100:      nop
+                plp
+                pld
+                plx
+                rts
+
+;**************************************
+; def eat_self?()
+; @b200
+;**************************************
+3200:           nop
+
+                ldx 0007
+                phx
+                jsr b100
+                plx
+
+                cmp #01
+                bne @return_3200
+                jmp 8000
+
+@return_3200:   nop
+                rts
+
 
 ;**************************************
 ; def update_vram_buffer_from_map_coord()
