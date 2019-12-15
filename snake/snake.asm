@@ -597,8 +597,74 @@
 ; TODO: routine to update tail flip
 ; @ab30
 ;**************************************
-2b30:           nop
+2b30:           php
 
+                lda 0006
+                rep #30
+                and #00ff
+                dec
+                asl
+                tax
+                sta 0015        ; save
+
+                sep #20
+
+                lda 7e0200,x    ; last body x
+                cmp 0009
+                beq @cmp_y      ; body.x == tail.x, skip
+
+                ; body.x != tail.x
+                lda #06
+                sta 7e2006      ; set horizontal sprite
+
+                lda 7e0200,x
+                cmp 0009
+                bcc @bx_lt_tx
+
+                ; body.x > tail.x
+                lda 7e2007
+                and #3f
+                sta 7e2007
+                bra @ret_2b30
+
+                ; body.x < tail.x
+@bx_lt_tx:      nop
+                brk 00
+                lda 7e2007
+                and #3f
+                ora #40
+                sta 7e2007
+                bra @ret_2b30
+
+@cmp_y:         nop
+                inx
+                lda 7e0200,x    ; last body y
+                cmp 000a
+                beq @ret_2b30
+
+                ; body.y != tail.y
+                lda #08
+                sta 7e2006      ; set vertical sprite
+
+                lda 7e0200,x
+                cmp 000a
+                bcc @by_lt_ty
+
+                ; body.y > tail.y
+                lda 7e2007
+                and #3f
+                ora #80
+                sta 7e2007
+                bra @ret_2b30
+
+                ; body.y < tail.y
+@by_lt_ty:      nop
+                lda 7e2007
+                and #3f
+                sta 7e2007
+
+@ret_2b30:      nop
+                plp
                 rts
 
 ;**************************************
