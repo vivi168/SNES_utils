@@ -369,14 +369,18 @@
 
                 ldx 0003        ; load y pointer
                 lda 819840,x    ; load corresponding value
-                lsr
-                lsr
-                lsr
-                lsr
-                cmp #0d         ; $SCREEN_W - 1
+                cmp #e0
                 bcc @save_y_appl
-                lda #0d         ; screen is only 224px high (14 tiles)
-@save_y_appl:   sta 0005        ; save it to apple y coord
+                ; if apple.y >= 224, apple.y -= 32
+                ; (screen is only 224 high)
+                sec
+                sbc #20
+@save_y_appl:   nop
+                lsr
+                lsr
+                lsr
+                lsr
+                sta 0005        ; save it to apple y coord
                 dex
                 stx 0003        ; next y pointer = y pointer - 1
 
