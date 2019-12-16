@@ -1233,7 +1233,7 @@
                 stz 0012        ; clear seed read?
 
                 stz 000b        ; move counter
-                lda #10
+                lda #0a
                 sta 000c        ; base speed
                 lda #01
                 sta 000d        ; base velocity
