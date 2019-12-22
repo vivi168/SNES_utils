@@ -43,6 +43,11 @@
 ; 7e0015: tile coord buffer
 ; 7e0016: tile coord buffer
 
+; 7e0020: score ones
+; 7e0021: score tens
+; 7e0022: score hundreds
+; 7e0023: score thousands
+
 ; 7e0100: JOY1_RAW
 ; 7e0102: JOY1_PRESSL
 ; 7e0103: JOY1_PRESSH
@@ -755,6 +760,7 @@
 
                 ; TODO: take speed into account to compute score
                 inc 0010        ; increase score
+                jsr c000        ; update score bcd
 
 @ret_3050:      nop
                 plp
@@ -952,6 +958,61 @@
                 dex
                 dex
                 sta 7e2300,x    ; tile 3 = tile 4 - 2 (tile 1 + 0x40)
+
+                plp
+                rts
+
+;**************************************
+; def score_to_bcd()
+; @c000
+;**************************************
+4000:           nop
+                php
+                brk 00
+
+                rep #30
+
+                stz 0020        ; score bcd ones
+                stz 0021        ; score bcd tens
+                stz 0022        ; score bcd hundreds
+                stz 0023        ; score bcd thousands
+
+                lda 0010
+                tax
+                cmp #000a
+                bcc @ones
+
+@bcdloop:       nop
+
+@thousands:     cmp #03e8
+                bcc @hundreds
+                sec
+                sbc #03e8
+                sta 0010
+                inc 0023
+                bra @bcdloop
+@hundreds:      nop
+                cmp #0064
+                bcc @tens
+                sec
+                sbc #0064
+                sta 0010
+                inc 0022
+                bra @bcdloop
+@tens:          nop
+                cmp #000a
+                bcc @ones
+                sec
+                sbc #000a
+                sta 0010
+                inc 0021
+                bra @bcdloop
+
+@ones:          nop
+                sep #20
+                lda 0010
+                sta 0020
+                stx 0010
 
                 plp
                 rts
