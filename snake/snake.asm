@@ -406,31 +406,6 @@
                 plp
                 rts
 
-
-;**************************************
-; def points_collide?(x1=07, y1=08,
-;                     x2=09, y2=0a)
-; result in A
-; @a800
-;**************************************
-2800:           phx
-                phd
-                tsc
-                tcd
-
-                ldx 07
-                cpx 09
-                bne @not_colliding
-
-                lda #01         ; collide
-                bra @return_2100
-
-@not_colliding: lda #00         ; does not collide
-
-@return_2100:   pld
-                plx
-                rts
-
 ;**************************************
 ; def map_to_screen_coord(point=07)
 ; result in A
@@ -734,15 +709,8 @@
 ;**************************************
 3050:           php
 
-                tsx
-                ldy 0004        ; apple x,y
-                phy
-                ldy 0007        ; head x,y
-                phy
-                jsr a800
-                txs
-
-                cmp #01
+                ldx 0004        ; apple xy
+                cpx 0007        ; head xy
                 bne @ret_3050
 
                 jsr a050        ; next apple coord
