@@ -125,51 +125,7 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 ; init a dummy buffer in WRAM
                 jsr 8300        ; @oam_buf_init
                 jsr 8550        ; @reset WRAM tilemap buffer
-                ; Init apple and head positions/sprite name here
-                ; Snake head, first sprite in OAM (name 2, second sprite in rom)
-                ldx #0000
-                lda #50
-                sta 7e2000,x    ; X pos (lsb)
-                inx
-                lda #5f
-                sta 7e2000,x    ; Y pos
-                inx
-                lda #02
-                sta 7e2000,x    ; name lsb
-                inx
-                lda #30
-                sta 7e2000,x    ; flip/prio/color/name msb
-                inx
-                ; Snake tail, third sprite in OAM (name 6)
-                lda #20
-                sta 7e2000,x    ; X pos (lsb)
-                inx
-                lda #5f
-                sta 7e2000,x    ; Y pos
-                inx
-                lda #06
-                sta 7e2000,x    ; name lsb
-                inx
-                lda #30
-                sta 7e2000,x    ; flip/prio/color/name msb
-                inx
-                ; Apple, third sprite in OAM (name 0).
-                ; must be last to appear beneath snake head
-                lda #10
-                sta 7e2000,x    ; X pos (lsb)
-                inx
-                lda #20
-                sta 7e2000,x    ; Y pos
-                inx
-                lda #00
-                sta 7e2000,x    ; name lsb
-                inx
-                lda #00         ; low priority
-                sta 7e2000,x    ; flip/prio/color/name msb
-                inx
-
-                lda #40
-                sta 7e2200      ; X pos msb and size for first 4 sprites
+                jsr 8570        ; @oam_initial_settings
 
                 jsr aa20        ; @update_oam_buffer_from_map_coord()
                 jsr b500
@@ -1165,6 +1121,58 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 inx
                 cpx #0800
                 bne @reset_tm
+                rts
+
+;**************************************
+; def oam_initial_settings()
+; @8570
+;**************************************
+0570:           nop
+                ; Init apple and head positions/sprite name here
+                ; Snake head, first sprite in OAM (name 2, second sprite in rom)
+                ldx #0000
+                lda #50
+                sta 7e2000,x    ; X pos (lsb)
+                inx
+                lda #5f
+                sta 7e2000,x    ; Y pos
+                inx
+                lda #02
+                sta 7e2000,x    ; name lsb
+                inx
+                lda #30
+                sta 7e2000,x    ; flip/prio/color/name msb
+                inx
+                ; Snake tail, third sprite in OAM (name 6)
+                lda #20
+                sta 7e2000,x    ; X pos (lsb)
+                inx
+                lda #5f
+                sta 7e2000,x    ; Y pos
+                inx
+                lda #06
+                sta 7e2000,x    ; name lsb
+                inx
+                lda #30
+                sta 7e2000,x    ; flip/prio/color/name msb
+                inx
+                ; Apple, third sprite in OAM (name 0).
+                ; must be last to appear beneath snake head
+                lda #10
+                sta 7e2000,x    ; X pos (lsb)
+                inx
+                lda #20
+                sta 7e2000,x    ; Y pos
+                inx
+                lda #00
+                sta 7e2000,x    ; name lsb
+                inx
+                lda #00         ; low priority
+                sta 7e2000,x    ; flip/prio/color/name msb
+                inx
+
+                lda #40
+                sta 7e2200      ; X pos msb and size for first 4 sprites
                 rts
 
 ;**************************************
