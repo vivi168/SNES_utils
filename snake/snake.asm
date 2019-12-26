@@ -109,11 +109,14 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 lda #01
                 sta 2105        ; BGMODE
 
-                lda #10
+                lda #10         ; BG1 MAP @ VRAM[2000]
                 sta 2107        ; BG1SC
+                lda #50         ; BG3 map @ VRAM[a000]
+                sta 2109        ; BG3SC
 
-                lda #00
+                lda #00         ; BG1 tiles @ VRAM[0000]
                 sta 210b        ; BG12NBA
+                lda #04         ; BG3 tiles @ VRAM[8000]
                 sta 210c        ; BG34NBA
 
                 lda #11
@@ -1141,7 +1144,7 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 txs             ; restore stack pointer
                 ; Copy WRAM tilemap buffer to VRAM
                 tsx             ; save stack pointer
-                pea 1000        ; vram_dest_addr
+                pea 1000        ; vram_dest_addr (@2000 really, word steps)
                 pea 2300        ; rom_src_addr
                 lda #7e         ; rom_src_bank
                 pha
@@ -1157,12 +1160,32 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 pea 0800        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
+                ; Copy small-font.bin to VRAM
+                tsx             ; save stack pointer
+                pea 4000        ; vram_dest_addr (@8000 really, word steps)
+                pea b840        ; rom_src_addr
+                lda #81         ; rom_src_bank
+                pha
+                pea 0c00        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
 
                 ; Copy snake-bg-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #00
                 pha             ; cgram_dest_addr
                 pea 9000        ; rom_src_addr
+                lda #81
+                pha             ; rom_src_bank
+                lda #20
+                pha             ; bytes_to_trasnfer
+                jsr 8460        ; @cgram_dma_transfer
+                txs             ; restore stack pointer
+                ; Copy small-font-pal.bin to CGRAM
+                tsx             ; save stack pointer
+                lda #10
+                pha             ; cgram_dest_addr
+                pea c460        ; rom_src_addr
                 lda #81
                 pha             ; rom_src_bank
                 lda #20
