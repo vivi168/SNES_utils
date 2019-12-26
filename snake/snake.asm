@@ -10,8 +10,13 @@
 8800:           .incbin assets/snake-sprites.bin        ; 0x800
 9000:           .incbin assets/snake-bg-pal.bin         ; 0x20
 9020:           .incbin assets/snake-sprites-pal.bin    ; 0x20
-9040:           .incbin assets/snake.map                ; 0x800
+9040:           .incbin assets/title-screen.map         ; 0x800
 9840:           .incbin assets/random.bin               ; 0x800
+a040:           .incbin assets/title-screen.bin         ; 0x1800
+b840:           .incbin assets/small-font.bin           ; 0xc00
+c440:           .incbin assets/title-screen-pal.bin     ; 0x20
+c460:           .incbin assets/small-font-pal.bin       ; 0x20
+
 
 ;**************************************
 ; WRAM addresses
@@ -175,7 +180,7 @@
                 ; transfer buffer to OAMRAM
                 jsr 8400        ; @oam_dma_transfer
 
-                ; Copy tiles to VRAM
+                ; Copy snake-bg.bin to VRAM
                 tsx             ; save stack pointer
                 pea 0000        ; vram_dest_addr
                 pea 8000        ; rom_src_addr
@@ -193,7 +198,7 @@
                 pea 0800        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
-                ; Copy sprite to VRAM
+                ; Copy snake-sprites.bin to VRAM
                 tsx             ; save stack pointer
                 pea 2000        ; vram_dest_addr
                 pea 8800        ; rom_src_addr
@@ -203,7 +208,7 @@
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
 
-                ; Copy BG palette to CGRAM
+                ; Copy snake-bg-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #00
                 pha             ; cgram_dest_addr
@@ -214,7 +219,7 @@
                 pha             ; bytes_to_trasnfer
                 jsr 8460        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
-                ; Copy sprite palette to CGRAM
+                ; Copy snake-sprites-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #80
                 pha             ; cgram_dest_addr
