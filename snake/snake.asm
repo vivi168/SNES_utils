@@ -71,6 +71,8 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
 ; 2|3 => tile 2 = tile 0 + 0x40, tile 3 = tile 2 + 2
 ;
 ; 7e2300: snake body tile buffer
+; 7e3000: BG3 tile buffer
+; BG tile = vhopppcc cccccccc
 ;**************************************
 ; ROUTINES LOCATION
 ;**************************************
@@ -105,9 +107,10 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
 
                 lda #61
                 sta 2101        ; OBSEL (1 = index in VRAM in 8K word steps)
+                                ; VRAM[4000]
 
-                lda #01
-                sta 2105        ; BGMODE
+                lda #09
+                sta 2105        ; BGMODE 1, BG3 priority high
 
                 lda #10         ; BG1 MAP @ VRAM[2000]
                 sta 2107        ; BG1SC
@@ -119,7 +122,7 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 lda #04         ; BG3 tiles @ VRAM[8000]
                 sta 210c        ; BG34NBA
 
-                lda #11
+                lda #15
                 sta 212c        ; TM
 
                 ;**************************************
@@ -128,6 +131,7 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 ; init a dummy buffer in WRAM
                 jsr 8300        ; @oam_buf_init
                 jsr 8550        ; @reset WRAM tilemap buffer
+                jsr b650        ; @init_bg3_tilemap_buffer
                 jsr 8570        ; @oam_initial_settings
 
                 jsr aa20        ; @update_oam_buffer_from_map_coord()
@@ -167,10 +171,20 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
 
                 ; update oam
                 jsr 8400        ; @oam_dma_transfer
-                ; update vram
+                ; TODO: reuse dma_transfers routine
+                ; update vram (snake body tilemap)
                 tsx             ; save stack pointer
                 pea 1000        ; vram_dest_addr
                 pea 2300        ; rom_src_addr
+                lda #7e         ; rom_src_bank
+                pha
+                pea 0800        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
+                ; update vram (bg3 tilemap)
+                tsx             ; save stack pointer
+                pea 5000        ; vram_dest_addr
+                pea 3000        ; rom_src_addr
                 lda #7e         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
@@ -842,6 +856,38 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 sta 7e2300,x    ; tile 3 = tile 4 - 2 (tile 1 + 0x40)
 
                 plp
+                rts
+
+;**************************************
+; def init_bg3_tilemap_buffer()
+; b650
+;**************************************
+;               S     C     O     R     E     :
+3600:           66 20 46 20 5e 20 64 00 4a 00 34 00
+3650:           nop
+                php
+                rep #30
+
+                lda #2000
+                ldx #0800
+
+@init_bg3:      nop
+                sta 7e3000,x
+                dex
+                dex
+                bne @init_bg3
+
+                lda #2066
+                sta 7e3000
+
+                plp
+                rts
+
+;**************************************
+; def update_bg3_tile_buffer()
+; b700
+;**************************************
+3700:           nop
                 rts
 
 ;**************************************
