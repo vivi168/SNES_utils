@@ -135,57 +135,7 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 ;**************************************
                 ; transfer buffer to OAMRAM
                 jsr 8400        ; @oam_dma_transfer
-
-                ; Copy snake-bg.bin to VRAM
-                tsx             ; save stack pointer
-                pea 0000        ; vram_dest_addr
-                pea 8000        ; rom_src_addr
-                lda #81         ; rom_src_bank
-                pha
-                pea 0800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
-                txs             ; restore stack pointer
-                ; Copy WRAM tilemap buffer to VRAM
-                tsx             ; save stack pointer
-                pea 1000        ; vram_dest_addr
-                pea 2300        ; rom_src_addr
-                lda #7e         ; rom_src_bank
-                pha
-                pea 0800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
-                txs             ; restore stack pointer
-                ; Copy snake-sprites.bin to VRAM
-                tsx             ; save stack pointer
-                pea 2000        ; vram_dest_addr
-                pea 8800        ; rom_src_addr
-                lda #81         ; rom_src_bank
-                pha
-                pea 0800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
-                txs             ; restore stack pointer
-
-                ; Copy snake-bg-pal.bin to CGRAM
-                tsx             ; save stack pointer
-                lda #00
-                pha             ; cgram_dest_addr
-                pea 9000        ; rom_src_addr
-                lda #81
-                pha             ; rom_src_bank
-                lda #20
-                pha             ; bytes_to_trasnfer
-                jsr 8460        ; @cgram_dma_transfer
-                txs             ; restore stack pointer
-                ; Copy snake-sprites-pal.bin to CGRAM
-                tsx             ; save stack pointer
-                lda #80
-                pha             ; cgram_dest_addr
-                pea 9020        ; rom_src_addr
-                lda #81
-                pha             ; rom_src_bank
-                lda #20
-                pha             ; bytes_to_trasnfer
-                jsr 8460        ; @cgram_dma_transfer
-                txs             ; restore stack pointer
+                jsr 85e0        ; @dma_transfers
 
 ;**************************************
 ; Final setting before starting gameloop
@@ -1173,6 +1123,63 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
 
                 lda #40
                 sta 7e2200      ; X pos msb and size for first 4 sprites
+                rts
+
+;**************************************
+; def dma_transfers()
+; @85e0
+;**************************************
+05e0:           nop
+                ; Copy snake-bg.bin to VRAM
+                tsx             ; save stack pointer
+                pea 0000        ; vram_dest_addr
+                pea 8000        ; rom_src_addr
+                lda #81         ; rom_src_bank
+                pha
+                pea 0800        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
+                ; Copy WRAM tilemap buffer to VRAM
+                tsx             ; save stack pointer
+                pea 1000        ; vram_dest_addr
+                pea 2300        ; rom_src_addr
+                lda #7e         ; rom_src_bank
+                pha
+                pea 0800        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
+                ; Copy snake-sprites.bin to VRAM
+                tsx             ; save stack pointer
+                pea 2000        ; vram_dest_addr
+                pea 8800        ; rom_src_addr
+                lda #81         ; rom_src_bank
+                pha
+                pea 0800        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
+
+                ; Copy snake-bg-pal.bin to CGRAM
+                tsx             ; save stack pointer
+                lda #00
+                pha             ; cgram_dest_addr
+                pea 9000        ; rom_src_addr
+                lda #81
+                pha             ; rom_src_bank
+                lda #20
+                pha             ; bytes_to_trasnfer
+                jsr 8460        ; @cgram_dma_transfer
+                txs             ; restore stack pointer
+                ; Copy snake-sprites-pal.bin to CGRAM
+                tsx             ; save stack pointer
+                lda #80
+                pha             ; cgram_dest_addr
+                pea 9020        ; rom_src_addr
+                lda #81
+                pha             ; rom_src_bank
+                lda #20
+                pha             ; bytes_to_trasnfer
+                jsr 8460        ; @cgram_dma_transfer
+                txs             ; restore stack pointer
                 rts
 
 ;**************************************
