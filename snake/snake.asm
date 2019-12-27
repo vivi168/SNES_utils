@@ -36,7 +36,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; 7e000a: tail y coord
 ; 7e000b; last move counter
 ; 7e000c: base speed
-; 7e000d: base velocity
+; 7e000d: base speed
 ; 7e000e: x velocity
 ; 7e000f: y velocity
 ; 7e0010: score L
@@ -664,8 +664,14 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda 0009        ; get tail xy
                 sta 7e0200,x    ; init a new body coord entry
 
-                ; TODO: take speed into account to compute score
-                inc 0010        ; increase score
+                ; score increase formula: score += 20 - base speed
+                lda #0014
+                sec
+                sbc 000c
+                clc
+                adc 0010
+                sta 010
+
                 ; CAUTION: rep #30 above
                 jsr c000        ; update score bcd
                 jsr b700        ; update bg3 from score bcd
@@ -1397,8 +1403,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 stz 000b        ; move counter
                 lda #0a
                 sta 000c        ; base speed
-                lda #01
-                sta 000d        ; base velocity
+                lda #00
+                sta 000d        ; base speed
                 stz 000e        ; x vel
                 stz 000f        ; y vel
                 stz 0010        ; score L
