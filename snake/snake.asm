@@ -13,9 +13,9 @@
 9040:           .incbin assets/title-screen.map         ; 0x800
 9840:           .incbin assets/random.bin               ; 0x800
 a040:           .incbin assets/title-screen.bin         ; 0x1800
-b840:           .incbin assets/small-font.bin           ; 0xc00
-c440:           .incbin assets/title-screen-pal.bin     ; 0x20
-c460:           .incbin assets/small-font-pal.bin       ; 0x20
+b840:           .incbin assets/small-font.bin           ; 0x600
+be40:           .incbin assets/title-screen-pal.bin     ; 0x20
+be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 
 ;**************************************
@@ -131,7 +131,7 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 ; init a dummy buffer in WRAM
                 jsr 8300        ; @oam_buf_init
                 jsr 8550        ; @reset WRAM tilemap buffer
-                jsr b650        ; @init_bg3_tilemap_buffer
+                jsr b620        ; @init_bg3_tilemap_buffer
                 jsr 8570        ; @oam_initial_settings
 
                 jsr aa20        ; @update_oam_buffer_from_map_coord()
@@ -656,7 +656,9 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
 
                 ; TODO: take speed into account to compute score
                 inc 0010        ; increase score
+                ; CAUTION: rep #30 above
                 jsr c000        ; update score bcd
+                jsr b700        ; update bg3 from score bcd
 
 @ret_3050:      nop
                 plp
@@ -860,15 +862,18 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
 
 ;**************************************
 ; def init_bg3_tilemap_buffer()
-; b650
+; b620
 ;**************************************
 ;               S     C     O     R     E     :
-3600:           66 20 46 20 5e 20 64 00 4a 00 34 00
-3650:           nop
+3600:           33 30 23 30 2f 30 32 30 25 30 1a 30
+;               0     0     0     0
+360c:           10 30 10 30 10 30 10 30
+3620:           nop
                 php
+
                 rep #30
 
-                lda #2000
+                lda #3000
                 ldx #0800
 
 @init_bg3:      nop
@@ -877,17 +882,49 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 dex
                 bne @init_bg3
 
-                lda #2066
-                sta 7e3000
+                ldx #0000
+
+@default_txt:   nop
+                lda 80b600,x
+                sta 7e3000,x
+                inx
+                inx
+                cpx #0014
+                bne @default_txt
 
                 plp
                 rts
 
 ;**************************************
 ; def update_bg3_tile_buffer()
+; update score from BCD buffer
 ; b700
 ;**************************************
 3700:           nop
+                php
+                sep #20
+                brk 00
+
+                lda 0023
+                clc
+                adc #10
+                sta 7e300c
+
+                lda 0022
+                clc
+                adc #10
+                sta 7e300e
+
+                lda 0021
+                clc
+                adc #10
+                sta 7e3010
+
+                lda 0020
+                clc
+                adc #10
+                sta 7e3012
+                plp
                 rts
 
 ;**************************************
@@ -896,9 +933,6 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
 ;**************************************
 4000:           nop
                 php
-                brk 00
-
-                rep #30
 
                 stz 0020        ; score bcd ones
                 stz 0021        ; score bcd tens
@@ -1212,7 +1246,7 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 pea b840        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
-                pea 0c00        ; bytes_to_trasnfer
+                pea 0600        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
 
@@ -1231,10 +1265,10 @@ c460:           .incbin assets/small-font-pal.bin       ; 0x20
                 tsx             ; save stack pointer
                 lda #10
                 pha             ; cgram_dest_addr
-                pea c460        ; rom_src_addr
+                pea be60        ; rom_src_addr
                 lda #81
                 pha             ; rom_src_bank
-                lda #20
+                lda #08
                 pha             ; bytes_to_trasnfer
                 jsr 8460        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
