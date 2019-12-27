@@ -122,6 +122,16 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #04         ; BG3 tiles @ VRAM[8000]
                 sta 210c        ; BG34NBA
 
+                lda #fd
+                sta 2112
+                lda #00
+                sta 2112
+
+                lda #ff
+                sta 2111
+                lda #00
+                sta 2111
+
                 lda #15
                 sta 212c        ; TM
 
