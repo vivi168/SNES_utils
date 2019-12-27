@@ -10,8 +10,8 @@
 8800:           .incbin assets/snake-sprites.bin        ; 0x800
 9000:           .incbin assets/snake-bg-pal.bin         ; 0x20
 9020:           .incbin assets/snake-sprites-pal.bin    ; 0x20
-9040:           .incbin assets/title-screen.map         ; 0x800
-9840:           .incbin assets/random.bin               ; 0x800
+9040:           .incbin assets/random.bin               ; 0x800
+9840:           .incbin assets/title-screen.map         ; 0x800
 a040:           .incbin assets/title-screen.bin         ; 0x1800
 b840:           .incbin assets/small-font.bin           ; 0x600
 be40:           .incbin assets/title-screen-pal.bin     ; 0x20
@@ -301,7 +301,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 @next_appl:     sep #30         ; m8 x8
 
                 ldx 0002        ; load x pointer
-                lda 819840,x    ; load corresponding value
+                lda 819040,x    ; load corresponding value
                 lsr
                 lsr
                 lsr
@@ -311,7 +311,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 stx 0002        ; next x pointer = x pointer + 1
 
                 ldx 0003        ; load y pointer
-                lda 819840,x    ; load corresponding value
+                lda 819040,x    ; load corresponding value
                 cmp #e0
                 bcc @save_y_appl
                 ; if apple.y >= 224, apple.y -= 32
