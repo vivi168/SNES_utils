@@ -7,11 +7,12 @@ options = {}
 OptionParser.new do |opts|
   opts.on('-f', '--file FILENAME', 'TMX source file') { |o| options[:filename] = o }
   opts.on('-s', '--tile-size TILESIZE', '8 or 16') { |o| options[:tile_size] = o.to_i }
+  opts.on('-p', '--palette PALETTE', 'palette no. (0..7)') { |o| options[:palette] = o.to_i }
 end.parse!
 
 raise OptionParser::MissingArgument, 'Must specify TMX source file' if options[:filename].nil?
 raise 'Wrong size : must either be 8 or 16' unless [8, 16].include? options[:tile_size]
 
-t = SnesUtils::Tmx2Snes.new options[:filename], big_char: options[:tile_size] == 16
+t = SnesUtils::Tmx2Snes.new options[:filename], big_char: options[:tile_size] == 16, palette: options[:palette]
 
 t.write
