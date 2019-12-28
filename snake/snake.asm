@@ -126,6 +126,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 sta 212c        ; TM
 
                 jsr b620        ; @reset_bg3_tilemap_buffer
+                jsr b7d0
 
                 ;**************************************
                 ; DMA transfers
@@ -631,7 +632,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 sta 7e0200,x
                 dex
                 dex
-                bpl @update_body_x
+                bne @update_body_x
 
                 ; first body part takes place of head
                 lda 0007
@@ -931,7 +932,6 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 3700:           nop
                 php
                 sep #20
-                brk 00
 
                 lda 0023
                 clc
@@ -957,15 +957,60 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def init_bg3_title_buffer()
-; @b770
+; @b7d0
 ;**************************************
-;     S  p  e  e  d  :  0  0
-3750: 33 50 45 45 44 1a 10 10
-;     P  u  s  h     s  t  a  r  t     b  u  t  t  o  n
-3758: 30 55 53 48 00 53 54 41 52 54 00 42 55 54 54 4f 4e
-;     ©  v  i  v  i  1  6  8     2  0  1  9
-3769: 5f 56 49 56 49 11 16 16 00 12 10 11 19
-3770:           nop
+;     S     p     e     e     d     :     0     0
+3750: 33 30 50 30 45 30 45 30 44 30 1a 30 10 30 10 30
+;     P     u     s     h           s     t     a     r     t
+3760: 30 30 55 30 53 30 48 30 00 30 53 30 54 30 41 30 52 30 54 30 00 30
+;     b     u     t     t     o     n
+3776: 42 30 55 30 54 30 54 30 4f 30 4e 30
+;     ©     v     i     v     i     1     6     8           2     0     1     9
+3782: 5f 30 56 30 49 30 56 30 49 30 11 30 16 30 18 30 00 30 12 30 10 30 11 30 19 30
+37d0:           nop
+
+                brk 00
+                ; @ a008
+                ldx #0000
+@speed_txt:     nop
+                lda 80b750,x
+                sta 7e3008,x
+                inx
+                inx
+                cpx #0010
+                bcc @speed_txt
+
+                ; @ a080
+                ldx #0000
+@start_txt:     nop
+                lda 80b760,x
+                sta 7e3100,x
+                inx
+                inx
+                cpx #0022
+                bcc @start_txt
+
+                ; @ a104
+                ldx #0000
+@copyr_txt:     nop
+                lda 80b782,x
+                sta 7e3284,x
+                inx
+                inx
+                cpx #0022
+                bcc @copyr_txt
+
+                ; BG3 V/H offsets
+                lda #80
+                sta 2112
+                lda #00
+                sta 2112
+
+                lda #c0
+                sta 2111
+                lda #00
+                sta 2111
+
                 rts
 
 ;**************************************
