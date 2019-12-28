@@ -112,48 +112,27 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #09
                 sta 2105        ; BGMODE 1, BG3 priority high
 
-                lda #10         ; BG1 MAP @ VRAM[2000]
+                lda #70         ; BG1 MAP @ VRAM[e000]
                 sta 2107        ; BG1SC
                 lda #50         ; BG3 map @ VRAM[a000]
                 sta 2109        ; BG3SC
 
-                lda #00         ; BG1 tiles @ VRAM[0000]
+                lda #06         ; BG1 tiles @ VRAM[c000]
                 sta 210b        ; BG12NBA
                 lda #04         ; BG3 tiles @ VRAM[8000]
                 sta 210c        ; BG34NBA
 
-                ; BG3 V/H offsets
-                lda #fd
-                sta 2112
-                lda #00
-                sta 2112
-
-                lda #ff
-                sta 2111
-                lda #00
-                sta 2111
-
-                lda #15         ; enable sprites, BG1&3
+                lda #05         ; enable BG1&3
                 sta 212c        ; TM
 
-                ;**************************************
-                ; OAM / VRAM init here
-                ;**************************************
-                ; init a dummy buffer in WRAM
-                jsr 8300        ; @oam_buf_init
-                jsr 8570        ; @oam_initial_settings
-                jsr 8550        ; @reset WRAM tilemap buffer
-                jsr b620        ; @init_bg3_tilemap_buffer
-
-                jsr aa20        ; @update_oam_buffer_from_map_coord()
-                jsr b500        ; update background buffer as well
+                jsr b620        ; @reset_bg3_tilemap_buffer
 
                 ;**************************************
                 ; DMA transfers
                 ;**************************************
                 ; transfer buffer to OAMRAM
                 jsr 8400        ; @oam_dma_transfer
-                jsr 85e0        ; @dma_transfers
+                jsr 87e0        ; @dma_transfers
 
 ;**************************************
 ; Final setting before starting gameloop
@@ -243,6 +222,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 jsr a050
                 ; then update oam buffer to reflect new apple coord
                 jsr aa20
+                jsr 85e0
                 ;jump to game loop
                 jmp 9080
 
@@ -650,7 +630,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 sta 7e0200,x
                 dex
                 dex
-                bne @update_body_x
+                bpl @update_body_x
 
                 ; first body part takes place of head
                 lda 0007
@@ -897,7 +877,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 rts
 
 ;**************************************
-; def init_bg3_tilemap_buffer()
+; def reset_bg3_tilemap_buffer()
 ; b620
 ;     vhopppcc
 ; 30: 00110000
@@ -914,12 +894,21 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #3000
                 ldx #0800
 
-@init_bg3:      nop
+@reset_bg3:     nop
                 sta 7e3000,x
                 dex
                 dex
-                bne @init_bg3
+                bpl @reset_bg3
 
+                plp
+                rts
+
+;**************************************
+; def init_bg3_score_buffer()
+; b640
+;**************************************
+3640:           php
+                rep #30
                 ldx #0000
 
 @default_txt:   nop
@@ -1247,10 +1236,68 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 rts
 
 ;**************************************
-; def dma_transfers()
+; def init_game_bg_settings()
 ; @85e0
 ;**************************************
 05e0:           nop
+
+                lda #8f
+                sta 2100        ; INIDISP
+                stz 4200        ; NMITIMEN
+
+                ; BG settings
+                lda #09
+                sta 2105        ; BGMODE 1, BG3 priority high
+
+                lda #10         ; BG1 MAP @ VRAM[2000]
+                sta 2107        ; BG1SC
+                lda #50         ; BG3 map @ VRAM[a000]
+                sta 2109        ; BG3SC
+
+                lda #00         ; BG1 tiles @ VRAM[0000]
+                sta 210b        ; BG12NBA
+                lda #04         ; BG3 tiles @ VRAM[8000]
+                sta 210c        ; BG34NBA
+
+                ; BG3 V/H offsets
+                lda #fd
+                sta 2112
+                lda #00
+                sta 2112
+
+                lda #ff
+                sta 2111
+                lda #00
+                sta 2111
+
+                lda #15         ; enable sprites, BG1&3
+                sta 212c        ; TM
+
+                ;**************************************
+                ; OAM / VRAM init here
+                ;**************************************
+                ; init a dummy buffer in WRAM
+                jsr 8300        ; @oam_buf_init
+                jsr 8570        ; @oam_initial_settings
+                jsr 8550        ; @reset WRAM tilemap buffer
+                jsr b620        ; @init_bg3_tilemap_buffer
+                jsr b640        ; @init_bg3_score_buffer
+
+                jsr aa20        ; @update_oam_buffer_from_map_coord()
+                jsr b500        ; update background buffer as well
+
+                lda #0f
+                sta 2100        ; INIDISP
+                lda #81
+                sta 4200        ; NMITIMEN
+
+                rts
+
+;**************************************
+; def dma_transfers()
+; @87e0
+;**************************************
+07e0:           nop
                 ; Copy snake-bg.bin to VRAM
                 tsx             ; save stack pointer
                 pea 0000        ; vram_dest_addr
