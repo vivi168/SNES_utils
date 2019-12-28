@@ -95,7 +95,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 txs             ; set stack pointer to 1fff
 
                 ; Forced Blank
-                lda #8f
+                lda #80
                 sta 2100        ; INIDISP
 
                 jsr 8e00        ; @clear_registers
@@ -969,7 +969,6 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 3782: 5f 30 56 30 49 30 56 30 49 30 11 30 16 30 18 30 00 30 12 30 10 30 11 30 19 30
 37d0:           nop
 
-                brk 00
                 ; @ a008
                 ldx #0000
 @speed_txt:     nop
@@ -1300,7 +1299,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;**************************************
 05e0:           nop
 
-                lda #8f
+                jsr 8660
+
+                lda #80
                 sta 2100        ; INIDISP
                 stz 4200        ; NMITIMEN
 
@@ -1345,10 +1346,48 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 jsr aa20        ; @update_oam_buffer_from_map_coord()
                 jsr b500        ; update background buffer as well
 
-                lda #0f
+                lda #00
                 sta 2100        ; INIDISP
                 lda #81
                 sta 4200        ; NMITIMEN
+
+                jsr 8640
+
+                rts
+
+
+;**************************************
+; def fade_in()
+; @8640
+;**************************************
+0640:           wai
+
+                lda #00
+                sta 2100        ; INIDISP
+
+@fadein_lp:     nop
+                inc
+                sta 2100
+                cmp #0f
+                bcc @fadein_lp
+
+                rts
+
+;**************************************
+; def fade_out()
+; @8660
+;**************************************
+0660:           wai
+
+                lda #0f
+                sta 2100        ; INIDISP
+
+                brk 00
+
+@fadeout_lp:    nop
+                dec
+                sta 2100
+                bne @fadeout_lp
 
                 rts
 
