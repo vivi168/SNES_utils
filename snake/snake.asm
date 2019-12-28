@@ -1034,7 +1034,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 cpx #0200       ; $OAML_SIZE
                 bne @set_x_lsb
 
-                lda #55         ; 1010101
+                lda #55         ; 01010101
 @set_x_msb:     sta 7e2000,x
                 inx
                 sta 7e2000,x
@@ -1239,8 +1239,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 sta 7e2000,x    ; flip/prio/color/name msb
                 inx
 
-                lda #40
-                sta 7e2200      ; X pos msb and size for first 4 sprites
+                lda #40         ; 0100_0000
+                sta 7e2200      ; X pos msb and size for first 3 sprites
                 rts
 
 ;**************************************
