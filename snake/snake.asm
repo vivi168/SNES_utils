@@ -215,21 +215,26 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda 0103        ; JOY1_PRESSH
 
                 bit #08
-                bne @inc_speed
-
-                bit #04
-                bne @dec_speed
-
-                bra @speed_done
-
-@inc_speed:     nop
+                beq @dec_speed
                 dec 000c        ; lower base speed, faster snake moves
+                lda 000c
+                cmp #04         ; maximum speed is 0x04
+                bcs @speed_done
+                lda #04
+                sta 000c
                 bra @speed_done
 
-@dec_speed:     nop
+@dec_speed:     lda 0103
+                bit #04
+                beq @speed_done
                 inc 000c        ; higher base speed, slower snake moves
+                lda 000c
+                cmp #13         ; minimum speed is 0x13
+                bcc @speed_done
+                lda #13
+                sta 000c
 
-@speed_done:    nop
+@speed_done:    lda 0103
                 bit #10         ; if start is pressed
                 beq @continue
                 jsr a000        ; then init random seed
@@ -238,7 +243,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; then update oam buffer to reflect new apple coord
                 jsr aa20
                 ;jump to game loop
-                jmp 9050
+                jmp 9080
 
 @continue:      jmp 9000        ; @menu_loop()
 
@@ -249,9 +254,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; check apple colision with head, score increase
 ; TODO if start is pressed in gameloop, jump to pause loop.
 ; TODO if start is pressed in pause loop, jump to gameloop
-; @9050
+; @9080
 ;**************************************
-1050:           wai
+1080:           wai
                 jsr aa60        ; handle key
 
                 lda 000b
@@ -286,7 +291,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 jsr aa20        ; update oam buffer
                 jsr b500        ; update background buffer as well
 
-                jmp 9050
+                jmp 9080
 
 ;**************************************
 ; def init_random_seed()
