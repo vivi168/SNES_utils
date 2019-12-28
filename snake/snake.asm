@@ -165,7 +165,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #81
                 sta 4200        ; NMITIMEN
 
-                jmp 9000        ; @gameloop
+                jmp 9000        ; @menu_loop
 
 ;**************************************
 ; BRK @ 8150
@@ -205,14 +205,32 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 rti
 
 ;**************************************
-; def logo_loop()
-; Logo screen loop (wait for user to press enter)
+; def menu_loop()
+; Menu screen loop (wait for user to press enter)
+; Can increase/decrease speed with up/down arrows
 ; @9000
 ;**************************************
 
 1000:           wai
                 lda 0103        ; JOY1_PRESSH
-                and #10         ; if start is pressed
+
+                bit #08
+                bne @inc_speed
+
+                bit #04
+                bne @dec_speed
+
+                bra @speed_done
+
+@inc_speed:     nop
+                dec 000c        ; lower base speed, faster snake moves
+                bra @speed_done
+
+@dec_speed:     nop
+                inc 000c        ; higher base speed, slower snake moves
+
+@speed_done:    nop
+                bit #10         ; if start is pressed
                 beq @continue
                 jsr a000        ; then init random seed
                 ;then generate apple position
@@ -222,7 +240,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ;jump to game loop
                 jmp 9050
 
-@continue:      jmp 9000        ; @logo_loop()
+@continue:      jmp 9000        ; @menu_loop()
 
 ;**************************************
 ; def game_loop()
@@ -424,20 +442,16 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 2a60:           lda 0103        ; JOY1_PRESSH
 
-                tax
-                and #08
+                bit #08
                 bne @move_up
 
-                txa
-                and #04
+                bit #04
                 bne @move_down
 
-                txa
-                and #02
+                bit #02
                 bne @move_left
 
-                txa
-                and #01
+                bit #01
                 bne @move_right
 
                 rts
