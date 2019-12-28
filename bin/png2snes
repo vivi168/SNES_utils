@@ -6,10 +6,11 @@ require 'snes_utils'
 options = {}
 OptionParser.new do |opts|
   opts.on('-f', '--file FILENAME', 'PNG source file') { |o| options[:filename] = o }
+  opts.on('-b', '--bpp BPP', 'BPP') { |o| options[:bpp] = o }
 end.parse!
 
 raise OptionParser::MissingArgument, 'Must specify PNG source file' if options[:filename].nil?
 
-c = SnesUtils::Png2Snes.new options[:filename]
+c = SnesUtils::Png2Snes.new options[:filename], bpp: options[:bpp].to_i
 c.write_palette
 c.write_image
