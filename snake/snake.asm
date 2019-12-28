@@ -222,6 +222,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 jsr a050
                 ; then update oam buffer to reflect new apple coord
                 jsr aa20
+                ; init bg settings for game loop
                 jsr 85e0
                 ;jump to game loop
                 jmp 9080
@@ -952,6 +953,19 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 adc #10
                 sta 7e3012
                 plp
+                rts
+
+;**************************************
+; def init_bg3_title_buffer()
+; @b770
+;**************************************
+;     S  p  e  e  d  :  0  0
+3750: 33 50 45 45 44 1a 10 10
+;     P  u  s  h     s  t  a  r  t     b  u  t  t  o  n
+3758: 30 55 53 48 00 53 54 41 52 54 00 42 55 54 54 4f 4e
+;     ©  v  i  v  i  1  6  8     2  0  1  9
+3769: 5f 56 49 56 49 11 16 16 00 12 10 11 19
+3770:           nop
                 rts
 
 ;**************************************
