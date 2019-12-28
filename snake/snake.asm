@@ -122,6 +122,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #04         ; BG3 tiles @ VRAM[8000]
                 sta 210c        ; BG34NBA
 
+                ; BG3 V/H offsets
                 lda #fd
                 sta 2112
                 lda #00
@@ -132,7 +133,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #00
                 sta 2111
 
-                lda #15
+                lda #15         ; enable sprites, BG1&3
                 sta 212c        ; TM
 
                 ;**************************************
@@ -140,12 +141,12 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ;**************************************
                 ; init a dummy buffer in WRAM
                 jsr 8300        ; @oam_buf_init
+                jsr 8570        ; @oam_initial_settings
                 jsr 8550        ; @reset WRAM tilemap buffer
                 jsr b620        ; @init_bg3_tilemap_buffer
-                jsr 8570        ; @oam_initial_settings
 
                 jsr aa20        ; @update_oam_buffer_from_map_coord()
-                jsr b500
+                jsr b500        ; update background buffer as well
 
                 ;**************************************
                 ; DMA transfers
@@ -898,6 +899,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;**************************************
 ; def init_bg3_tilemap_buffer()
 ; b620
+;     vhopppcc
+; 30: 00110000
 ;**************************************
 ;               S     C     O     R     E     :
 3600:           33 30 23 30 2f 30 32 30 25 30 1a 30
@@ -1284,6 +1287,24 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 pea 0600        ; bytes_to_trasnfer
                 jsr 8430        ; @vram_dma_transfer
                 txs             ; restore stack pointer
+                ; Copy title-screen.bin to VRAM
+                tsx             ; save stack pointer
+                pea 6000        ; vram_dest_addr (@c000 really, word steps)
+                pea a040        ; rom_src_addr
+                lda #81         ; rom_src_bank
+                pha
+                pea 1800        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
+                ; Copy title-screen.map to VRAM
+                tsx             ; save stack pointer
+                pea 7000        ; vram_dest_addr (@e000 really, word steps)
+                pea 9840        ; rom_src_addr
+                lda #81         ; rom_src_bank
+                pha
+                pea 0800        ; bytes_to_trasnfer
+                jsr 8430        ; @vram_dma_transfer
+                txs             ; restore stack pointer
 
                 ; Copy snake-bg-pal.bin to CGRAM
                 tsx             ; save stack pointer
@@ -1304,6 +1325,17 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #81
                 pha             ; rom_src_bank
                 lda #08
+                pha             ; bytes_to_trasnfer
+                jsr 8460        ; @cgram_dma_transfer
+                txs             ; restore stack pointer
+                ; Copy title-screen-pal.bin to CGRAM
+                tsx             ; save stack pointer
+                lda #20
+                pha             ; cgram_dest_addr
+                pea be40        ; rom_src_addr
+                lda #81
+                pha             ; rom_src_bank
+                lda #20
                 pha             ; bytes_to_trasnfer
                 jsr 8460        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
