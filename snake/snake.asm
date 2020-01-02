@@ -313,7 +313,6 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 bne @check_time ; have 2 seconds elapsed yet?
 
                 jmp 8000
-                rts
 
 ;**************************************
 ; def init_random_seed()
@@ -742,10 +741,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; top edge < y < bottom edge
                 rts
 
-@reset:         nop
-                jmp 9100
-@no_reset:      nop
-                rts
+@reset:         jmp 9100
+@no_reset:      rts
 
 ;**************************************
 ; def collides_with_body(xy=08)
@@ -808,8 +805,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 bne @return_3200
                 jmp 9100
 
-@return_3200:   nop
-                rts
+@return_3200:   rts
 
 
 ;**************************************
