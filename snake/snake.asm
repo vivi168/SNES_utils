@@ -215,9 +215,13 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #13
                 sta 000c
 
-@speed_done:    lda 0103
-                bit #10         ; if start is pressed
-                beq @continue
+@speed_done:    jsr b840        ; update speed shadow
+
+                lda 0103
+                bit #10         ; check if start is pressed
+                beq @loop_menu
+
+                ; start has been pressed
                 jsr a000        ; then init random seed
                 ;then generate apple position
                 jsr a050
@@ -228,7 +232,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ;jump to game loop
                 jmp 9080
 
-@continue:      jmp 9000        ; @menu_loop()
+@loop_menu:     jmp 9000        ; @menu_loop()
 
 ;**************************************
 ; def game_loop()
@@ -1011,6 +1015,45 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 rts
 
 ;**************************************
+; def update_speed_display()
+; @b840
+;**************************************
+3840:           php
+
+                lda 000c        ; load speed
+                pha             ; save it
+
+                stz 0020        ; bcd ones
+                stz 0021        ; bcd tens
+
+                lda #14
+                sec
+                sbc 000c
+
+                cmp #0a
+                bcc @speed_one
+                sec
+                sbc #0a
+                sta 000c
+                inc 0021
+
+@speed_one:     nop
+                clc
+                adc #10
+                sta 7e3016
+
+                lda 0021
+                clc
+                adc #10
+                sta 7e3014
+
+                pla             ; restore speed
+                sta 000c
+
+                plp
+                rts
+
+;**************************************
 ; def score_to_bcd()
 ; @c000
 ;**************************************
@@ -1378,7 +1421,6 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #0f
                 sta 2100        ; INIDISP
 
-                brk 00
 
 @fadeout_lp:    nop
                 dec
