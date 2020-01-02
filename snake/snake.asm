@@ -297,7 +297,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;**************************************
 ; def game_over_loop()
 ; Game over loop
-; wait 3 sec and jump to reset
+; wait 2 sec and jump to reset
 ; @9100
 ;**************************************
 
