@@ -48,6 +48,10 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; 7e0015: tile coord buffer
 ; 7e0016: tile coord buffer
 
+; 7e0017: timer frame counter
+; 7e0018: timer second
+; 7e0019: timer buffer
+
 ; 7e0020: score ones
 ; 7e0021: score tens
 ; 7e0022: score hundreds
@@ -158,6 +162,16 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 0200:           lda 4210        ; RDNMI
                 inc 0000        ; increase frame counter
+
+                ; timer
+                inc 0017
+                lda 0017
+                cmp #3c
+                bne @timer_done
+                stz 0017
+                inc 0018        ; increase second counter
+@timer_done:    nop
+
                 inc 000b        ; increase snake should move?
 
                 ; update oam
@@ -279,6 +293,27 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 jsr b500        ; update background buffer as well
 
                 jmp 9080
+
+;**************************************
+; def game_over_loop()
+; Game over loop
+; wait 3 sec and jump to reset
+; @9100
+;**************************************
+
+1100:           wai
+
+                lda 0018        ; load second counter
+                clc
+                adc #02         ; add 2 seconds
+                sta 0019        ; save it
+
+@check_time:    lda 0019
+                cmp 0018
+                bne @check_time ; have 2 seconds elapsed yet?
+
+                jmp 8000
+                rts
 
 ;**************************************
 ; def init_random_seed()
@@ -708,7 +743,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 rts
 
 @reset:         nop
-                jmp 8000
+                jmp 9100
 @no_reset:      nop
                 rts
 
@@ -771,7 +806,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
                 cmp #01
                 bne @return_3200
-                jmp 8000
+                jmp 9100
 
 @return_3200:   nop
                 rts
@@ -1672,6 +1707,11 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; initial apple coordinates
                 stz 0004
                 stz 0005
+
+                ; timer
+                stz 0017
+                stz 0018
+                stz 0019
 
                 rts
 
