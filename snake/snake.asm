@@ -1002,13 +1002,11 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; BG3 V/H offsets
                 lda #80
                 sta 2112
-                lda #00
-                sta 2112
+                stz 2112
 
                 lda #c0
                 sta 2111
-                lda #00
-                sta 2111
+                stz 2111
 
                 rts
 
@@ -1322,13 +1320,11 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; BG3 V/H offsets
                 lda #fd
                 sta 2112
-                lda #00
-                sta 2112
+                stz 2112
 
                 lda #ff
                 sta 2111
-                lda #00
-                sta 2111
+                stz 2111
 
                 lda #15         ; enable sprites, BG1&3
                 sta 212c        ; TM
@@ -1518,12 +1514,20 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 rep #20
 
                 stz 210d
+                stz 210d
+                stz 210e
                 stz 210e
                 stz 210f
+                stz 210f
+                stz 2110
                 stz 2110
                 stz 2111
+                stz 2111
+                stz 2112
                 stz 2112
                 stz 2113
+                stz 2113
+                stz 2114
                 stz 2114
 
                 sep #20
