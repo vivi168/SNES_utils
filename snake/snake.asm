@@ -992,6 +992,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def init_bg3_title_buffer()
+; TODO: use end of string character
+; make a print routine
 ; @b7d0
 ;**************************************
 ;     S     p     e     e     d     :     0     0
