@@ -7,4 +7,4 @@
 
  ruby -I../lib/ ../bin/tmx2snes -f assets/title-screen.tmx -p 2 -s 8
 
-mini_assembler -a snake.asm
+ruby -I../lib ../bin/mini_assembler -a snake.asm
