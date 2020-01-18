@@ -9,11 +9,12 @@ Warning: Tileset should be 128 pixel wide for best usability.
 ## How to use
 
 ```
-$ png2snes -f file.png
-$ tmx2snes -f file.tmx [-s tile_size]
+$ png2snes -f file.png -b bpp
+$ tmx2snes -f file.tmx -s tile_size -p palette_id
 $ mini_assembler [-f rom.smc]
+$ mini_assembler -a source.asm
 ```
 
 ## Demo
 
-For now, you need ca65 to build the demo. run `make`, it should produce `demo.smc`.
+Snake : This is a clone of the well known snake game. It was build solely with the tools found in this repo.
