@@ -1,0 +1,10 @@
+#!/bin/bash
+
+ ruby -I../lib/ ../bin/png2snes -f assets/small-font.png -b 2
+ ruby -I../lib/ ../bin/png2snes -f assets/snake-bg.png -b 4
+ ruby -I../lib/ ../bin/png2snes -f assets/snake-sprites.png -b 4
+ ruby -I../lib/ ../bin/png2snes -f assets/title-screen.png -b 4
+
+ ruby -I../lib/ ../bin/tmx2snes -f assets/title-screen.tmx -p 2 -s 8
+
+ruby -I../lib ../bin/mini_assembler -a snake.asm

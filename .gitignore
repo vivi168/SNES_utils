@@ -1,5 +1,6 @@
 .DS_Store
 *.bin
+!snake/assets/random.bin
 *.o
 *.smc
 *.vra
