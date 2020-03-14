@@ -333,16 +333,17 @@ module SnesUtils
       end
     end
 
-    def mapped_address(raw_address, absolute = false)
-      address = raw_address
+    def mapped_address(address, absolute = false)
       return hex(address, 4) unless absolute
 
       if @mem_map == :lorom
-        snes_bank = addr / 0x8000
-        snes_addr = addr - (snes_bank * 0x8000)
-        snes_addr += 0x8000 if snes_addr < 0x8000
+        bank_offset = address / 0x8000
+        mapped_addr = address - (bank_offset * 0x8000)
+        mapped_addr += 0x8000 if mapped_addr < 0x8000
+        mapped_bank = bank_offset + @current_bank_no
+        mapped_bank += 0x80 if mapped_bank < 0x7f
 
-        { bank: (0x80 + snes_bank), addr: snes_addr }
+        { mapped_bank: mapped_bank, mapped_addr: mapped_addr, rom_address: full_address(address) }
       elsif @mem_map == :hirom
         { }
       else
@@ -350,12 +351,20 @@ module SnesUtils
       end
     end
 
-    def label?(address)
-      address.start_with?('@')
+    def detect_label_type(address)
+      if address.start_with?('@')
+        :relative
+      elsif address.start_with?('%')
+        :absolute16
+      elsif address.start_with?('&')
+        :absolute24
+      else
+        nil
+      end
     end
 
     def contains_label?(op)
-      op.include?('@')
+      op.include?('@') | op.include?('%') | op.include?('&')
     end
 
     def parse_address(line, register_label = false)
@@ -363,9 +372,20 @@ module SnesUtils
 
       address = line.split(':').first.strip.chomp
       return -1 if address.to_i(16) > 0xffff
-      return address.to_i(16) unless label?(address)
+      return address.to_i(16) if detect_label_type(address).nil?
 
-      @label_registry[address] = mapped_address(@current_addr)
+      label_type = detect_label_type(address)
+      case label_type
+      when :relative
+        @label_registry[address] = mapped_address(@current_addr)
+      when :absolute16
+        @label_registry[address[1..-1]] = mapped_address(@current_addr, true)
+      when :absolute24
+        @label_registry[address[1..-1]] = mapped_address(@current_addr, true)
+      else
+        op
+      end
+
       return @current_addr
     end
 
@@ -377,11 +397,37 @@ module SnesUtils
       raw_operand = instruction[1].to_s
 
       if register_label and contains_label?(raw_operand)
-        raw_operand = raw_operand.split(',').map { |op| label?(op) ? mapped_address(@current_addr) : op }.join(',')
+        raw_operand = raw_operand.split(',').map do |op|
+          label_type = detect_label_type(op)
+          case label_type
+          when :relative
+            mapped_address(@current_addr)
+          when :absolute16
+            dummy = mapped_address(@current_addr, true)
+            dummy[:mapped_addr].to_s(16)
+          when :absolute24
+            dummy = mapped_address(@current_addr, true)
+            full_address(dummy[:mapped_addr], dummy[:mapped_bank]).to_s(16)
+          else
+            op
+          end
+        end.join(',')
       end
 
       if resolve_label and contains_label?(raw_operand)
-        raw_operand = raw_operand.split(',').map { |op| label?(op) ? @label_registry[op] : op }.join(',')
+        raw_operand = raw_operand.split(',').map do |op|
+          label_type = detect_label_type(op)
+          case label_type
+          when :relative
+            @label_registry[op]
+          when :absolute16
+            @label_registry[op[1..-1]][:mapped_addr].to_s(16)
+          when :absolute24
+            full_address(@label_registry[op[1..-1]][:mapped_addr], @label_registry[op[1..-1]][:mapped_bank]).to_s(16)
+          else
+            op
+          end
+        end.join(',')
       end
 
       opcode_data = detect_opcode_data_from_mnemonic(mnemonic, raw_operand)
