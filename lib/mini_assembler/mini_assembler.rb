@@ -124,12 +124,16 @@ module SnesUtils
 
             next
           elsif matches = Definitions::READ_BANK_SWITCH.match(line)
-            @current_bank_no = matches[1].to_i(16)
-            @current_addr = @current_bank_no << 16
+            new_bank_no = matches[1].to_i(16)
+            return "Error at line #{line_no + 1}" if new_bank_no > 0xff
+            @current_bank_no = new_bank_no
+            @current_addr = 0
 
             next
           elsif matches = Definitions::READ_ADDR_SWITCH.match(line)
-            @current_addr = full_address(matches[1].to_i(16))
+            new_addr = matches[1].to_i(16)
+            return "Error at line #{line_no + 1}" if new_addr > 0xffff
+            @current_addr = new_addr
 
             next
           end
@@ -137,8 +141,9 @@ module SnesUtils
           instruction, length, address = parse_instruction(line, register_label=(i == 0), resolve_label=(i==1))
           return "Error at line #{line_no + 1}" unless instruction
 
-          instructions << [instruction, length, address]
-          @current_addr = address + length
+          instructions << [instruction, length, full_address(address)]
+          bank_wrap = inc_addr(address, length)
+          puts "Warning: bank wrap at line #{line_no + 1}" if bank_wrap && (i == 0)
         end
       end
 
@@ -149,7 +154,7 @@ module SnesUtils
 
       instructions.map do |instruction_arr|
         instruction, length, address = instruction_arr
-        total_bytes_read += replace_memory_range(address, address+length-1, instruction)
+        total_bytes_read += replace_memory_range(address, address + length - 1, instruction)
       end
 
       raw_bytes.each do |raw_byte|
@@ -193,6 +198,18 @@ module SnesUtils
 
     def full_address(address, bank_no = @current_bank_no)
       (bank_no << 16) | address
+    end
+
+    def inc_addr(address, length)
+      @current_addr = address + length
+      initial_bank_no = @current_bank_no
+
+      while @current_addr > 0xffff
+        @current_addr -= 0x10000
+        @current_bank_no += 1
+      end
+
+      @current_bank_no != initial_bank_no
     end
 
     def address_human(addr=nil)
@@ -310,7 +327,7 @@ module SnesUtils
           return 'error' unless instruction
 
           replace_memory_range(address, address+length-1, instruction)
-          @current_addr = address + length
+          inc_addr(address, length)
           return disassemble_range(address, 1, length > 2).join
         end
       end
@@ -334,17 +351,18 @@ module SnesUtils
     end
 
     def label?(address)
-      address.start_with?('@') || address.start_with?('@@')
+      address.start_with?('@')
     end
 
     def contains_label?(op)
-      op.include?('@') || op.include?('@@')
+      op.include?('@')
     end
 
     def parse_address(line, register_label = false)
       return @current_addr if line.index(':').nil?
 
       address = line.split(':').first.strip.chomp
+      return -1 if address.to_i(16) > 0xffff
       return address.to_i(16) unless label?(address)
 
       @label_registry[address] = mapped_address(@current_addr)
@@ -353,6 +371,7 @@ module SnesUtils
 
     def parse_instruction(line, register_label = false, resolve_label = false)
       current_address = parse_address(line, register_label)
+      return if current_address < 0 || current_address > 0xffff
       instruction = line.split(':').last.split(' ')
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
