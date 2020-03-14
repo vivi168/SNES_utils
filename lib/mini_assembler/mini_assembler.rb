@@ -310,9 +310,17 @@ module SnesUtils
       end
     end
 
+    def mapped_address(raw_address, absolute = false)
+      address = raw_address
+      return hex(address, 4) unless absolute
+
+      if @mem_map == :lorom
+      else
+      end
+    end
+
     def label?(address)
       address.start_with?('@')
-      # (Definitions::BYTE_LOC_REGEX =~ arg).nil?
     end
 
     def parse_address(line, register_label = false)
