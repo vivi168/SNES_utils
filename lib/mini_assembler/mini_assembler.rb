@@ -113,6 +113,7 @@ module SnesUtils
               raw_bytes << [addr, bytes]
             end
 
+            # TODO: incr_addr
             next
           elsif matches = Definitions::INCBIN_REGEX.match(line)
             if i == 1
@@ -122,6 +123,7 @@ module SnesUtils
               incbin_files << [addr, filename]
             end
 
+            # TODO: incr_addr
             next
           elsif matches = Definitions::READ_BANK_SWITCH.match(line)
             new_bank_no = matches[1].to_i(16)
@@ -167,7 +169,22 @@ module SnesUtils
         total_bytes_read += incbin(filename, addr)
       end
 
+      dump_label_registry
+
       return "Read #{total_bytes_read} bytes"
+    end
+
+    def dump_label_registry
+      dump = ['label,snes addr,rom addr']
+      @label_registry.each do |k, v|
+        next if k.start_with?('@')
+
+        dump << "#{k},#{address_human(v[:mapped_addr], v[:mapped_bank])},#{hex(v[:rom_address], 6)}"
+      end
+
+      open('labels.csv', 'w') do |f|
+        f << dump.join("\n")
+      end
     end
 
     def detect_opcode_data_from_mnemonic(mnemonic, operand)
@@ -212,8 +229,8 @@ module SnesUtils
       @current_bank_no != initial_bank_no
     end
 
-    def address_human(addr=nil)
-      address = full_address(addr || @current_addr)
+    def address_human(addr=nil, cur_bank=@current_bank_no)
+      address = full_address(addr || @current_addr, cur_bank)
       bank = address >> 16
       addr = (((address>>8)&0xFF) << 8) | (address&0xFF)
       "#{hex(bank)}/#{hex(addr, 4)}"
