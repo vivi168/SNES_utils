@@ -13,7 +13,8 @@ module SnesUtils
         @memory = []
       end
 
-      @cpu = :wdc65816
+      @cpu = :wdc65816 # :spc700
+      @mem_map = :lorom # :hirom
 
       @normal_mode = true
 
@@ -23,8 +24,6 @@ module SnesUtils
       @index_flag = 1
 
       @next_addr_to_list = 0
-
-      @label_registry = {}
     end
 
     def run
@@ -74,6 +73,7 @@ module SnesUtils
       return 0 unless File.file?(filename)
 
       @label_registry = {}
+      @address_registry = {}
 
       current_addr = start_addr || @current_addr
       current_bank_no = @current_bank_no
@@ -97,6 +97,12 @@ module SnesUtils
             next
           elsif line == '.65816'
             @cpu = :wdc65816
+            next
+          elsif line == '.lorom'
+            @mem_map = :lorom
+            next
+          elsif line == '.hirom'
+            @mem_map = :hirom
             next
           end
 
@@ -185,8 +191,8 @@ module SnesUtils
       end
     end
 
-    def full_address(address)
-      (@current_bank_no << 16) | address
+    def full_address(address, bank_no = @current_bank_no)
+      (bank_no << 16) | address
     end
 
     def address_human(addr=nil)
@@ -315,12 +321,24 @@ module SnesUtils
       return hex(address, 4) unless absolute
 
       if @mem_map == :lorom
+        snes_bank = addr / 0x8000
+        snes_addr = addr - (snes_bank * 0x8000)
+        snes_addr += 0x8000 if snes_addr < 0x8000
+
+        { bank: (0x80 + snes_bank), addr: snes_addr }
+      elsif @mem_map == :hirom
+        { }
       else
+        { }
       end
     end
 
     def label?(address)
-      address.start_with?('@')
+      address.start_with?('@') || address.start_with?('@@')
+    end
+
+    def contains_label?(op)
+      op.include?('@') || op.include?('@@')
     end
 
     def parse_address(line, register_label = false)
@@ -329,7 +347,7 @@ module SnesUtils
       address = line.split(':').first.strip.chomp
       return address.to_i(16) unless label?(address)
 
-      @label_registry[address] = hex(@current_addr, 4)
+      @label_registry[address] = mapped_address(@current_addr)
       return @current_addr
     end
 
@@ -339,11 +357,11 @@ module SnesUtils
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
 
-      if register_label and raw_operand.include?('@')
-        raw_operand = raw_operand.split(',').map { |op| label?(op) ? hex(@current_addr, 4) : op }.join(',')
+      if register_label and contains_label?(raw_operand)
+        raw_operand = raw_operand.split(',').map { |op| label?(op) ? mapped_address(@current_addr) : op }.join(',')
       end
 
-      if resolve_label and raw_operand.include?('@')
+      if resolve_label and contains_label?(raw_operand)
         raw_operand = raw_operand.split(',').map { |op| label?(op) ? @label_registry[op] : op }.join(',')
       end
 
