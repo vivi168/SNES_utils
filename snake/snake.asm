@@ -89,7 +89,10 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;**************************************
 
 ; 0000 @ bank 80 = 80/8000
-0000:           sei
+.bank 00
+.addr 0000
+
+%reset_vec:     sei
                 clc
                 xce
                 sep #20         ; M8
@@ -102,8 +105,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #80
                 sta 2100        ; INIDISP
 
-                jsr 8e00        ; @clear_registers
-                jsr 8ed0
+                jsr %cls_reg    ; @clear_registers
+                jsr %cls_cus_reg
 
 ;**************************************
 ; Main Register Settings
@@ -136,8 +139,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; DMA transfers
                 ;**************************************
                 ; transfer buffer to OAMRAM
-                jsr 8400        ; @oam_dma_transfer
-                jsr 87e0        ; @dma_transfers
+                jsr %oam_dat_tsfr        ; @oam_dma_transfer
+                jsr %dma_transfer        ; @dma_transfers
 
 ;**************************************
 ; Final setting before starting gameloop
@@ -150,7 +153,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #81
                 sta 4200        ; NMITIMEN
 
-                jmp 9000        ; @menu_loop
+                jmp %menu_loop        ; @menu_loop
 
 ;**************************************
 ; BRK @ 8150
@@ -175,7 +178,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 inc 000b        ; increase snake should move?
 
                 ; update oam
-                jsr 8400        ; @oam_dma_transfer
+                jsr %oam_dat_tsfr        ; @oam_dma_transfer
                 ; TODO: reuse dma_transfers routine
                 ; update vram (snake body tilemap)
                 tsx             ; save stack pointer
@@ -184,7 +187,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #7e         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
+                jsr %vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; update vram (bg3 tilemap)
                 tsx             ; save stack pointer
@@ -193,20 +196,19 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #7e         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
+                jsr %vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
 
-                jsr 8500        ; read joypad
+                jsr %read_joy_1        ; read joypad
                 rti
 
 ;**************************************
 ; def menu_loop()
 ; Menu screen loop (wait for user to press enter)
 ; Can increase/decrease speed with up/down arrows
-; @9000
 ;**************************************
 
-1000:           wai
+%menu_loop:     wai
                 lda 0103        ; JOY1_PRESSH
 
                 bit #08
@@ -229,24 +231,26 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #13
                 sta 000c
 
-@speed_done:    jsr b840        ; update speed shadow
+@speed_done:    jsr %upd_spd_disp        ; update speed shadow
 
                 lda 0103
                 bit #10         ; check if start is pressed
                 beq @loop_menu
 
+                brk 00
+
                 ; start has been pressed
-                jsr a000        ; then init random seed
+                jsr %init_rand        ; then init random seed
                 ;then generate apple position
-                jsr a050
+                jsr %rd_appl_coord
                 ; then update oam buffer to reflect new apple coord
                 jsr aa20
                 ; init bg settings for game loop
-                jsr 85e0
+                jsr %init_bg_set
                 ;jump to game loop
-                jmp 9080
+                jmp %game_loop
 
-@loop_menu:     jmp 9000        ; @menu_loop()
+@loop_menu:     jmp %menu_loop        ; @menu_loop()
 
 ;**************************************
 ; def game_loop()
@@ -255,10 +259,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; check apple colision with head, score increase
 ; TODO if start is pressed in gameloop, jump to pause loop.
 ; TODO if start is pressed in pause loop, jump to gameloop
-; @9080
 ;**************************************
-1080:           wai
-                jsr aa60        ; handle key
+%game_loop:     wai
+                jsr %handle_input        ; handle key
 
                 lda 000b
                 cmp 000c        ; skip if move counter < speed?
@@ -266,9 +269,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ldx 000e        ; skip if velocity is 0
                 beq @continue_gl
 
-                jsr b000 ; update body + tail coords
-                jsr aad0 ; update_head_direction()
-                jsr ab30 ; update_tail_direction()
+                jsr %updt_snak_bdy ; update body + tail coords
+                jsr %updt_head_dir ; update_head_direction()
+                jsr %updt_tail_dir ; update_tail_direction()
 
                 ; head x += xvel
                 clc
@@ -285,23 +288,21 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 stz 000b
 
 @continue_gl:   nop
-                jsr b050        ; check if collide with apple
-                jsr b090        ; check if collide with wall
-                jsr b200        ; check if collide with body
+                jsr %eat_apple        ; check if collide with apple
+                jsr %chk_wall_coli        ; check if collide with wall
+                jsr %eat_self        ; check if collide with body
 
                 jsr aa20        ; update oam buffer
-                jsr b500        ; update background buffer as well
+                jsr %up_vbuf_map        ; update background buffer as well
 
-                jmp 9080
+                jmp %game_loop
 
 ;**************************************
 ; def game_over_loop()
 ; Game over loop
 ; wait 2 sec and jump to reset
-; @9100
 ;**************************************
-
-1100:           wai
+%game_over_lp:  wai
 
                 lda 0018        ; load second counter
                 clc
@@ -312,15 +313,14 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 cmp 0018
                 bne @check_time ; have 2 seconds elapsed yet?
 
-                jmp 8000
+                jmp %reset_vec
 
 ;**************************************
 ; def init_random_seed()
 ; Init the random seed.
 ; Set initial x and y pointer
-; @a000
 ;**************************************
-2000:           lda 0012        ; check if seed was read
+%init_rand:     lda 0012        ; check if seed was read
                 bne @rts_2000   ; if non zero, it was read
                 lda 0000        ; else, load frame counter
                 bne @save_2000
@@ -338,9 +338,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;**************************************
 ; def random_apple_coordinates()
 ; Get next pseudo random apple coordinate
-; @a050
 ;**************************************
-2050:           php
+%rd_appl_coord: php
 
 @next_appl:     sep #30         ; m8 x8
 
@@ -380,7 +379,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
                 ; check if apple is on body
                 phx
-                jsr b100
+                jsr %chk_body_coli
                 plx
                 cmp #01
                 beq @next_appl
@@ -391,9 +390,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;**************************************
 ; def map_to_screen_coord(point=07)
 ; result in A
-; @a850
 ;**************************************
-2850:           phd
+%map_scn_coord: phd
                 tsc
                 tcd
 
@@ -436,7 +434,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 @loop_2a20:     lda (00,x)      ; load sprite map coord
                 pha
-                jsr a850        ; map_to_screen_coord
+                jsr %map_scn_coord        ; map_to_screen_coord
                 sta (02,x)      ; save it to oam
                 pla
                 inx
@@ -463,10 +461,11 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; down 4
 ; left 2
 ; right 1
-; @aa60
+; #TODO: queue up movement so snake won't eat
+; himself when pressing down/left quickly for example
 ;**************************************
 
-2a60:           lda 0103        ; JOY1_PRESSH
+%handle_input:  lda 0103        ; JOY1_PRESSH
 
                 bit #08
                 bne @move_up
@@ -516,9 +515,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;**************************************
 ; def update_head_direction()
 ; TODO maybe refactor, bit ugly?
-; @aad0
 ;**************************************
-2ad0:           nop
+%updt_head_dir: nop
 
                 lda 000e        ; xvel
                 beq @check_h_vert
@@ -572,9 +570,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; def update_tail_direction()
 ; TODO: refactor. Can spare cycles by
 ; better branching organization
-; @ab30
 ;**************************************
-2b30:           php
+%updt_tail_dir: php
 
                 lda 0006
                 rep #30
@@ -648,7 +645,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; and tail, after a head movement
 ; @b000
 ;**************************************
-3000:           php
+%updt_snak_bdy:  php
 
                 lda 0006        ; load body size
                 rep #30
@@ -683,15 +680,14 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; def eat_apple()
 ; check apple collision +
 ; increase body size + append a body part
-; @b050
 ;**************************************
-3050:           php
+%eat_apple:     php
 
                 ldx 0004        ; apple xy
                 cpx 0007        ; head xy
                 bne @ret_3050
 
-                jsr a050        ; next apple coord
+                jsr %rd_appl_coord        ; next apple coord
 
                 ; increase body size and init new body part coords
                 lda 0006        ; load body size
@@ -713,8 +709,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 sta 010
 
                 ; CAUTION: rep #30 above
-                jsr c000        ; update score bcd
-                jsr b700        ; update bg3 from score bcd
+                jsr %to_bcd        ; update score bcd
+                jsr %up_bg3_tile        ; update bg3 from score bcd
 
 @ret_3050:      nop
                 plp
@@ -722,9 +718,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def check_wall_collision()
-; @b090
 ;**************************************
-3090:           nop
+%chk_wall_coli: nop
                 lda 0007        ; head x
                 cmp #00
                 bcc @reset
@@ -741,16 +736,15 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; top edge < y < bottom edge
                 rts
 
-@reset:         jmp 9100
+@reset:         jmp %game_over_lp
 @no_reset:      rts
 
 ;**************************************
 ; def collides_with_body(xy=08)
 ; check if a xy pair collides with a body xy pair
 ; result in A
-; @b100
 ;**************************************
-3100:           phx
+%chk_body_coli: phx
                 phd             ; save direct page
                 php
                 tsc
@@ -792,18 +786,17 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def eat_self?()
-; @b200
 ;**************************************
-3200:           nop
+%eat_self:      nop
 
                 ldx 0007
                 phx
-                jsr b100
+                jsr %chk_body_coli
                 plx
 
                 cmp #01
                 bne @return_3200
-                jmp 9100
+                jmp %game_over_lp
 
 @return_3200:   rts
 
@@ -812,9 +805,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; def update_vram_buffer_from_map_coord()
 ; this routine update tilemap WRAM buffer
 ; from snake body array located at 7e0200
-; @b500
 ;**************************************
-3500:           php
+%up_vbuf_map:   php
 
                 ldx #0000
 
@@ -942,9 +934,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def init_bg3_score_buffer()
-; b640
 ;**************************************
-3640:           php
+%init_score_buf:           php
                 rep #30
                 ldx #0000
 
@@ -962,9 +953,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;**************************************
 ; def update_bg3_tile_buffer()
 ; update score from BCD buffer
-; b700
 ;**************************************
-3700:           nop
+%up_bg3_tile:   nop
                 php
                 sep #20
 
@@ -1049,9 +1039,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def update_speed_display()
-; @b840
 ;**************************************
-3840:           php
+%upd_spd_disp:  php
 
                 lda 000c        ; load speed
                 pha             ; save it
@@ -1088,9 +1077,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def score_to_bcd()
-; @c000
 ;**************************************
-4000:           nop
+%to_bcd:        nop
                 php
 
                 stz 0020        ; score bcd ones
@@ -1142,10 +1130,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; def oam_buf_init()
 ; Init OAM Dummy Buffer WRAM
 ; $oam_buffer_start = 7e2000
-; @8300
 ;**************************************
 
-0300:           php
+%oam_buf_init:  php
                 sep #20
                 rep #10
                 lda #01
@@ -1173,10 +1160,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; def oam_dma_transfer()
 ; OAM buffer - DMA Transfer
 ; m8 x16
-; @8400
 ;**************************************
 
-0400:           ldx #0000
+%oam_dat_tsfr:  ldx #0000
                 stx 2102        ; OAMDADDL
 
                 lda #04         ; OAMDATA 21*04*
@@ -1205,10 +1191,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;                       rom_src_addr=0a, vram_dest_addr=0c)
 ; VRAM - DMA Transfer
 ; m8 x16
-; @8430
 ;**************************************
 
-0430:           phx             ; save stack pointer
+%vram_dma_tsfr: phx             ; save stack pointer
                 phd             ; save direct page
                 tsc
                 tcd             ; direct page = stack pointer
@@ -1242,10 +1227,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;                        rom_src_addr=09, cgram_dest_addr=0b)
 ; CGRAM - DMA Transfer
 ; m8 x16
-; @8460
 ;**************************************
 
-0460:           phx             ; save stack pointer
+%cgram_dma_t:   phx             ; save stack pointer
                 phd             ; save direct page
                 tsc
                 tcd             ; direct page = stack pointer
@@ -1277,9 +1261,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ;**************************************
 ; def read_joy_pad_1()
 ; Read Joy Pad 1
-; @8500
 ;**************************************
-0500:           php
+%read_joy_1:    php
 @read_data:     lda 4212        ; read joypad status (HVBJOY)
                 and #01
                 bne @read_data  ; read done when 0
@@ -1303,9 +1286,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def reset_tilemap_buffer()
-; @8550
 ;**************************************
-0550:           ldx #0000
+%rst_tmap_buf:  ldx #0000
                 lda #00
 
 @reset_tm:      nop
@@ -1317,9 +1299,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def oam_initial_settings()
-; @8570
 ;**************************************
-0570:           nop
+%oam_init:      nop
                 ; Init apple and head positions/sprite name here
                 ; Snake head, first sprite in OAM (name 2, second sprite in rom)
                 ldx #0000
@@ -1369,11 +1350,10 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def init_game_bg_settings()
-; @85e0
 ;**************************************
-05e0:           nop
+%init_bg_set:   nop
 
-                jsr 8660
+                jsr %fade_out
 
                 lda #80
                 sta 2100        ; INIDISP
@@ -1409,30 +1389,29 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; OAM / VRAM init here
                 ;**************************************
                 ; init a dummy buffer in WRAM
-                jsr 8300        ; @oam_buf_init
-                jsr 8570        ; @oam_initial_settings
-                jsr 8550        ; @reset WRAM tilemap buffer
+                jsr %oam_buf_init        ; @oam_buf_init
+                jsr %oam_init        ; @oam_initial_settings
+                jsr %rst_tmap_buf        ; @reset WRAM tilemap buffer
                 jsr b620        ; @init_bg3_tilemap_buffer
-                jsr b640        ; @init_bg3_score_buffer
+                jsr %init_score_buf        ; @init_bg3_score_buffer
 
                 jsr aa20        ; @update_oam_buffer_from_map_coord()
-                jsr b500        ; update background buffer as well
+                jsr %up_vbuf_map        ; update background buffer as well
 
                 lda #00
                 sta 2100        ; INIDISP
                 lda #81
                 sta 4200        ; NMITIMEN
 
-                jsr 8640
+                jsr %fade_in
 
                 rts
 
 
 ;**************************************
 ; def fade_in()
-; @8640
 ;**************************************
-0640:           wai
+%fade_in:       wai
 
                 lda #00
                 sta 2100        ; INIDISP
@@ -1447,9 +1426,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def fade_out()
-; @8660
 ;**************************************
-0660:           wai
+%fade_out:      wai
 
                 lda #0f
                 sta 2100        ; INIDISP
@@ -1464,9 +1442,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def dma_transfers()
-; @87e0
 ;**************************************
-07e0:           nop
+%dma_transfer:  nop
                 ; Copy snake-bg.bin to VRAM
                 tsx             ; save stack pointer
                 pea 0000        ; vram_dest_addr
@@ -1474,7 +1451,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #81         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
+                jsr %vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy WRAM tilemap buffer to VRAM
                 tsx             ; save stack pointer
@@ -1483,7 +1460,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #7e         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
+                jsr %vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy snake-sprites.bin to VRAM
                 tsx             ; save stack pointer
@@ -1492,7 +1469,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #81         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
+                jsr %vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy small-font.bin to VRAM
                 tsx             ; save stack pointer
@@ -1501,7 +1478,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #81         ; rom_src_bank
                 pha
                 pea 0600        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
+                jsr %vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy title-screen.bin to VRAM
                 tsx             ; save stack pointer
@@ -1510,7 +1487,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #81         ; rom_src_bank
                 pha
                 pea 1800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
+                jsr %vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy title-screen.map to VRAM
                 tsx             ; save stack pointer
@@ -1519,7 +1496,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #81         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr 8430        ; @vram_dma_transfer
+                jsr %vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
 
                 ; Copy snake-bg-pal.bin to CGRAM
@@ -1531,7 +1508,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 pha             ; rom_src_bank
                 lda #20
                 pha             ; bytes_to_trasnfer
-                jsr 8460        ; @cgram_dma_transfer
+                jsr %cgram_dma_t        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy small-font-pal.bin to CGRAM
                 tsx             ; save stack pointer
@@ -1542,7 +1519,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 pha             ; rom_src_bank
                 lda #08
                 pha             ; bytes_to_trasnfer
-                jsr 8460        ; @cgram_dma_transfer
+                jsr %cgram_dma_t        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy title-screen-pal.bin to CGRAM
                 tsx             ; save stack pointer
@@ -1553,7 +1530,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 pha             ; rom_src_bank
                 lda #20
                 pha             ; bytes_to_trasnfer
-                jsr 8460        ; @cgram_dma_transfer
+                jsr %cgram_dma_t        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy snake-sprites-pal.bin to CGRAM
                 tsx             ; save stack pointer
@@ -1564,7 +1541,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 pha             ; rom_src_bank
                 lda #20
                 pha             ; bytes_to_trasnfer
-                jsr 8460        ; @cgram_dma_transfer
+                jsr %cgram_dma_t        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
                 rts
 
@@ -1574,7 +1551,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; @8e00
 ;**************************************
 
-0e00:           stz 2101
+%cls_reg:       stz 2101
                 stz 2102
                 stz 2103
                 stz 2105
@@ -1667,9 +1644,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; def clear_custom_registers()
-; @8e00
+; @8ed0
 ;**************************************
-0ed0:           stz 0000        ; clear frame counter
+%cls_cus_reg:   stz 0000        ; clear frame counter
                 stz 0001        ; clear random seed
                 lda #02
                 sta 0006        ; init body size
