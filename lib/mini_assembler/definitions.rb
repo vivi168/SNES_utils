@@ -11,5 +11,7 @@ module SnesUtils
     WRITE_REGEX = /^\.write\s*(.*)$/i
     INCBIN_REGEX = /^(#{HEX_DIGIT}{1,4}):\s*\.incbin\s+(.*)$/i
     READ_REGEX = /^((#{HEX_DIGIT}{1,4}):\s*)*\.read\s+(.*)$/i
+    READ_BANK_SWITCH = /^\.bank\s+(#{HEX_DIGIT}{1,2})$/i
+    READ_ADDR_SWITCH = /^\.addr\s+(#{HEX_DIGIT}{1,4})$/i
   end
 end

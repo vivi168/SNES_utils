@@ -76,6 +76,7 @@ module SnesUtils
       @label_registry = {}
 
       current_addr = start_addr || @current_addr
+      current_bank_no = @current_bank_no
       instructions = []
       raw_bytes = []
       incbin_files = []
@@ -84,6 +85,8 @@ module SnesUtils
 
       2.times do |i|
         @current_addr = current_addr
+        @current_bank_no = current_bank_no
+
         instructions = []
         File.open(filename).each_with_index do |raw_line, line_no|
           line = raw_line.split(';').first.strip.chomp
@@ -99,7 +102,7 @@ module SnesUtils
 
           if matches = Definitions::BYTE_SEQUENCE_REGEX.match(line)
             if i == 1
-              addr = matches[1].to_i(16)
+              addr = full_address(matches[1].to_i(16))
               bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
               raw_bytes << [addr, bytes]
             end
@@ -107,11 +110,20 @@ module SnesUtils
             next
           elsif matches = Definitions::INCBIN_REGEX.match(line)
             if i == 1
-              addr = matches[1].to_i(16)
+              addr = full_address(matches[1].to_i(16))
               filename = matches[2].strip.chomp
 
               incbin_files << [addr, filename]
             end
+
+            next
+          elsif matches = Definitions::READ_BANK_SWITCH.match(line)
+            @current_bank_no = matches[1].to_i(16)
+            @current_addr = @current_bank_no << 16
+
+            next
+          elsif matches = Definitions::READ_ADDR_SWITCH.match(line)
+            @current_addr = full_address(matches[1].to_i(16))
 
             next
           end
@@ -127,6 +139,7 @@ module SnesUtils
       @cpu = cpu
 
       total_bytes_read = 0
+      @current_bank_no = current_bank_no
 
       instructions.map do |instruction_arr|
         instruction, length, address = instruction_arr
@@ -297,11 +310,16 @@ module SnesUtils
       end
     end
 
+    def label?(address)
+      address.start_with?('@')
+      # (Definitions::BYTE_LOC_REGEX =~ arg).nil?
+    end
+
     def parse_address(line, register_label = false)
       return @current_addr if line.index(':').nil?
 
       address = line.split(':').first.strip.chomp
-      return address.to_i(16) unless address.start_with?('@')
+      return address.to_i(16) unless label?(address)
 
       @label_registry[address] = hex(@current_addr, 4)
       return @current_addr
@@ -314,25 +332,11 @@ module SnesUtils
       raw_operand = instruction[1].to_s
 
       if register_label and raw_operand.include?('@')
-        raw_operands = raw_operand.split(',')
-        raw_operands.each_with_index do |op, idx|
-          if op.start_with?('@')
-            raw_operands[idx] = hex(@current_addr, 4)
-          end
-        end
-
-        raw_operand = raw_operands.join(',')
+        raw_operand = raw_operand.split(',').map { |op| label?(op) ? hex(@current_addr, 4) : op }.join(',')
       end
 
       if resolve_label and raw_operand.include?('@')
-        raw_operands = raw_operand.split(',')
-        raw_operands.each_with_index do |op, idx|
-          if op.start_with?('@')
-            raw_operands[idx] = @label_registry[op]
-          end
-        end
-
-        raw_operand = raw_operands.join(',')
+        raw_operand = raw_operand.split(',').map { |op| label?(op) ? @label_registry[op] : op }.join(',')
       end
 
       opcode_data = detect_opcode_data_from_mnemonic(mnemonic, raw_operand)
