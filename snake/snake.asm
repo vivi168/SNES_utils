@@ -91,8 +91,9 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; 0000 @ bank 80 = 80/8000
 .bank 00
 .addr 0000
+%reset_vec:    jmp &fast_reset
 
-%reset_vec:     sei
+%fast_reset:    sei
                 clc
                 xce
                 sep #20         ; M8
@@ -237,8 +238,6 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 bit #10         ; check if start is pressed
                 beq @loop_menu
 
-                brk 00
-
                 ; start has been pressed
                 jsr %init_rand        ; then init random seed
                 ;then generate apple position
@@ -313,7 +312,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 cmp 0018
                 bne @check_time ; have 2 seconds elapsed yet?
 
-                jmp %reset_vec
+                jmp %fast_reset
 
 ;**************************************
 ; def init_random_seed()
@@ -1638,7 +1637,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 stz 420a
                 stz 420b
                 stz 420c
-                stz 420d
+                lda #01
+                sta 420d
 
                 rts
 
@@ -1703,7 +1703,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 7fc0: 53 55 50 45 52 20 53 4e 41 4b 45 20 20 20 20 20 20 20 20 20 20
 
 ; map mode
-7fd5: 20
+7fd5: 30
 
 ; cartridge type
 7fd6: 00
