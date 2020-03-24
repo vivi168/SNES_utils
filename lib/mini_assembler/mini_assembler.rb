@@ -127,7 +127,8 @@ module SnesUtils
             next
           elsif matches = Definitions::READ_BANK_SWITCH.match(line)
             new_bank_no = matches[1].to_i(16)
-            return "Error at line #{line_no + 1}" if new_bank_no > 0xff
+            max_bank_no = @mem_map == :hirom ? 0x3f : 0x7f
+            return "Error at line #{line_no + 1}" if new_bank_no > max_bank_no
             @current_bank_no = new_bank_no
             @current_addr = 0
 
@@ -357,12 +358,14 @@ module SnesUtils
         bank_offset = address / 0x8000
         mapped_addr = address - (bank_offset * 0x8000)
         mapped_addr += 0x8000 if mapped_addr < 0x8000
-        mapped_bank = bank_offset + @current_bank_no
+        mapped_bank = @current_bank_no * 2
+        mapped_bank += bank_offset
         mapped_bank += 0x80 if mapped_bank < 0x7f
 
         { mapped_bank: mapped_bank, mapped_addr: mapped_addr, rom_address: full_address(address) }
       elsif @mem_map == :hirom
-        { }
+        mapped_bank = @current_bank_no + 0xc0 if @current_bank_no < 0x3f
+        { mapped_bank: mapped_bank, mapped_addr: address, rom_address: full_address(address) }
       else
         { }
       end
