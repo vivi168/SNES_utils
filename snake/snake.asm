@@ -414,9 +414,9 @@
 ; @aa20
 ;**************************************
 ; coord pairs (RAM map coord/OAM buffer screen coord)
-%head_pair: 07 00 00 20 08 00 01 20 ; head 7e0007,8 > 7e2000,1
-%tail_pair: 09 00 04 20 0a 00 05 20 ; tail 7e0009,a > 7e2004,5
-%apple_par: 04 00 08 20 05 00 09 20 ; apple 7e0004,5 > 7e2008,9
+%head_pair: .db 07 00 00 20 08 00 01 20 ; head 7e0007,8 > 7e2000,1
+%tail_pair: .db 09 00 04 20 0a 00 05 20 ; tail 7e0009,a > 7e2004,5
+%apple_par: .db 04 00 08 20 05 00 09 20 ; apple 7e0004,5 > 7e2008,9
 
 %update_oam_buffer_from_map_coord:           phd
                 php
@@ -913,9 +913,9 @@
 ; 30: 00110000
 ;**************************************
 ;               S     C     O     R     E     :
-%score_txt:     33 30 23 30 2f 30 32 30 25 30 1a 30
+%score_txt: .db 33 30 23 30 2f 30 32 30 25 30 1a 30
 ;               0     0     0     0
-%score_val:     10 30 10 30 10 30 10 30
+%score_val: .db 10 30 10 30 10 30 10 30
 
 %reset_bg3_1:   nop
                 php
@@ -987,14 +987,14 @@
 ; TODO: use end of string character
 ; make a print routine
 ;**************************************
-;       S     p     e     e     d     :     0     0
-%speed: 33 30 50 30 45 30 45 30 44 30 1a 30 10 30 10 30
+;           S     p     e     e     d     :     0     0
+%speed: .db 33 30 50 30 45 30 45 30 44 30 1a 30 10 30 10 30
 ;            P     u     s     h           s     t     a     r     t
-%push_start: 30 30 55 30 53 30 48 30 00 30 53 30 54 30 41 30 52 30 54 30 00 30
+%push_start: .db 30 30 55 30 53 30 48 30 00 30 53 30 54 30 41 30 52 30 54 30 00 30
 ;              b     u     t     t     o     n
-%push_start_2: 42 30 55 30 54 30 54 30 4f 30 4e 30
+%push_start_2: .db 42 30 55 30 54 30 54 30 4f 30 4e 30
 ;           ©     v     i     v     i     1     6     8           2     0     1     9
-%copyright: 5f 30 56 30 49 30 56 30 49 30 11 30 16 30 18 30 00 30 12 30 10 30 11 30 19 30
+%copyright: .db 5f 30 56 30 49 30 56 30 49 30 11 30 16 30 18 30 00 30 12 30 10 30 11 30 19 30
 %print_menu:           nop
 
                 ; @ a008
@@ -1699,37 +1699,37 @@
 ;**************************************
 
 ; zero bytes
-7fb0: 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+7fb0: .db 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 
 ; game title "SUPER SNAKE          "
-7fc0: 53 55 50 45 52 20 53 4e 41 4b 45 20 20 20 20 20 20 20 20 20 20
+7fc0: .db 53 55 50 45 52 20 53 4e 41 4b 45 20 20 20 20 20 20 20 20 20 20
 
 ; map mode
-7fd5: 30
+7fd5: .db 30
 
 ; cartridge type
-7fd6: 00
+7fd6: .db 00
 
 ; ROM size
-7fd7: 09
+7fd7: .db 09
 
 ; RAM size
-7fd8: 00
+7fd8: .db 00
 
 ; destination code
-7fd9: 00
+7fd9: .db 00
 
 ; fixed value
-7fda: 33
+7fda: .db 33
 
 ; mask ROM version
-7fdb: 00
+7fdb: .db 00
 
 ; checksum complement
-7fdc: 00 00
+7fdc: .db 00 00
 
 ; checksum
-7fde: 00 00
+7fde: .db 00 00
 
 ;**************************************
 ;
@@ -1738,23 +1738,23 @@
 ;**************************************
 
 ; zero bytes
-7fe0: 00 00 00 00
+7fe0: .db 00 00 00 00
 
 ; 65816 mode
-7fe4: 00 00 ; COP
-7fe6: 50 81 ; BRK
-7fe8: 00 00
-7fea: 00 82 ; NMI
-7fec: 00 00
-7fee: 00 00 ; IRQ
+7fe4: .db 00 00 ; COP
+7fe6: .db 50 81 ; BRK
+7fe8: .db 00 00
+7fea: .db 00 82 ; NMI
+7fec: .db 00 00
+7fee: .db 00 00 ; IRQ
 
 ; zero bytes
-7ff0: 00 00 00 00
+7ff0: .db 00 00 00 00
 
 ; 6502 mode
-7ff4: 00 00 ; COP
-7ff6: 00 00
-7ff8: 00 00
-7ffa: 00 00 ; NMI
-7ffc: 00 80 ; RESET
-7ffe: 00 00 ; IRQ/BRK
+7ff4: .db 00 00 ; COP
+7ff6: .db 00 00
+7ff8: .db 00 00
+7ffa: .db 00 00 ; NMI
+7ffc: .db 00 80 ; RESET
+7ffe: .db 00 00 ; IRQ/BRK

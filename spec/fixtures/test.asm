@@ -5,12 +5,13 @@
 ;**************************************
 
 ; insert byte sequence at any location
-0030: 11 22 33 44 55 66 77 88
-0038: de af fa ce de ca fe 12
+0030: .db 11 22 33 44 55 66 77 88
+0038: .db de af fa ce de ca fe 12
 
  ; beware of current mode in mini assembler
 .65816 ; to be sure, set cpu explicitly
-
+.bank 00
+.addr 0000
 0000:   lda #12
         sei
         clc
