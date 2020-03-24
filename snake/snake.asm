@@ -987,14 +987,14 @@
 ; TODO: use end of string character
 ; make a print routine
 ;**************************************
-;           S     p     e     e     d     :     0     0
-%speed: .db 33 30 50 30 45 30 45 30 44 30 1a 30 10 30 10 30
-;            P     u     s     h           s     t     a     r     t
-%push_start: .db 30 30 55 30 53 30 48 30 00 30 53 30 54 30 41 30 52 30 54 30 00 30
-;              b     u     t     t     o     n
+;                  S     p     e     e     d     :     0     0
+%speed:        .db 33 30 50 30 45 30 45 30 44 30 1a 30 10 30 10 30
+;                  P     u     s     h           s     t     a     r     t
+%push_start:   .db 30 30 55 30 53 30 48 30 00 30 53 30 54 30 41 30 52 30 54 30 00 30
+;                  b     u     t     t     o     n
 %push_start_2: .db 42 30 55 30 54 30 54 30 4f 30 4e 30
-;           ©     v     i     v     i     1     6     8           2     0     1     9
-%copyright: .db 5f 30 56 30 49 30 56 30 49 30 11 30 16 30 18 30 00 30 12 30 10 30 11 30 19 30
+;                  ©     v     i     v     i     1     6     8           2     0     1     9
+%copyright:    .db 5f 30 56 30 49 30 56 30 49 30 11 30 16 30 18 30 00 30 12 30 10 30 11 30 19 30
 %print_menu:           nop
 
                 ; @ a008
