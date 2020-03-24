@@ -386,6 +386,9 @@ module SnesUtils
     end
 
     def detect_label_type(address)
+      if address.start_with?('#')
+        address = address[1..-1]
+      end
       if address.start_with?('@')
         :relative
       elsif address.start_with?('%')
@@ -453,11 +456,23 @@ module SnesUtils
           label_type = detect_label_type(op)
           case label_type
           when :relative
-            @label_registry[op]
+            if op.start_with?('#')
+              @label_registry[op[1..-1]]
+            else
+              @label_registry[op]
+            end
           when :absolute16
-            @label_registry[op[1..-1]][:mapped_addr].to_s(16)
+            if op.start_with?('#')
+              "##{@label_registry[op[2..-1]][:mapped_addr].to_s(16)}"
+            else
+              @label_registry[op[1..-1]][:mapped_addr].to_s(16)
+            end
           when :absolute24
-            full_address(@label_registry[op[1..-1]][:mapped_addr], @label_registry[op[1..-1]][:mapped_bank]).to_s(16)
+            if op.start_with?('#')
+              "##{full_address(@label_registry[op[2..-1]][:mapped_addr], @label_registry[op[1..-1]][:mapped_bank]).to_s(16)}"
+            else
+              full_address(@label_registry[op[1..-1]][:mapped_addr], @label_registry[op[1..-1]][:mapped_bank]).to_s(16)
+            end
           else
             op
           end

@@ -345,7 +345,6 @@
 @next_appl:     sep #30         ; m8 x8
 
                 ldx 0002        ; load x pointer
-                brk 00
                 lda &random_bin,x    ; load corresponding value
                 lsr
                 lsr
@@ -415,16 +414,16 @@
 ; @aa20
 ;**************************************
 ; coord pairs (RAM map coord/OAM buffer screen coord)
-2a00: 07 00 00 20 08 00 01 20 ; head 7e0007,8 > 7e2000,1
-2a08: 09 00 04 20 0a 00 05 20 ; tail 7e0009,a > 7e2004,5
-2a10: 04 00 08 20 05 00 09 20 ; apple 7e0004,5 > 7e2008,9
+%head_pair: 07 00 00 20 08 00 01 20 ; head 7e0007,8 > 7e2000,1
+%tail_pair: 09 00 04 20 0a 00 05 20 ; tail 7e0009,a > 7e2004,5
+%apple_par: 04 00 08 20 05 00 09 20 ; apple 7e0004,5 > 7e2008,9
 
 %update_oam_buffer_from_map_coord:           phd
                 php
                 phb
 
                 rep #30         ; m 16 x 16
-                lda #aa00       ; index DP @ coord pairs array
+                lda #%head_pair       ; index DP @ coord pairs array
                 tcd
                 sep #20         ; m 8
 
