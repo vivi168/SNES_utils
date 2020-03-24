@@ -133,8 +133,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 lda #05         ; enable BG1&3
                 sta 212c        ; TM
 
-                jsr b620        ; @reset_bg3_tilemap_buffer
-                jsr b7d0
+                jsr %reset_bg3_1        ; @reset_bg3_tilemap_buffer
+                jsr %print_menu
 
                 ;**************************************
                 ; DMA transfers
@@ -243,7 +243,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ;then generate apple position
                 jsr %rd_appl_coord
                 ; then update oam buffer to reflect new apple coord
-                jsr aa20
+                jsr %update_oam_buffer_from_map_coord
                 ; init bg settings for game loop
                 jsr %init_bg_set
                 ;jump to game loop
@@ -291,7 +291,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 jsr %chk_wall_coli        ; check if collide with wall
                 jsr %eat_self        ; check if collide with body
 
-                jsr aa20        ; update oam buffer
+                jsr %update_oam_buffer_from_map_coord        ; update oam buffer
                 jsr %up_vbuf_map        ; update background buffer as well
 
                 jmp %game_loop
@@ -312,7 +312,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 cmp 0018
                 bne @check_time ; have 2 seconds elapsed yet?
 
-                jmp %fast_reset
+                brk 00
+                jmp &far_jmp_test
 
 ;**************************************
 ; def init_random_seed()
@@ -416,7 +417,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 2a08: 09 00 04 20 0a 00 05 20 ; tail 7e0009,a > 7e2004,5
 2a10: 04 00 08 20 05 00 09 20 ; apple 7e0004,5 > 7e2008,9
 
-2a20:           phd
+%update_oam_buffer_from_map_coord:           phd
                 php
                 phb
 
@@ -911,10 +912,11 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; 30: 00110000
 ;**************************************
 ;               S     C     O     R     E     :
-3600:           33 30 23 30 2f 30 32 30 25 30 1a 30
+%score_txt:     33 30 23 30 2f 30 32 30 25 30 1a 30
 ;               0     0     0     0
-360c:           10 30 10 30 10 30 10 30
-3620:           nop
+%score_val:     10 30 10 30 10 30 10 30
+
+%reset_bg3_1:   nop
                 php
 
                 rep #30
@@ -939,7 +941,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ldx #0000
 
 @default_txt:   nop
-                lda 80b600,x
+                lda %score_txt,x
                 sta 7e3000,x
                 inx
                 inx
@@ -983,22 +985,21 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 ; def init_bg3_title_buffer()
 ; TODO: use end of string character
 ; make a print routine
-; @b7d0
 ;**************************************
-;     S     p     e     e     d     :     0     0
-3750: 33 30 50 30 45 30 45 30 44 30 1a 30 10 30 10 30
-;     P     u     s     h           s     t     a     r     t
-3760: 30 30 55 30 53 30 48 30 00 30 53 30 54 30 41 30 52 30 54 30 00 30
-;     b     u     t     t     o     n
-3776: 42 30 55 30 54 30 54 30 4f 30 4e 30
-;     ©     v     i     v     i     1     6     8           2     0     1     9
-3782: 5f 30 56 30 49 30 56 30 49 30 11 30 16 30 18 30 00 30 12 30 10 30 11 30 19 30
-37d0:           nop
+;       S     p     e     e     d     :     0     0
+%speed: 33 30 50 30 45 30 45 30 44 30 1a 30 10 30 10 30
+;            P     u     s     h           s     t     a     r     t
+%push_start: 30 30 55 30 53 30 48 30 00 30 53 30 54 30 41 30 52 30 54 30 00 30
+;              b     u     t     t     o     n
+%push_start_2: 42 30 55 30 54 30 54 30 4f 30 4e 30
+;           ©     v     i     v     i     1     6     8           2     0     1     9
+%copyright: 5f 30 56 30 49 30 56 30 49 30 11 30 16 30 18 30 00 30 12 30 10 30 11 30 19 30
+%print_menu:           nop
 
                 ; @ a008
                 ldx #0000
 @speed_txt:     nop
-                lda 80b750,x
+                lda %speed,x
                 sta 7e3008,x
                 inx
                 inx
@@ -1008,7 +1009,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; @ a080
                 ldx #0000
 @start_txt:     nop
-                lda 80b760,x
+                lda %push_start,x
                 sta 7e3100,x
                 inx
                 inx
@@ -1018,11 +1019,11 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; @ a104
                 ldx #0000
 @copyr_txt:     nop
-                lda 80b782,x
+                lda %copyright,x
                 sta 7e3284,x
                 inx
                 inx
-                cpx #0022
+                cpx #001a
                 bcc @copyr_txt
 
                 ; BG3 V/H offsets
@@ -1391,10 +1392,10 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 jsr %oam_buf_init        ; @oam_buf_init
                 jsr %oam_init        ; @oam_initial_settings
                 jsr %rst_tmap_buf        ; @reset WRAM tilemap buffer
-                jsr b620        ; @init_bg3_tilemap_buffer
+                jsr %reset_bg3_1        ; @init_bg3_tilemap_buffer
                 jsr %init_score_buf        ; @init_bg3_score_buffer
 
-                jsr aa20        ; @update_oam_buffer_from_map_coord()
+                jsr %update_oam_buffer_from_map_coord        ; @update_oam_buffer_from_map_coord()
                 jsr %up_vbuf_map        ; update background buffer as well
 
                 lda #00
@@ -1756,3 +1757,11 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 7ffa: 00 00 ; NMI
 7ffc: 00 80 ; RESET
 7ffe: 00 00 ; IRQ/BRK
+
+.bank 01
+.addr 0000      ; 82/0000
+%far_jmp_test2: jmp &fast_reset
+.addr 8000      ; 83/8000
+
+%far_jmp_test:  lda #12
+                jmp &far_jmp_test2

@@ -106,14 +106,21 @@ module SnesUtils
             next
           end
 
-          if matches = Definitions::BYTE_SEQUENCE_REGEX.match(line)
-            if i == 1
+          if matches = Definitions::READ_BYTE_SEQUENCE_REGEX.match(line)
+            raw_addr = matches[1]
+            if raw_addr.start_with?('%')
+              addr = parse_address(line, true)
+            else
               addr = full_address(matches[1].to_i(16))
-              bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
+            end
+            bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
+
+            if i == 1
               raw_bytes << [addr, bytes]
             end
 
             # TODO: incr_addr
+            inc_addr(@current_addr, bytes.size)
             next
           elsif matches = Definitions::INCBIN_REGEX.match(line)
             if i == 1
