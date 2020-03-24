@@ -119,18 +119,25 @@ module SnesUtils
               raw_bytes << [addr, bytes]
             end
 
-            # TODO: incr_addr
-            inc_addr(@current_addr, bytes.size)
+            if contains_label?(raw_addr)
+              inc_addr(@current_addr, bytes.size)
+            end
             next
-          elsif matches = Definitions::INCBIN_REGEX.match(line)
-            if i == 1
+          elsif matches = Definitions::READ_INCBIN_REGEX.match(line)
+            raw_addr = matches[1]
+            if raw_addr.start_with?('%')
+              addr = parse_address(line, true)
+            else
               addr = full_address(matches[1].to_i(16))
-              filename = matches[2].strip.chomp
-
-              incbin_files << [addr, filename]
+            end
+            target_filename = matches[2].strip.chomp
+            if i == 1
+              incbin_files << [addr, target_filename]
             end
 
-            # TODO: incr_addr
+            if contains_label?(raw_addr)
+              inc_addr(@current_addr, File.size(target_filename))
+            end
             next
           elsif matches = Definitions::READ_BANK_SWITCH.match(line)
             new_bank_no = matches[1].to_i(16)

@@ -6,17 +6,19 @@
 
 .65816
 
-8000:           .incbin assets/snake-bg.bin             ; 0x800
-8800:           .incbin assets/snake-sprites.bin        ; 0x800
-9000:           .incbin assets/snake-bg-pal.bin         ; 0x20
-9020:           .incbin assets/snake-sprites-pal.bin    ; 0x20
-9040:           .incbin assets/random.bin               ; 0x800
-9840:           .incbin assets/title-screen.map         ; 0x800
-a040:           .incbin assets/title-screen.bin         ; 0x1800
-b840:           .incbin assets/small-font.bin           ; 0x600
-be40:           .incbin assets/title-screen-pal.bin     ; 0x20
-be60:           .incbin assets/small-font-pal.bin       ; 0x08
+.bank 00
+.addr 8000 ; 81/8000
 
+%snake_bg:          .incbin assets/snake-bg.bin             ; 0x800
+%snake_sprite:      .incbin assets/snake-sprites.bin        ; 0x800
+%snake_bg_pal:      .incbin assets/snake-bg-pal.bin         ; 0x20
+%snake_sprite_pal:  .incbin assets/snake-sprites-pal.bin    ; 0x20
+%random_bin:        .incbin assets/random.bin               ; 0x800
+%title_screen_map:  .incbin assets/title-screen.map         ; 0x800
+%title_screen:      .incbin assets/title-screen.bin         ; 0x1800
+%small_font:        .incbin assets/small-font.bin           ; 0x600
+%title_screen_pal:  .incbin assets/title-screen-pal.bin     ; 0x20
+%small_font_pal:    .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; WRAM addresses
@@ -312,7 +314,6 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 cmp 0018
                 bne @check_time ; have 2 seconds elapsed yet?
 
-                brk 00
                 jmp &far_jmp_test
 
 ;**************************************
@@ -344,7 +345,8 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
 @next_appl:     sep #30         ; m8 x8
 
                 ldx 0002        ; load x pointer
-                lda 819040,x    ; load corresponding value
+                brk 00
+                lda &random_bin,x    ; load corresponding value
                 lsr
                 lsr
                 lsr
@@ -354,7 +356,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 stx 0002        ; next x pointer = x pointer + 1
 
                 ldx 0003        ; load y pointer
-                lda 819040,x    ; load corresponding value
+                lda &random_bin,x    ; load corresponding value
                 cmp #e0
                 bcc @save_y_appl
                 ; if apple.y >= 224, apple.y -= 32
@@ -1447,7 +1449,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; Copy snake-bg.bin to VRAM
                 tsx             ; save stack pointer
                 pea 0000        ; vram_dest_addr
-                pea 8000        ; rom_src_addr
+                pea %snake_bg        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
@@ -1465,7 +1467,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; Copy snake-sprites.bin to VRAM
                 tsx             ; save stack pointer
                 pea 2000        ; vram_dest_addr
-                pea 8800        ; rom_src_addr
+                pea %snake_sprite        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
@@ -1474,7 +1476,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; Copy small-font.bin to VRAM
                 tsx             ; save stack pointer
                 pea 4000        ; vram_dest_addr (@8000 really, word steps)
-                pea b840        ; rom_src_addr
+                pea %small_font        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
                 pea 0600        ; bytes_to_trasnfer
@@ -1483,7 +1485,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; Copy title-screen.bin to VRAM
                 tsx             ; save stack pointer
                 pea 6000        ; vram_dest_addr (@c000 really, word steps)
-                pea a040        ; rom_src_addr
+                pea %title_screen        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
                 pea 1800        ; bytes_to_trasnfer
@@ -1492,7 +1494,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 ; Copy title-screen.map to VRAM
                 tsx             ; save stack pointer
                 pea 7000        ; vram_dest_addr (@e000 really, word steps)
-                pea 9840        ; rom_src_addr
+                pea %title_screen_map        ; rom_src_addr
                 lda #81         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
@@ -1503,7 +1505,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 tsx             ; save stack pointer
                 lda #00
                 pha             ; cgram_dest_addr
-                pea 9000        ; rom_src_addr
+                pea %snake_bg_pal        ; rom_src_addr
                 lda #81
                 pha             ; rom_src_bank
                 lda #20
@@ -1514,7 +1516,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 tsx             ; save stack pointer
                 lda #10
                 pha             ; cgram_dest_addr
-                pea be60        ; rom_src_addr
+                pea %small_font_pal        ; rom_src_addr
                 lda #81
                 pha             ; rom_src_bank
                 lda #08
@@ -1525,7 +1527,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 tsx             ; save stack pointer
                 lda #20
                 pha             ; cgram_dest_addr
-                pea be40        ; rom_src_addr
+                pea %title_screen_pal        ; rom_src_addr
                 lda #81
                 pha             ; rom_src_bank
                 lda #20
@@ -1536,7 +1538,7 @@ be60:           .incbin assets/small-font-pal.bin       ; 0x08
                 tsx             ; save stack pointer
                 lda #80
                 pha             ; cgram_dest_addr
-                pea 9020        ; rom_src_addr
+                pea %snake_sprite_pal        ; rom_src_addr
                 lda #81
                 pha             ; rom_src_bank
                 lda #20
