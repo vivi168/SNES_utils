@@ -314,7 +314,7 @@
                 cmp 0018
                 bne @check_time ; have 2 seconds elapsed yet?
 
-                jmp &far_jmp_test
+                jmp &fast_reset
 
 ;**************************************
 ; def init_random_seed()
@@ -1758,11 +1758,3 @@
 7ffa: 00 00 ; NMI
 7ffc: 00 80 ; RESET
 7ffe: 00 00 ; IRQ/BRK
-
-.bank 01
-.addr 0000      ; 82/0000
-%far_jmp_test2: jmp &fast_reset
-.addr 8000      ; 83/8000
-
-%far_jmp_test:  lda #12
-                jmp &far_jmp_test2
