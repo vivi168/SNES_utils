@@ -15,7 +15,7 @@ module SnesUtils
 
       raise ArgumentError, 'Image width and height must be a multiple of sprite size' if (@image.width % @char_size != 0) or (@image.height % @char_size != 0)
 
-      alpha_first if alpha
+      unshift_alpha(alpha) if alpha
       fill_palette
     end
 
@@ -29,7 +29,8 @@ module SnesUtils
       end
     end
 
-    def alpha_first
+    def unshift_alpha(alpha)
+      @palette.unshift(alpha)
     end
 
     def fill_palette
