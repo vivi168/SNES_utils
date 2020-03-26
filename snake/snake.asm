@@ -1705,7 +1705,7 @@
                 sep #20
                 lda #f0
                 pha
-                plb             ; dbr = 7e
+                plb             ; dbr = f0
 
                 rep #30
                 ; TODO: here implement save check
@@ -1715,8 +1715,7 @@
                 cmp 0000
                 beq @save_score
                 sta 0000
-                lda #0000
-                sta 0002        ; empty score first time
+                stz 0002        ; empty score first time
 
 @save_score:    lda 7e0010      ; load score
                 cmp 0002
