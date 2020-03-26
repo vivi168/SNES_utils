@@ -302,6 +302,7 @@
 ; wait 2 sec and jump to reset
 ;**************************************
 %game_over_lp:  wai
+                jsr %write_sram ; save score
 
                 lda 0018        ; load second counter
                 clc
@@ -312,7 +313,6 @@
                 cmp 0018
                 bne @check_time ; have 2 seconds elapsed yet?
 
-                jsr %write_sram
                 jmp %reset_vec
 
 ;**************************************
@@ -1708,14 +1708,23 @@
                 plb             ; dbr = 7e
 
                 rep #30
+                ; TODO: here implement save check
+                ; if 0000 != DEAD, means it's
+                ; uninitialized SRAM
                 lda #dead
+                cmp 0000
+                beq @save_score
                 sta 0000
-                sta 0400
-                lda 7e0010      ; load score
-                sta 0002        ; store it
-                sta 0402
+                lda #0000
+                sta 0002        ; empty score first time
 
-                plb
+@save_score:    lda 7e0010      ; load score
+                cmp 0002
+                ; if score < saved score
+                bcc @skip_save_score
+                sta 0002        ; store it
+
+@skip_save_score:     plb
                 plp
                 rts
 
