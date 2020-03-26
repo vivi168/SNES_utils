@@ -22,6 +22,8 @@ module SnesUtils
       @current_bank_no = 0
       @accumulator_flag = 1
       @index_flag = 1
+      @label_registry = {}
+
 
       @next_addr_to_list = 0
     end
@@ -72,9 +74,6 @@ module SnesUtils
     def read(filename, start_addr = nil)
       return 0 unless File.file?(filename)
 
-      @label_registry = {}
-      @address_registry = {}
-
       current_addr = start_addr || @current_addr
       current_bank_no = @current_bank_no
       instructions = []
@@ -119,9 +118,7 @@ module SnesUtils
               raw_bytes << [addr, bytes]
             end
 
-            if contains_label?(raw_addr)
-              inc_addr(@current_addr, bytes.size)
-            end
+            inc_addr(@current_addr, bytes.size)
             next
           elsif matches = Definitions::READ_INCBIN_REGEX.match(line)
             raw_addr = matches[1]
@@ -135,9 +132,12 @@ module SnesUtils
               incbin_files << [addr, target_filename]
             end
 
-            if contains_label?(raw_addr)
-              inc_addr(@current_addr, File.size(target_filename))
-            end
+            inc_addr(@current_addr, File.size(target_filename))
+            next
+          elsif matches = Definitions::READ_INCSRC_REGEX.match(line)
+            target_filename = matches[1].strip.chomp
+            incsrc_res = read(target_filename)
+            puts "incsrc: #{target_filename}, #{incsrc_res}" if i == 1
             next
           elsif matches = Definitions::READ_BANK_SWITCH.match(line)
             new_bank_no = matches[1].to_i(16)
