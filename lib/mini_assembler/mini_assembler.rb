@@ -1,7 +1,9 @@
+# frozen_string_literal: true
+
 module SnesUtils
   Readline.completion_proc = proc do |input|
     Wdc65816::Definitions::OPCODES_DATA.map { |row| row[:mnemonic] }
-                               .select { |mnemonic| mnemonic.upcase.start_with?(input.upcase) }
+                                       .select { |mnemonic| mnemonic.upcase.start_with?(input.upcase) }
   end
 
   class MiniAssembler
@@ -24,7 +26,6 @@ module SnesUtils
       @index_flag = 1
       @label_registry = {}
 
-
       @next_addr_to_list = 0
     end
 
@@ -45,7 +46,7 @@ module SnesUtils
       filename = filename.empty? ? 'out.smc' : filename
 
       File.open(filename, 'w+b') do |file|
-        file.write([@memory.map { |i| i ? i : '00' }.join].pack('H*'))
+        file.write([@memory.map { |i| i || '00' }.join].pack('H*'))
       end
 
       filename
@@ -68,7 +69,7 @@ module SnesUtils
       res = read(filename)
       write(outfile)
 
-      return res
+      res
     end
 
     def read(filename, start_addr = nil)
@@ -107,30 +108,26 @@ module SnesUtils
 
           if matches = Definitions::READ_BYTE_SEQUENCE_REGEX.match(line)
             raw_addr = matches[1]
-            if raw_addr.start_with?('%')
-              addr = parse_address(line, true)
-            else
-              addr = full_address(matches[1].to_i(16))
-            end
+            addr = if raw_addr.start_with?('%')
+                     parse_address(line, true)
+                   else
+                     full_address(matches[1].to_i(16))
+                   end
             bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
 
-            if i == 1
-              raw_bytes << [addr, bytes]
-            end
+            raw_bytes << [addr, bytes] if i == 1
 
             inc_addr(@current_addr, bytes.size)
             next
           elsif matches = Definitions::READ_INCBIN_REGEX.match(line)
             raw_addr = matches[1]
-            if raw_addr.start_with?('%')
-              addr = parse_address(line, true)
-            else
-              addr = full_address(matches[1].to_i(16))
-            end
+            addr = if raw_addr.start_with?('%')
+                     parse_address(line, true)
+                   else
+                     full_address(matches[1].to_i(16))
+                   end
             target_filename = matches[2].strip.chomp
-            if i == 1
-              incbin_files << [addr, target_filename]
-            end
+            incbin_files << [addr, target_filename] if i == 1
 
             inc_addr(@current_addr, File.size(target_filename))
             next
@@ -143,6 +140,7 @@ module SnesUtils
             new_bank_no = matches[1].to_i(16)
             max_bank_no = @mem_map == :hirom ? 0x3f : 0x7f
             return "Error at line #{line_no + 1}" if new_bank_no > max_bank_no
+
             @current_bank_no = new_bank_no
             @current_addr = 0
 
@@ -150,17 +148,20 @@ module SnesUtils
           elsif matches = Definitions::READ_ADDR_SWITCH.match(line)
             new_addr = matches[1].to_i(16)
             return "Error at line #{line_no + 1}" if new_addr > 0xffff
+
             @current_addr = new_addr
 
             next
           end
 
-          instruction, length, address = parse_instruction(line, register_label=(i == 0), resolve_label=(i==1))
+          instruction, length, address = parse_instruction(line, register_label = (i == 0), resolve_label = (i == 1))
           return "Error at line #{line_no + 1}" unless instruction
 
           instructions << [instruction, length, full_address(address)]
           bank_wrap = inc_addr(address, length)
-          puts "Warning: bank wrap at line #{line_no + 1}" if bank_wrap && (i == 0)
+          if bank_wrap && (i == 0)
+            puts "Warning: bank wrap at line #{line_no + 1}"
+          end
         end
       end
 
@@ -186,7 +187,7 @@ module SnesUtils
 
       dump_label_registry
 
-      return "Read #{total_bytes_read} bytes"
+      "Read #{total_bytes_read} bytes"
     end
 
     def dump_label_registry
@@ -244,10 +245,10 @@ module SnesUtils
       @current_bank_no != initial_bank_no
     end
 
-    def address_human(addr=nil, cur_bank=@current_bank_no)
+    def address_human(addr = nil, cur_bank = @current_bank_no)
       address = full_address(addr || @current_addr, cur_bank)
       bank = address >> 16
-      addr = (((address>>8)&0xFF) << 8) | (address&0xFF)
+      addr = (((address >> 8) & 0xFF) << 8) | (address & 0xFF)
       "#{hex(bank)}/#{hex(addr, 4)}"
     end
 
@@ -259,7 +260,9 @@ module SnesUtils
       start_full_addr = full_address(start_addr)
       end_full_addr = full_address(end_addr)
 
-      return [] if start_full_addr > end_full_addr || start_full_addr >= @memory.length
+      if start_full_addr > end_full_addr || start_full_addr >= @memory.length
+        return []
+      end
 
       @memory[start_full_addr..end_full_addr]
     end
@@ -282,62 +285,62 @@ module SnesUtils
       if @normal_mode
         if line == '!'
           @normal_mode = false
-          return
+          nil
         elsif line == '.spc700'
           @cpu = :spc700
-          return 'spc700'
+          'spc700'
         elsif line == '.65816'
           @cpu = :wdc65816
-          return '65816'
+          '65816'
         elsif matches = Definitions::WRITE_REGEX.match(line)
           filename = matches[1].strip.chomp
           out_filename = write(filename)
-          return "Written #{@memory.size} bytes to file #{out_filename}"
+          "Written #{@memory.size} bytes to file #{out_filename}"
         elsif matches = Definitions::READ_REGEX.match(line)
           start_addr = matches[2]&.to_i(16)
           filename = matches[3].strip.chomp
 
-          return read(filename, start_addr)
+          read(filename, start_addr)
         elsif matches = Definitions::INCBIN_REGEX.match(line)
           start_addr = matches[1].to_i(16)
           filename = matches[2].strip.chomp
           nb_bytes = incbin(filename, start_addr)
 
-          return "Inserted #{nb_bytes} bytes at #{address_human(start_addr)}"
+          "Inserted #{nb_bytes} bytes at #{address_human(start_addr)}"
         elsif Definitions::BYTE_LOC_REGEX =~ line
-          return memory_loc(line.to_i(16))
+          memory_loc(line.to_i(16))
         elsif matches = Definitions::BYTE_RANGE_REGEX.match(line)
           start_addr = matches[1].to_i(16)
           end_addr = matches[2].to_i(16)
 
           padding_count = start_addr % 8
-          padding = (1..padding_count).map { |b| '  ' }
+          padding = (1..padding_count).map { |_b| '  ' }
           arr = memory_range(start_addr, end_addr)
           return if arr.empty?
 
-          padded_arr = arr.insert(8-padding_count, *padding).each_slice(8).to_a
-          return padded_arr.each_with_index.map do |row, idx|
-            if idx == 0
-              line_addr = start_addr
-            else
-              line_addr = start_addr - padding_count + idx * 8
-            end
+          padded_arr = arr.insert(8 - padding_count, *padding).each_slice(8).to_a
+          padded_arr.each_with_index.map do |row, idx|
+            line_addr = if idx == 0
+                          start_addr
+                        else
+                          start_addr - padding_count + idx * 8
+                        end
             ["#{address_human(line_addr)}-", *row].join(' ')
           end.join("\n")
         elsif matches = Definitions::BYTE_SEQUENCE_REGEX.match(line)
           addr = matches[1].to_i(16)
           bytes = matches[2].delete(' ').scan(/.{1,2}/).map { |b| hex(b.to_i(16)) }
           replace_memory_range(addr, addr + bytes.length - 1, bytes)
-          return
+          nil
         elsif matches = Definitions::DISASSEMBLE_REGEX.match(line)
           start = matches[1].empty? ? @next_addr_to_list : matches[1].to_i(16)
-          return disassemble_range(start, 20).join("\n")
+          disassemble_range(start, 20).join("\n")
         elsif matches = Definitions::SWITCH_BANK_REGEX.match(line)
           target_bank_no = matches[1].to_i(16)
           @current_bank_no = target_bank_no
           @current_addr = @current_bank_no << 16
           @next_addr_to_list = 0
-          return
+          nil
         elsif matches = Definitions::FLIP_MX_REG_REGEX.match(line)
           val = matches[1]
           reg = matches[2]
@@ -348,19 +351,19 @@ module SnesUtils
             @index_flag = val.to_i
           end
 
-          return
+          nil
         end
       else
         if line == ''
           @normal_mode = true
-          return
+          nil
         else
           instruction, length, address = parse_instruction(line)
           return 'error' unless instruction
 
-          replace_memory_range(address, address+length-1, instruction)
+          replace_memory_range(address, address + length - 1, instruction)
           inc_addr(address, length)
-          return disassemble_range(address, 1, length > 2).join
+          disassemble_range(address, 1, length > 2).join
         end
       end
     end
@@ -381,22 +384,18 @@ module SnesUtils
         mapped_bank = @current_bank_no + 0xc0 if @current_bank_no < 0x3f
         { mapped_bank: mapped_bank, mapped_addr: address, rom_address: full_address(address) }
       else
-        { }
+        {}
       end
     end
 
     def detect_label_type(address)
-      if address.start_with?('#')
-        address = address[1..-1]
-      end
+      address = address[1..-1] if address.start_with?('#')
       if address.start_with?('@')
         :relative
       elsif address.start_with?('%')
         :absolute16
       elsif address.start_with?('&')
         :absolute24
-      else
-        nil
       end
     end
 
@@ -404,7 +403,7 @@ module SnesUtils
       op.include?('@') | op.include?('%') | op.include?('&')
     end
 
-    def parse_address(line, register_label = false)
+    def parse_address(line, _register_label = false)
       return @current_addr if line.index(':').nil?
 
       address = line.split(':').first.strip.chomp
@@ -423,17 +422,18 @@ module SnesUtils
         op
       end
 
-      return @current_addr
+      @current_addr
     end
 
     def parse_instruction(line, register_label = false, resolve_label = false)
       current_address = parse_address(line, register_label)
       return if current_address < 0 || current_address > 0xffff
+
       instruction = line.split(':').last.split(' ')
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
 
-      if register_label and contains_label?(raw_operand)
+      if register_label && contains_label?(raw_operand)
         raw_operand = raw_operand.split(',').map do |op|
           label_type = detect_label_type(op)
           case label_type
@@ -451,7 +451,7 @@ module SnesUtils
         end.join(',')
       end
 
-      if resolve_label and contains_label?(raw_operand)
+      if resolve_label && contains_label?(raw_operand)
         raw_operand = raw_operand.split(',').map do |op|
           label_type = detect_label_type(op)
           case label_type
@@ -493,6 +493,7 @@ module SnesUtils
         if SnesUtils.const_get(@cpu.capitalize)::Definitions::BIT_INSTRUCTIONS.include?(mode)
           m = operand_matches[1].to_i(16)
           return if m > 0x1fff
+
           b = operand_matches[2].to_i(16)
           return if b > 7
 
@@ -513,7 +514,7 @@ module SnesUtils
           if SnesUtils.const_get(@cpu.capitalize)::Definitions::DOUBLE_OPERAND_INSTRUCTIONS.include?(mode)
             relative_addr = operand[1] - current_address - length
 
-            return if (relative_addr < -128 || relative_addr > 127)
+            return if relative_addr < -128 || relative_addr > 127
 
             relative_addr = 0x100 + relative_addr if relative_addr < 0
             param_bytes = "#{hex(operand[0])}#{hex(relative_addr)}"
@@ -521,29 +522,31 @@ module SnesUtils
             relative_addr = operand - current_address - length
 
             if @cpu == :wdc65816 && mode == :rell
-              return if (relative_addr < -32768 || relative_addr > 32767)
+              return if relative_addr < -32_768 || relative_addr > 32_767
             else
-              return if (relative_addr < -128 || relative_addr > 127)
+              return if relative_addr < -128 || relative_addr > 127
             end
 
-            relative_addr = (2**(8*(length-1))) + relative_addr if relative_addr < 0
-            param_bytes = hex(relative_addr, 2*(length-1)).scan(/.{2}/).reverse.join
+            if relative_addr < 0
+              relative_addr = (2**(8 * (length - 1))) + relative_addr
+            end
+            param_bytes = hex(relative_addr, 2 * (length - 1)).scan(/.{2}/).reverse.join
           end
         else
-          param_bytes = hex(operand, 2*(length-1)).scan(/.{2}/).reverse.join
+          param_bytes = hex(operand, 2 * (length - 1)).scan(/.{2}/).reverse.join
         end
       end
 
       encoded_result = "#{opcode}#{param_bytes}"
 
-      return [encoded_result.scan(/.{2}/), length, current_address]
+      [encoded_result.scan(/.{2}/), length, current_address]
     end
 
     def auto_update_flags(opcode, operand)
-      if 0xc2 == opcode
+      if opcode == 0xc2
         @index_flag = 0 if (operand & 0x10) == 0x10
         @accumulator_flag = 0 if (operand & 0x20) == 0x20
-      elsif 0xe2 == opcode
+      elsif opcode == 0xe2
         @index_flag = 1 if (operand & 0x10) == 0x10
         @accumulator_flag = 1 if (operand & 0x20) == 0x20
       end
@@ -555,6 +558,7 @@ module SnesUtils
       count.times do
         byte = memory_loc(next_idx)
         break unless byte
+
         opcode = byte.to_i(16)
 
         opcode_data = detect_opcode_data_from_opcode(opcode, force_length)
@@ -565,9 +569,9 @@ module SnesUtils
 
         format = SnesUtils.const_get(@cpu.capitalize)::Definitions::MODES_FORMATS[mode]
 
-        operand = memory_range(next_idx+1, next_idx+length-1).reverse.join.to_i(16)
+        operand = memory_range(next_idx + 1, next_idx + length - 1).reverse.join.to_i(16)
 
-        hex_encoded_instruction = memory_range(next_idx, next_idx+length-1)
+        hex_encoded_instruction = memory_range(next_idx, next_idx + length - 1)
         prefix = ["#{address_human(next_idx)}:", *hex_encoded_instruction].join(' ')
 
         auto_update_flags(opcode, operand) if @cpu == :wdc65816
@@ -599,12 +603,12 @@ module SnesUtils
           end
         end
 
-        instructions << "#{prefix.ljust(30)} #{format % [mnemonic, *operand]}"
+        instructions << "#{prefix.ljust(30)} #{format(format, mnemonic, *operand)}"
         next_idx += length
       end
 
       @next_addr_to_list = next_idx
-      return instructions
+      instructions
     end
 
     def relative_operand(operand, next_idx, limit = 0x7f, offset = 0x100, rjust_len = 2)
