@@ -93,9 +93,7 @@
 ; 0000 @ bank 80 = 80/8000
 .bank 00
 .addr 0000
-%reset_vec:    jmp &fast_reset
-
-%fast_reset:    sei
+%reset_vec:     sei
                 clc
                 xce
                 sep #20         ; M8
@@ -314,7 +312,8 @@
                 cmp 0018
                 bne @check_time ; have 2 seconds elapsed yet?
 
-                jmp &fast_reset
+                jsr %write_sram
+                jmp %reset_vec
 
 ;**************************************
 ; def init_random_seed()
@@ -1194,7 +1193,34 @@
 ; m8 x16
 ;**************************************
 
-.incsrc test.asm
+%vram_dma_tsfr: phx             ; save stack pointer
+                phd             ; save direct page
+                tsc
+                tcd             ; direct page = stack pointer
+
+                ldx 0c          ; $vram_dest_addr
+                stx 2116        ; VMADDL
+
+                lda #18         ; VMDATAL 21*18*
+                sta 4301
+
+                ldx 0a          ; $rom_src_addr
+                stx 4302
+                lda 09          ; $rom_src_bank
+                sta 4304
+
+                ldx 07          ; $bytes_to_transfer
+                stx 4305
+
+                lda #01
+                sta 4300
+
+                lda #01
+                sta 420b
+
+                pld             ; restore direct page
+                plx             ; restore stack pointer
+                rts
 
 ;**************************************
 ; def cgram_dma_transfer(btt=07, rom_src_bank=08,
@@ -1666,6 +1692,34 @@
                 rts
 
 ;**************************************
+; write to SRAM
+;**************************************
+%write_sram:    nop
+; 7e0010: score L
+; 7e0011: score H
+                php
+                phb     ; save dbr
+
+                brk 00
+
+                sep #20
+                lda #f0
+                pha
+                plb             ; dbr = 7e
+
+                rep #30
+                lda #dead
+                sta 0000
+                sta 0400
+                lda 7e0010      ; load score
+                sta 0002        ; store it
+                sta 0402
+
+                plb
+                plp
+                rts
+
+;**************************************
 ;
 ; ROM registration data (addresses are offset by 0x8000)
 ;
@@ -1687,7 +1741,7 @@
 7fd7: .db 09
 
 ; RAM size
-7fd8: .db 00
+7fd8: .db 01
 
 ; destination code
 7fd9: .db 00
