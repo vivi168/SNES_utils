@@ -7,4 +7,6 @@ ruby -I../lib/ ../bin/png2snes -f assets/title-screen.png -b 4 -a 0x7c1f
 
 ruby -I../lib/ ../bin/tmx2snes -f assets/title-screen.tmx -p 2 -s 8
 
+ruby -I../lib ../bin/mini_assembler -a spc700_prog.asm
+mv out.smc assets/spc700_prog.bin
 ruby -I../lib ../bin/mini_assembler -a snake.asm

@@ -143,6 +143,9 @@
                 jsr %oam_dat_tsfr        ; @oam_dma_transfer
                 jsr %dma_transfer        ; @dma_transfers
 
+                ; SPC 700
+                jsr %spc_upload
+
 ;**************************************
 ; Final setting before starting gameloop
 ;**************************************
@@ -1725,6 +1728,81 @@
 
 @skip_save_score:     plb
                 plp
+                rts
+
+;**************************************
+; SPC upload
+;**************************************
+; %dummy_spc_data: .db de ad aa bb cc
+%dummy_spc_data: .incbin assets/spc700_prog.bin
+
+%spc_upload:    php
+
+                sep #20 ; a 8
+                rep #10 ; i 16
+
+                ldy #0000       ; retry counter
+
+                ;  1. Wait for a 16-bit read on $2140-1 to return $BBAA.
+@retry_ack:     nop
+
+                ldx #bbaa
+                cpx 2140
+                beq @upload_spc ; wait until [2140] == bbaa (means spc700 is ready)
+                dey
+                bne @retry_ack
+                bra @exit_spc_upl
+
+                ; 2. Write the target address to $2142-3.
+@upload_spc:    ldx #0600       ; target spc700 ram address
+                stx 2142        ; [2142] = dest_addr (spc700 ram address)
+
+                ; 3. Write non-zero to $2141.
+                lda #01
+                sta 2141        ; start command. can be any non zero value
+
+                ; 4. Write $CC to $2140.
+                ; 5. Wait until reading $2140 returns $CC.
+@write_cc:      lda #cc
+                sta 2140
+                cmp 2140
+                bne @write_cc ; wait until [2140] == cc (kick command)
+
+                ldx #0005       ; data length
+                ldy #0000       ; loop counter (index)
+
+@transfer_spc:  lda %dummy_spc_data,y      ; src_addr[y]
+                ; 6. Set your first byte to $2141.
+                sta 2141        ; send data byte
+                tya
+                ; 7. Set your byte index ($00 for the first byte) to $2140.
+                sta 2140        ; send index.lsb
+                cmp 2140
+                ; 8. Wait for $2140 to echo your byte index.
+                bne @transfer_spc ; wait until [2140] == index.lsb
+                iny
+                dex
+                ; 9. Go back to step 6 with your next byte and ++index until you're done.
+                bne @transfer_spc
+
+                ; jump to uploaded code
+                ; Put the target address in $2142-3
+@jmp_upload:    ldx #0600
+                stx 2142
+                ; Put $00 in $2141
+                lda #00
+                sta 2141
+                ; Put index+2 in $2140
+                tya
+                inc
+                inc
+                ; wait for the echo
+                sta 2140
+                cmp 2140
+                bne @jmp_upload
+                ; Shortly afterwards, your code will be executing.
+
+@exit_spc_upl:  plp
                 rts
 
 ;**************************************
