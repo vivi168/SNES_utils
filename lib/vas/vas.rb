@@ -4,7 +4,7 @@ module SnesUtils
       raise unless File.file?(filename)
 
       @filename = filename
-      @program_counter = 0x5ff
+      @program_counter = 0
       @origin = 0
     end
 
@@ -28,11 +28,11 @@ module SnesUtils
       # @cpu = WDC65816
       @cpu = SPC700
       @program_counter = program_counter
-
-      puts @line
     end
 
     def parse
+      return [] if @line.empty?
+
       # TODO process custom instruction, labels
       raise if @line.start_with?('.')
 
@@ -50,6 +50,9 @@ module SnesUtils
       operand_data = detect_operand(raw_operand)
 
       operand = process_operand(operand_data)
+
+      puts @line
+      puts [opcode, *operand].map{|i| i.to_s(16)}.inspect
 
       return [opcode, *operand]
     end
@@ -70,42 +73,57 @@ module SnesUtils
       if double_operand_instruction?
         process_double_operand_instruction(operand_data)
       else
-        operand = [operand_data[1]&.to_i(16)]
-        rel_instruction? ? process_rel_operand(operand) : operand
+        operand = operand_data[1]&.to_i(16)
+        rel_instruction? ? process_rel_operand(operand) : little_endian(operand, @length - 1)
       end
     end
 
     def process_double_operand_instruction(operand_data)
       if bit_instruction?
-        m = operand_data[1].to_i(16)
-        raise if m > 0x1fff
-
-        b = operand_data[2].to_i(16)
-        raise if b > 7
-
-        operand = m << 3 | b
+        process_bit_operand(operand_data)
       else
         operands = [operand_data[1], operand_data[2]].map { |o| o.to_i(16) }
-        second_operand = rel_instruction? ? process_rel_operand(operands[1]) : operands[1]
+        operand_2 = rel_instruction? ? process_rel_operand(operands[1]) : operands[1]
 
-        [operands[0], second_operand]
+        rel_instruction? ? [operands[0], operand_2] : [operand_2, operands[0]]
       end
+    end
+
+    def process_bit_operand(operand_data)
+      m = operand_data[1].to_i(16)
+      raise if m > 0x1fff
+
+      b = operand_data[2].to_i(16)
+      raise if b > 7
+
+      little_endian(m << 3 | b, 2)
     end
 
     def process_rel_operand(operand)
       relative_addr = operand - @program_counter - @length
 
-      if @cpu == WDC65816 && mode == :rell
+      if @cpu == WDC65816 && @mode == :rell
         raise if relative_addr < -32_768 || relative_addr > 32_767
 
         relative_addr += 0x10000 if relative_addr < 0
+        little_endian(relative_addr, 2)
       else
         raise if relative_addr < -128 || relative_addr > 127
 
         relative_addr += 0x100 if relative_addr < 0
+        relative_addr
       end
 
-      relative_addr
+    end
+
+    def little_endian(operand, length)
+      if length > 2
+        [((operand >> 0) & 0xff), ((operand >> 8) & 0xff), ((operand >> 16) & 0xff)]
+      elsif length > 1
+        [((operand >> 0) & 0xff), ((operand >> 8) & 0xff)]
+      else
+        operand
+      end
     end
 
     def double_operand_instruction?
