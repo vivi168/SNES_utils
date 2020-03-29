@@ -3,7 +3,7 @@ module SnesUtils
     WDC65816 = :wdc65816
     SPC700 = :spc700
 
-    INSTRUCTIONS = [
+    DIRECTIVE = [
       '.65816', '.spc700', '.org', '.base', '.db', '.define', '.incbin', '.incsrc'
     ]
 
@@ -11,38 +11,59 @@ module SnesUtils
       raise unless File.file?(filename)
 
       @filename = filename
-      @program_counter = 0
-      @origin = 0
-      @origin_bank = 0
-      @base = 0
-      @cpu = WDC65816
-
       @label_registry = []
-
       @memory = []
     end
 
     def assemble
+      2.times do |pass|
+        @program_counter = 0
+        @origin = 0
+        @base = 0
+        @cpu = WDC65816
+
+        assemble_file(pass)
+      end
+
+      write
+    end
+
+    def assemble_file(pass)
       File.open(@filename).each_with_index do |raw_line, line_no|
         @line = raw_line.split(';').first.strip.chomp
         next if @line.empty?
 
-        if @line.start_with?(*INSTRUCTIONS)
-          process_instruction
+        if @line.start_with?(*DIRECTIVE)
+          process_directive
           next
         end
 
+        if @line.include?(':')
+          arr = @line.split(':')
+          label = arr[0].strip.chomp
+          unless /^@\w+$/ =~ label
+            puts "Error: invalid label"
+            raise
+          end
+          @label_registry << [label[1..-1], @program_counter + @origin] if pass == 0
+          next unless arr[1]
+          instruction = arr[1].strip.chomp
+        else
+          instruction = @line
+        end
+
+        next if instruction.empty?
+
         begin
-        bytes = LineAssembler.new(@line, options).assemble
+          bytes = LineAssembler.new(instruction, options).assemble
         rescue
           puts "Error at line #{line_no + 1}"
-          return
+          raise
         end
-        insert(bytes)
+
+        insert(bytes) if pass == 1
         @program_counter += bytes.size
       end
-
-      write()
     end
 
     def insert(bytes)
@@ -52,13 +73,13 @@ module SnesUtils
 
     def write(filename = 'out.smc')
       File.open(filename, 'w+b') do |file|
-        file.write([@memory.map { |i| hex(i) }.join].pack('H*'))
+        file.write([@memory.map { |i| Vas::hex(i) }.join].pack('H*'))
       end
 
       filename
     end
 
-    def hex(num, rjust_len = 2)
+    def self.hex(num, rjust_len = 2)
       (num || 0).to_s(16).rjust(rjust_len, '0').upcase
     end
 
@@ -66,31 +87,28 @@ module SnesUtils
       {
         program_counter: @program_counter,
         origin: @origin,
-        origin_bank: @origin_bank,
-        cpu: @cpu
+        cpu: @cpu,
+        label_registry: @label_registry
       }
     end
 
-    def process_instruction
-      instruction = @line.split(' ')
+    def process_directive
+      directive = @line.split(' ')
 
-      case instruction[0]
+      case directive[0]
       when '.65816'
         @cpu = WDC65816
       when '.spc700'
         @cpu = SPC700
       when '.org'
-        update_origin(instruction[1].to_i(16))
+        update_origin(directive[1].to_i(16))
       when '.base'
-        @base = instruction[1].to_i(16)
+        @base = directive[1].to_i(16)
       end
     end
 
     def update_origin(param)
-      origin_address = param & 0x00ffff
-      origin_bank = (param >> 16) & 0xff
-      @origin = origin_address
-      @origin_bank = origin_bank
+      @origin = param
 
       update_base_from_origin
     end
@@ -105,15 +123,17 @@ module SnesUtils
   class LineAssembler
     def initialize(raw_line, **options)
       @line = raw_line.split(';').first.strip.chomp
-      @current_address = options[:program_counter] + options[:origin]
-      @origin_bank = options[:origin_bank]
+      @current_address = (options[:program_counter] + options[:origin])
       @cpu = options[:cpu]
+      @label_registry = options[:label_registry]
     end
 
     def assemble
       instruction = @line.split(' ')
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
+
+      raw_operand = replace_label(raw_operand) if contains_label?(raw_operand)
 
       opcode_data = detect_opcode(mnemonic, raw_operand)
       raise unless opcode_data
@@ -127,6 +147,31 @@ module SnesUtils
       operand = process_operand(operand_data)
 
       return [opcode, *operand]
+    end
+
+    def contains_label?(operand)
+      operand.include?('@') || operand.include?('!')
+    end
+
+    def replace_label(operand)
+      raise unless matches = /(@|!)(\w+)/.match(operand)
+
+      mode = matches[1]
+      label = matches[2]
+
+      label_data = @label_registry.detect { |l| l[0] == label }
+
+      value = label_data ? label_data[1] : @current_address
+
+      if mode == '@'
+        value = value & 0x00ffff
+        new_value = Vas::hex(value, 4)
+      else
+        value = value | (((@current_address >> 16) & 0xff) << 16)
+        new_value = Vas::hex(value, 6)
+      end
+
+      operand.gsub(/(@|!)\w+/, new_value)
     end
 
     def detect_opcode(mnemonic, operand)
@@ -172,7 +217,7 @@ module SnesUtils
     end
 
     def process_rel_operand(operand)
-      relative_addr = operand - @current_address - @length
+      relative_addr = operand - (@current_address & 0x00ffff) - @length
 
       if @cpu == Vas::WDC65816 && @mode == :rell
         raise if relative_addr < -32_768 || relative_addr > 32_767
