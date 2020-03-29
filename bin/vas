@@ -13,4 +13,4 @@ OptionParser.new do |opts|
   opts.on('-f', '--file FILENAME', 'ASM file') { |o| options[:filename] = o }
 end.parse!
 
-SnesUtils::Vas.new.assemble(options[:filename])
+SnesUtils::Vas.new(options[:filename]).assemble
