@@ -1,42 +1,82 @@
 module SnesUtils
   class Vas
+    WDC65816 = :wdc65816
+    SPC700 = :spc700
+
+    INSTRUCTIONS = [
+      '.65816', '.spc700', '.org', '.db', '.define', '.incbin', '.incsrc'
+    ]
+
     def initialize(filename)
       raise unless File.file?(filename)
 
       @filename = filename
       @program_counter = 0
       @origin = 0
+      @origin_bank = 0
+      @base = 0
+      @cpu = WDC65816
+
+      @label_registry = []
     end
 
     def assemble
       File.open(@filename).each_with_index do |raw_line, line_no|
-        bytes = LineParser.new(raw_line, @program_counter).parse
+        @line = raw_line.split(';').first.strip.chomp
+        next if @line.empty?
+
+        if @line.start_with?(*INSTRUCTIONS)
+          process_instruction
+          next
+        end
+
+        begin
+        bytes = LineAssembler.new(@line, options).assemble
+        rescue
+          puts "Error at line #{line_no}"
+          return
+        end
         @program_counter += bytes.size
+      end
+    end
+
+    def options
+      {
+        program_counter: @program_counter,
+        origin: @origin,
+        origin_bank: @origin_bank,
+        cpu: @cpu
+      }
+    end
+
+    def process_instruction
+      instruction = @line.split(' ')
+
+      case instruction[0]
+      when '.65816'
+        @cpu = WDC65816
+      when '.spc700'
+        @cpu = SPC700
+      when '.org'
+        param = instruction[1].to_i(16)
+        origin_address = param & 0x00ffff
+        origin_bank = (param >> 16) & 0xff
+        @origin = origin_address
+        @origin_bank = origin_bank
       end
     end
   end
 
-  class LineParser
-    INSTRUCTIONS = [
-      '.org', '.db', '.define', '.incbin', '.incsrc'
-    ]
-    WDC65816 = :wdc65816
-    SPC700 = :spc700
-
-    def initialize(raw_line, program_counter)
+  class LineAssembler
+    def initialize(raw_line, **options)
       @line = raw_line.split(';').first.strip.chomp
-      # @cpu = WDC65816
-      @cpu = SPC700
-      @program_counter = program_counter
+      @current_address = options[:program_counter] + options[:origin]
+      @origin_bank = options[:origin_bank]
+      @cpu = options[:cpu]
     end
 
-    def parse
-      return [] if @line.empty?
-
-      # TODO process custom instruction, labels
-      raise if @line.start_with?('.')
-
-      instruction = @line.split(':').last.split(' ')
+    def assemble
+      instruction = @line.split(' ')
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
 
@@ -100,9 +140,9 @@ module SnesUtils
     end
 
     def process_rel_operand(operand)
-      relative_addr = operand - @program_counter - @length
+      relative_addr = operand - @current_address - @length
 
-      if @cpu == WDC65816 && @mode == :rell
+      if @cpu == Vas::WDC65816 && @mode == :rell
         raise if relative_addr < -32_768 || relative_addr > 32_767
 
         relative_addr += 0x10000 if relative_addr < 0
