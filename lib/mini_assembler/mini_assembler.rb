@@ -497,7 +497,7 @@ module SnesUtils
           b = operand_matches[2].to_i(16)
           return if b > 7
 
-          operand = m << 3 | 5
+          operand = m << 3 | b
         else
           if SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(mode)
             operand = [operand_matches[1], operand_matches[2]].map { |o| o.to_i(16) }
