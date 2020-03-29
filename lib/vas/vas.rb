@@ -4,7 +4,7 @@ module SnesUtils
     SPC700 = :spc700
 
     INSTRUCTIONS = [
-      '.65816', '.spc700', '.org', '.db', '.define', '.incbin', '.incsrc'
+      '.65816', '.spc700', '.org', '.base', '.db', '.define', '.incbin', '.incsrc'
     ]
 
     def initialize(filename)
@@ -18,6 +18,8 @@ module SnesUtils
       @cpu = WDC65816
 
       @label_registry = []
+
+      @memory = []
     end
 
     def assemble
@@ -33,11 +35,31 @@ module SnesUtils
         begin
         bytes = LineAssembler.new(@line, options).assemble
         rescue
-          puts "Error at line #{line_no}"
+          puts "Error at line #{line_no + 1}"
           return
         end
+        insert(bytes)
         @program_counter += bytes.size
       end
+
+      write()
+    end
+
+    def insert(bytes)
+      insert_at = @program_counter + @base
+      @memory[insert_at..bytes.size] = bytes
+    end
+
+    def write(filename = 'out.smc')
+      File.open(filename, 'w+b') do |file|
+        file.write([@memory.map { |i| hex(i) }.join].pack('H*'))
+      end
+
+      filename
+    end
+
+    def hex(num, rjust_len = 2)
+      (num || 0).to_s(16).rjust(rjust_len, '0').upcase
     end
 
     def options
@@ -58,12 +80,25 @@ module SnesUtils
       when '.spc700'
         @cpu = SPC700
       when '.org'
-        param = instruction[1].to_i(16)
-        origin_address = param & 0x00ffff
-        origin_bank = (param >> 16) & 0xff
-        @origin = origin_address
-        @origin_bank = origin_bank
+        update_origin(instruction[1].to_i(16))
+      when '.base'
+        @base = instruction[1].to_i(16)
       end
+    end
+
+    def update_origin(param)
+      origin_address = param & 0x00ffff
+      origin_bank = (param >> 16) & 0xff
+      @origin = origin_address
+      @origin_bank = origin_bank
+
+      update_base_from_origin
+    end
+
+    def update_base_from_origin
+      # TODO: automatically update base
+      # lorom/hirom scheme
+      # spc700 scheme
     end
   end
 
@@ -90,9 +125,6 @@ module SnesUtils
       operand_data = detect_operand(raw_operand)
 
       operand = process_operand(operand_data)
-
-      puts @line
-      puts [opcode, *operand].map{|i| i.to_s(16)}.inspect
 
       return [opcode, *operand]
     end
