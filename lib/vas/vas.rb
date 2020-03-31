@@ -7,6 +7,8 @@ module SnesUtils
       '.65816', '.spc700', '.org', '.base', '.db', '.define', '.incbin', '.incsrc'
     ]
 
+    LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
+
     def initialize(filename)
       raise "File not found" unless File.file?(filename)
 
@@ -177,11 +179,11 @@ module SnesUtils
     end
 
     def contains_label?(operand)
-      operand.include?('@') || operand.include?('!')
+      Vas::LABEL_OPERATORS.any? { |s| operand.include?(s[-1,1]) }
     end
 
     def replace_label(operand)
-      raise "Invalid label syntax"  unless matches = /(@|!)(\w+)/.match(operand)
+      raise "Invalid label syntax"  unless matches = /(#{Vas::LABEL_OPERATORS.join('|')})(\w+)/.match(operand)
 
       mode = matches[1]
       label = matches[2]
@@ -190,15 +192,27 @@ module SnesUtils
 
       value = label_data ? label_data[1] : @current_address
 
-      if mode == '@'
+      case mode
+      when '@'
         value = value & 0x00ffff
         new_value = Vas::hex(value, 4)
-      else
+      when '!'
         value = value | (((@current_address >> 16) & 0xff) << 16)
         new_value = Vas::hex(value, 6)
+      when '<'
+        value = value & 0x0000ff
+        new_value = Vas::hex(value)
+      when '>'
+        value = (value & 0x00ff00) >> 8
+        new_value = Vas::hex(value)
+      when '^'
+        value = (value & 0xff0000) >> 16
+        new_value = Vas::hex(value)
+      else
+        raise 'Label error'
       end
 
-      operand.gsub(/(@|!)\w+/, new_value)
+      operand.gsub(/(#{Vas::LABEL_OPERATORS.join('|')})\w+/, new_value)
     end
 
     def detect_opcode(mnemonic, operand)
