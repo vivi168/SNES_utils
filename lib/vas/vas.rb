@@ -126,6 +126,7 @@ module SnesUtils
 
     def update_origin(param)
       @origin = param
+      @program_counter = 0
 
       update_base_from_origin
     end
