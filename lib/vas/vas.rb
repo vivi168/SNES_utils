@@ -10,7 +10,7 @@ module SnesUtils
     LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
 
     def initialize(filename)
-      raise "File not found" unless File.file?(filename)
+      raise "File not found: #{filename}" unless File.file?(filename)
 
       @filename = filename
       @label_registry = []
@@ -48,7 +48,7 @@ module SnesUtils
           arr = @line.split(':')
           label = arr[0].strip.chomp
           unless /^\w+$/ =~ label
-            raise "Invalid label"
+            raise "Invalid label: #{label}"
           end
           register_label(label) if pass == 0
           next unless arr[1]
@@ -72,7 +72,7 @@ module SnesUtils
     end
 
     def register_label(label)
-      raise "Label already defined" if @label_registry.detect { |l| l[0] == label }
+      raise "Label already defined: #{label}" if @label_registry.detect { |l| l[0] == label }
       @label_registry << [label, @program_counter + @origin]
     end
 
@@ -204,7 +204,7 @@ module SnesUtils
     end
 
     def replace_label(operand)
-      raise "Invalid label syntax"  unless matches = /(#{Vas::LABEL_OPERATORS.join('|')})(\w+)/.match(operand)
+      raise "Invalid label syntax: #{operand}"  unless matches = /(#{Vas::LABEL_OPERATORS.join('|')})(\w+)/.match(operand)
 
       mode = matches[1]
       label = matches[2]
@@ -230,7 +230,7 @@ module SnesUtils
         value = (value & 0xff0000) >> 16
         new_value = Vas::hex(value)
       else
-        raise 'Label error'
+        raise "Mode error: #{mode}"
       end
 
       operand.gsub(/(#{Vas::LABEL_OPERATORS.join('|')})\w+/, new_value)
@@ -270,10 +270,10 @@ module SnesUtils
 
     def process_bit_operand(operand_data)
       m = operand_data[1].to_i(16)
-      raise "Out of range" if m > 0x1fff
+      raise "Out of range: m > 0x1fff: #{m}" if m > 0x1fff
 
       b = operand_data[2].to_i(16)
-      raise "Out of range" if b > 7
+      raise "Out of range: b > 7: #{b}" if b > 7
 
       little_endian(m << 3 | b, 2)
     end
@@ -282,12 +282,12 @@ module SnesUtils
       relative_addr = operand - (@current_address & 0x00ffff) - @length
 
       if @cpu == Vas::WDC65816 && @mode == :rell
-        raise "Out of range" if relative_addr < -32_768 || relative_addr > 32_767
+        raise "Relative address out of range: #{relative_addr}" if relative_addr < -32_768 || relative_addr > 32_767
 
         relative_addr += 0x10000 if relative_addr < 0
         little_endian(relative_addr, 2)
       else
-        raise "Out of range" if relative_addr < -128 || relative_addr > 127
+        raise "Relative address out of range: #{relative_addr}" if relative_addr < -128 || relative_addr > 127
 
         relative_addr += 0x100 if relative_addr < 0
         relative_addr
