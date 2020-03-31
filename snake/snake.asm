@@ -6,19 +6,29 @@
 
 .65816
 
-.bank 00
-.addr 8000 ; 81/8000
+.org 818000
+.base 8000
 
-%snake_bg:          .incbin assets/snake-bg.bin             ; 0x800
-%snake_sprite:      .incbin assets/snake-sprites.bin        ; 0x800
-%snake_bg_pal:      .incbin assets/snake-bg-pal.bin         ; 0x20
-%snake_sprite_pal:  .incbin assets/snake-sprites-pal.bin    ; 0x20
-%random_bin:        .incbin assets/random.bin               ; 0x800
-%title_screen_map:  .incbin assets/title-screen.map         ; 0x800
-%title_screen:      .incbin assets/title-screen.bin         ; 0x1800
-%small_font:        .incbin assets/small-font.bin           ; 0x600
-%title_screen_pal:  .incbin assets/title-screen-pal.bin     ; 0x20
-%small_font_pal:    .incbin assets/small-font-pal.bin       ; 0x08
+snake_bg:
+                .incbin assets/snake-bg.bin             ; 0x800
+snake_sprite:
+                .incbin assets/snake-sprites.bin        ; 0x800
+snake_bg_pal:
+                .incbin assets/snake-bg-pal.bin         ; 0x20
+snake_sprite_pal:
+                .incbin assets/snake-sprites-pal.bin    ; 0x20
+random_bin:
+                .incbin assets/random.bin               ; 0x800
+title_screen_map:
+                .incbin assets/title-screen.map         ; 0x800
+title_screen:
+                .incbin assets/title-screen.bin         ; 0x1800
+small_font:
+                .incbin assets/small-font.bin           ; 0x600
+title_screen_pal:
+                .incbin assets/title-screen-pal.bin     ; 0x20
+small_font_pal:
+                .incbin assets/small-font-pal.bin       ; 0x08
 
 ;**************************************
 ; WRAM addresses
@@ -91,9 +101,11 @@
 ;**************************************
 
 ; 0000 @ bank 80 = 80/8000
-.bank 00
-.addr 0000
-%reset_vec:     sei
+.org 808000
+.base 0000
+
+reset_vec:
+                sei
                 clc
                 xce
                 sep #20         ; M8
@@ -106,8 +118,8 @@
                 lda #80
                 sta 2100        ; INIDISP
 
-                jsr %cls_reg    ; @clear_registers
-                jsr %cls_cus_reg
+                jsr @cls_reg    ; @clear_registers
+                jsr @cls_cus_reg
 
 ;**************************************
 ; Main Register Settings
@@ -133,18 +145,18 @@
                 lda #05         ; enable BG1&3
                 sta 212c        ; TM
 
-                jsr %reset_bg3_1        ; @reset_bg3_tilemap_buffer
-                jsr %print_menu
+                jsr @reset_bg3_1        ; @reset_bg3_tilemap_buffer
+                jsr @print_menu
 
                 ;**************************************
                 ; DMA transfers
                 ;**************************************
                 ; transfer buffer to OAMRAM
-                jsr %oam_dat_tsfr        ; @oam_dma_transfer
-                jsr %dma_transfer        ; @dma_transfers
+                jsr @oam_dat_tsfr        ; @oam_dma_transfer
+                jsr @dma_transfer        ; @dma_transfers
 
                 ; SPC 700
-                jsr %spc_upload
+                jsr @spc_upload
 
 ;**************************************
 ; Final setting before starting gameloop
@@ -157,17 +169,23 @@
                 lda #81
                 sta 4200        ; NMITIMEN
 
-                jmp %menu_loop        ; @menu_loop
+                jmp @menu_loop        ; @menu_loop
 
 ;**************************************
 ; BRK @ 8150
 ;**************************************
-0150:           rti
+0150:
+.org 008150
+.base 0150
+    rti
 ;**************************************
 ; NMI @ 8200
 ;**************************************
 
-0200:           lda 4210        ; RDNMI
+; 0200:
+.org 008200
+.base 200
+lda 4210        ; RDNMI
                 inc 0000        ; increase frame counter
 
                 ; timer
@@ -177,12 +195,12 @@
                 bne @timer_done
                 stz 0017
                 inc 0018        ; increase second counter
-@timer_done:    nop
+timer_done:    nop
 
                 inc 000b        ; increase snake should move?
 
                 ; update oam
-                jsr %oam_dat_tsfr        ; @oam_dma_transfer
+                jsr @oam_dat_tsfr        ; @oam_dma_transfer
                 ; TODO: reuse dma_transfers routine
                 ; update vram (snake body tilemap)
                 tsx             ; save stack pointer
@@ -191,7 +209,7 @@
                 lda #7e         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr %vram_dma_tsfr        ; @vram_dma_transfer
+                jsr @vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; update vram (bg3 tilemap)
                 tsx             ; save stack pointer
@@ -200,10 +218,10 @@
                 lda #7e         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr %vram_dma_tsfr        ; @vram_dma_transfer
+                jsr @vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
 
-                jsr %read_joy_1        ; read joypad
+                jsr @read_joy_1        ; read joypad
                 rti
 
 ;**************************************
@@ -212,7 +230,7 @@
 ; Can increase/decrease speed with up/down arrows
 ;**************************************
 
-%menu_loop:     wai
+menu_loop:     wai
                 lda 0103        ; JOY1_PRESSH
 
                 bit #08
@@ -225,7 +243,7 @@
                 sta 000c
                 bra @speed_done
 
-@dec_speed:     lda 0103
+dec_speed:     lda 0103
                 bit #04
                 beq @speed_done
                 inc 000c        ; higher base speed, slower snake moves
@@ -235,24 +253,24 @@
                 lda #13
                 sta 000c
 
-@speed_done:    jsr %upd_spd_disp        ; update speed shadow
+speed_done:    jsr @upd_spd_disp        ; update speed shadow
 
                 lda 0103
                 bit #10         ; check if start is pressed
                 beq @loop_menu
 
                 ; start has been pressed
-                jsr %init_rand        ; then init random seed
+                jsr @init_rand        ; then init random seed
                 ;then generate apple position
-                jsr %rd_appl_coord
+                jsr @rd_appl_coord
                 ; then update oam buffer to reflect new apple coord
-                jsr %update_oam_buffer_from_map_coord
+                jsr @update_oam_buffer_from_map_coord
                 ; init bg settings for game loop
-                jsr %init_bg_set
+                jsr @init_bg_set
                 ;jump to game loop
-                jmp %game_loop
+                jmp @game_loop
 
-@loop_menu:     jmp %menu_loop        ; @menu_loop()
+loop_menu:     jmp @menu_loop        ; @menu_loop()
 
 ;**************************************
 ; def game_loop()
@@ -262,8 +280,8 @@
 ; TODO if start is pressed in gameloop, jump to pause loop.
 ; TODO if start is pressed in pause loop, jump to gameloop
 ;**************************************
-%game_loop:     wai
-                jsr %handle_input        ; handle key
+game_loop:     wai
+                jsr @handle_input        ; handle key
 
                 lda 000b
                 cmp 000c        ; skip if move counter < speed?
@@ -271,9 +289,9 @@
                 ldx 000e        ; skip if velocity is 0
                 beq @continue_gl
 
-                jsr %updt_snak_bdy ; update body + tail coords
-                jsr %updt_head_dir ; update_head_direction()
-                jsr %updt_tail_dir ; update_tail_direction()
+                jsr @updt_snak_bdy ; update body + tail coords
+                jsr @updt_head_dir ; update_head_direction()
+                jsr @updt_tail_dir ; update_tail_direction()
 
                 ; head x += xvel
                 clc
@@ -289,52 +307,52 @@
                 ; reset move counter
                 stz 000b
 
-@continue_gl:   nop
-                jsr %eat_apple        ; check if collide with apple
-                jsr %chk_wall_coli        ; check if collide with wall
-                jsr %eat_self        ; check if collide with body
+continue_gl:   nop
+                jsr @eat_apple        ; check if collide with apple
+                jsr @chk_wall_coli        ; check if collide with wall
+                jsr @eat_self        ; check if collide with body
 
-                jsr %update_oam_buffer_from_map_coord        ; update oam buffer
-                jsr %up_vbuf_map        ; update background buffer as well
+                jsr @update_oam_buffer_from_map_coord        ; update oam buffer
+                jsr @up_vbuf_map        ; update background buffer as well
 
-                jmp %game_loop
+                jmp @game_loop
 
 ;**************************************
 ; def game_over_loop()
 ; Game over loop
 ; wait 2 sec and jump to reset
 ;**************************************
-%game_over_lp:  wai
-                jsr %write_sram ; save score
+game_over_lp:  wai
+                jsr @write_sram ; save score
 
                 lda 0018        ; load second counter
                 clc
                 adc #02         ; add 2 seconds
                 sta 0019        ; save it
 
-@check_time:    lda 0019
+check_time:    lda 0019
                 cmp 0018
                 bne @check_time ; have 2 seconds elapsed yet?
 
-                jmp %reset_vec
+                jmp @reset_vec
 
 ;**************************************
 ; def init_random_seed()
 ; Init the random seed.
 ; Set initial x and y pointer
 ;**************************************
-%init_rand:     lda 0012        ; check if seed was read
+init_rand:     lda 0012        ; check if seed was read
                 bne @rts_2000   ; if non zero, it was read
                 lda 0000        ; else, load frame counter
                 bne @save_2000
                 inc             ; ensure non zero result
-@save_2000:     sta 0001        ; save it as a random seed
+save_2000:     sta 0001        ; save it as a random seed
 
                 sta 0002        ; initial x pointer = seed
                 dec
                 sta 0003        ; initial y pointer = seed - 1
 
-@rts_2000:      lda #01         ; seed was read (1)
+rts_2000:      lda #01         ; seed was read (1)
                 sta 0012
                 rts
 
@@ -342,12 +360,12 @@
 ; def random_apple_coordinates()
 ; Get next pseudo random apple coordinate
 ;**************************************
-%rd_appl_coord: php
+rd_appl_coord: php
 
-@next_appl:     sep #30         ; m8 x8
+next_appl:     sep #30         ; m8 x8
 
                 ldx 0002        ; load x pointer
-                lda &random_bin,x    ; load corresponding value
+                lda !random_bin,x    ; load corresponding value
                 lsr
                 lsr
                 lsr
@@ -357,14 +375,14 @@
                 stx 0002        ; next x pointer = x pointer + 1
 
                 ldx 0003        ; load y pointer
-                lda &random_bin,x    ; load corresponding value
+                lda !random_bin,x    ; load corresponding value
                 cmp #e0
                 bcc @save_y_appl
                 ; if apple.y >= 224, apple.y -= 32
                 ; (screen is only 224 high)
                 sec
                 sbc #20
-@save_y_appl:   nop
+save_y_appl:   nop
                 lsr
                 lsr
                 lsr
@@ -382,7 +400,7 @@
 
                 ; check if apple is on body
                 phx
-                jsr %chk_body_coli
+                jsr @chk_body_coli
                 plx
                 cmp #01
                 beq @next_appl
@@ -394,7 +412,7 @@
 ; def map_to_screen_coord(point=07)
 ; result in A
 ;**************************************
-%map_scn_coord: phd
+map_scn_coord: phd
                 tsc
                 tcd
 
@@ -416,16 +434,17 @@
 ; @aa20
 ;**************************************
 ; coord pairs (RAM map coord/OAM buffer screen coord)
-%head_pair: .db 07 00 00 20 08 00 01 20 ; head 7e0007,8 > 7e2000,1
-%tail_pair: .db 09 00 04 20 0a 00 05 20 ; tail 7e0009,a > 7e2004,5
-%apple_par: .db 04 00 08 20 05 00 09 20 ; apple 7e0004,5 > 7e2008,9
+head_pair:
+                .db 07,00,00,20,08,00,01,20 ; head 7e0007,8 > 7e2000,1
+                .db 09,00,04,20,0a,00,05,20 ; tail 7e0009,a > 7e2004,5
+                .db 04,00,08,20,05,00,09,20 ; apple 7e0004,5 > 7e2008,9
 
-%update_oam_buffer_from_map_coord:           phd
+update_oam_buffer_from_map_coord:           phd
                 php
                 phb
 
                 rep #30         ; m 16 x 16
-                lda #%head_pair       ; index DP @ coord pairs array
+                lda #@head_pair       ; index DP @ coord pairs array
                 tcd
                 sep #20         ; m 8
 
@@ -435,9 +454,9 @@
                 ldy #0006
                 ldx #0000
 
-@loop_2a20:     lda (00,x)      ; load sprite map coord
+loop_2a20:     lda (00,x)      ; load sprite map coord
                 pha
-                jsr %map_scn_coord        ; map_to_screen_coord
+                jsr @map_scn_coord        ; map_to_screen_coord
                 sta (02,x)      ; save it to oam
                 pla
                 inx
@@ -468,7 +487,7 @@
 ; himself when pressing down/left quickly for example
 ;**************************************
 
-%handle_input:  lda 0103        ; JOY1_PRESSH
+handle_input:  lda 0103        ; JOY1_PRESSH
 
                 bit #08
                 bne @move_up
@@ -484,42 +503,42 @@
 
                 rts
 
-@move_up:       nop
+move_up:       nop
                 lda 000f        ; don't allow switching direction in same axis
                 bne @return_2a60
                 lda #ff
                 stz 000e
                 sta 000f
                 rts
-@move_down:     nop
+move_down:     nop
                 lda 000f
                 bne @return_2a60
                 lda #01
                 stz 000e
                 sta 000f
                 rts
-@move_left:     nop
+move_left:     nop
                 lda 000e
                 bne @return_2a60
                 lda #ff
                 sta 000e
                 stz 000f
                 rts
-@move_right:    nop
+move_right:    nop
                 lda 000e
                 bne @return_2a60
                 lda #01
                 sta 000e
                 stz 000f
 
-@return_2a60:   rts
+return_2a60:   rts
 
 
 ;**************************************
 ; def update_head_direction()
 ; TODO maybe refactor, bit ugly?
 ;**************************************
-%updt_head_dir: nop
+updt_head_dir: nop
 
                 lda 000e        ; xvel
                 beq @check_h_vert
@@ -539,13 +558,13 @@
                 rts
 
                 ; head xvel > 0, reset tile flip
-@skip_head_hf:  nop
+skip_head_hf:  nop
                 lda 7e2003
                 and #3f
                 sta 7e2003
                 rts
 
-@check_h_vert:  nop
+check_h_vert:  nop
                 lda 000f        ; yvel
                 beq @ret_2ad0
                 ; head yvel != 0, proceed
@@ -564,17 +583,17 @@
                 rts
 
                 ; head yvel < 0, reset tile flip
-@skip_head_vf:  lda 7e2003
+skip_head_vf:  lda 7e2003
                 and #3f
                 sta 7e2003
 
-@ret_2ad0:      rts
+ret_2ad0:      rts
 ;**************************************
 ; def update_tail_direction()
 ; TODO: refactor. Can spare cycles by
 ; better branching organization
 ;**************************************
-%updt_tail_dir: php
+updt_tail_dir: php
 
                 lda 0006
                 rep #30
@@ -604,14 +623,14 @@
                 bra @ret_2b30
 
                 ; body.x < tail.x
-@bx_lt_tx:      nop
+bx_lt_tx:      nop
                 lda 7e2007
                 and #3f
                 ora #40
                 sta 7e2007
                 bra @ret_2b30
 
-@cmp_y:         nop
+cmp_y:         nop
                 inx
                 lda 7e0200,x    ; last body y
                 cmp 000a
@@ -633,12 +652,12 @@
                 bra @ret_2b30
 
                 ; body.y < tail.y
-@by_lt_ty:      nop
+by_lt_ty:      nop
                 lda 7e2007
                 and #3f
                 sta 7e2007
 
-@ret_2b30:      nop
+ret_2b30:      nop
                 plp
                 rts
 
@@ -648,7 +667,7 @@
 ; and tail, after a head movement
 ; @b000
 ;**************************************
-%updt_snak_bdy:  php
+updt_snak_bdy:  php
 
                 lda 0006        ; load body size
                 rep #30
@@ -661,7 +680,7 @@
                 lda 7e0200,x
                 sta 0009
 
-@update_body_x: nop
+update_body_x: nop
                 txy
                 dex
                 dex
@@ -684,13 +703,13 @@
 ; check apple collision +
 ; increase body size + append a body part
 ;**************************************
-%eat_apple:     php
+eat_apple:     php
 
                 ldx 0004        ; apple xy
                 cpx 0007        ; head xy
                 bne @ret_3050
 
-                jsr %rd_appl_coord        ; next apple coord
+                jsr @rd_appl_coord        ; next apple coord
 
                 ; increase body size and init new body part coords
                 lda 0006        ; load body size
@@ -712,17 +731,17 @@
                 sta 010
 
                 ; CAUTION: rep #30 above
-                jsr %to_bcd        ; update score bcd
-                jsr %up_bg3_tile        ; update bg3 from score bcd
+                jsr @to_bcd        ; update score bcd
+                jsr @up_bg3_tile        ; update bg3 from score bcd
 
-@ret_3050:      nop
+ret_3050:      nop
                 plp
                 rts
 
 ;**************************************
 ; def check_wall_collision()
 ;**************************************
-%chk_wall_coli: nop
+chk_wall_coli: nop
                 lda 0007        ; head x
                 cmp #00
                 bcc @reset
@@ -739,15 +758,15 @@
                 ; top edge < y < bottom edge
                 rts
 
-@reset:         jmp %game_over_lp
-@no_reset:      rts
+reset:         jmp @game_over_lp
+no_reset:      rts
 
 ;**************************************
 ; def collides_with_body(xy=08)
 ; check if a xy pair collides with a body xy pair
 ; result in A
 ;**************************************
-%chk_body_coli: phx
+chk_body_coli: phx
                 phd             ; save direct page
                 php
                 tsc
@@ -765,7 +784,7 @@
                 beq @collides
 
                 ; compare with body loop
-@check_colli:   nop
+check_colli:   nop
 
                 lda 7e0200,x
                 cmp 08          ; compare param xy to body xy
@@ -778,10 +797,10 @@
                 lda #0000
                 bra @ret_3100
 
-@collides:      nop
+collides:      nop
                 lda #0001
 
-@ret_3100:      nop
+ret_3100:      nop
                 plp
                 pld
                 plx
@@ -790,18 +809,18 @@
 ;**************************************
 ; def eat_self?()
 ;**************************************
-%eat_self:      nop
+eat_self:      nop
 
                 ldx 0007
                 phx
-                jsr %chk_body_coli
+                jsr @chk_body_coli
                 plx
 
                 cmp #01
                 bne @return_3200
-                jmp %game_over_lp
+                jmp @game_over_lp
 
-@return_3200:   rts
+return_3200:   rts
 
 
 ;**************************************
@@ -809,7 +828,7 @@
 ; this routine update tilemap WRAM buffer
 ; from snake body array located at 7e0200
 ;**************************************
-%up_vbuf_map:   php
+up_vbuf_map:   php
 
                 ldx #0000
 
@@ -819,7 +838,7 @@
                 asl
                 sta 0013
 
-@cp_tm_vram:    nop
+cp_tm_vram:    nop
                 ; update x
                 lda 7e0200,x
                 tay
@@ -914,7 +933,7 @@
 ;     vhopppcc
 ; 30: 00110000
 ;**************************************
-%reset_bg3_1:   nop
+reset_bg3_1:   nop
                 php
 
                 rep #30
@@ -922,7 +941,7 @@
                 lda #3000
                 ldx #0800
 
-@reset_bg3:     nop
+reset_bg3:     nop
                 sta 7e3000,x
                 dex
                 dex
@@ -934,17 +953,19 @@
 ;**************************************
 ; def init_bg3_score_buffer()
 ;**************************************
-%init_score_buf:           php
+init_score_buf:           php
                 rep #30
                 ldx #0000
 
 ;               S     C     O     R     E     :
-%score_txt: .db 33 30 23 30 2f 30 32 30 25 30 1a 30
+score_txt:
+                .db 33,30,23,30,2f,30,32,30,25,30,1a,30
 ;               0     0     0     0
-%score_val: .db 10 30 10 30 10 30 10 30
+score_val:
+                .db 10,30,10,30,10,30,10,30
 
-@default_txt:   nop
-                lda %score_txt,x
+default_txt:   nop
+                lda @score_txt,x
                 sta 7e3000,x
                 inx
                 inx
@@ -958,7 +979,7 @@
 ; def update_bg3_tile_buffer()
 ; update score from BCD buffer
 ;**************************************
-%up_bg3_tile:   nop
+up_bg3_tile:   nop
                 php
                 sep #20
 
@@ -990,19 +1011,22 @@
 ; make a print routine
 ;**************************************
 ;                  S     p     e     e     d     :     0     0
-%speed:        .db 33 30 50 30 45 30 45 30 44 30 1a 30 10 30 10 30
+speed:
+    .db 33,30,50,30,45,30,45,30,44,30,1a,30,10,30,10,30
 ;                  P     u     s     h           s     t     a     r     t
-%push_start:   .db 30 30 55 30 53 30 48 30 00 30 53 30 54 30 41 30 52 30 54 30 00 30
+push_start:
+    .db 30,30,55,30,53,30,48,30,00,30,53,30,54,30,41,30,52,30,54,30,00,30
 ;                  b     u     t     t     o     n
-%push_start_2: .db 42 30 55 30 54 30 54 30 4f 30 4e 30
+    .db 42,30,55,30,54,30,54,30,4f,30,4e,30
 ;                  ©     v     i     v     i     1     6     8           2     0     1     9
-%copyright:    .db 5f 30 56 30 49 30 56 30 49 30 11 30 16 30 18 30 00 30 12 30 10 30 11 30 19 30
-%print_menu:           nop
+copyright:
+    .db 5f,30,56,30,49,30,56,30,49,30,11,30,16,30,18,30,00,30,12,30,10,30,11,30,19,30
+print_menu:           nop
 
                 ; @ a008
                 ldx #0000
-@speed_txt:     nop
-                lda %speed,x
+speed_txt:     nop
+                lda @speed,x
                 sta 7e3008,x
                 inx
                 inx
@@ -1011,8 +1035,8 @@
 
                 ; @ a080
                 ldx #0000
-@start_txt:     nop
-                lda %push_start,x
+start_txt:     nop
+                lda @push_start,x
                 sta 7e3100,x
                 inx
                 inx
@@ -1021,8 +1045,8 @@
 
                 ; @ a104
                 ldx #0000
-@copyr_txt:     nop
-                lda %copyright,x
+copyr_txt:     nop
+                lda @copyright,x
                 sta 7e3284,x
                 inx
                 inx
@@ -1043,7 +1067,7 @@
 ;**************************************
 ; def update_speed_display()
 ;**************************************
-%upd_spd_disp:  php
+upd_spd_disp:  php
 
                 lda 000c        ; load speed
                 pha             ; save it
@@ -1062,7 +1086,7 @@
                 sta 000c
                 inc 0021
 
-@speed_one:     nop
+speed_one:     nop
                 clc
                 adc #10
                 sta 7e3016
@@ -1081,7 +1105,7 @@
 ;**************************************
 ; def score_to_bcd()
 ;**************************************
-%to_bcd:        nop
+to_bcd:        nop
                 php
 
                 stz 0020        ; score bcd ones
@@ -1094,16 +1118,16 @@
                 cmp #000a
                 bcc @ones
 
-@bcdloop:       nop
+bcdloop:       nop
 
-@thousands:     cmp #03e8
+thousands:     cmp #03e8
                 bcc @hundreds
                 sec
                 sbc #03e8
                 sta 0010
                 inc 0023
                 bra @bcdloop
-@hundreds:      nop
+hundreds:      nop
                 cmp #0064
                 bcc @tens
                 sec
@@ -1111,7 +1135,7 @@
                 sta 0010
                 inc 0022
                 bra @bcdloop
-@tens:          nop
+tens:          nop
                 cmp #000a
                 bcc @ones
                 sec
@@ -1120,7 +1144,7 @@
                 inc 0021
                 bra @bcdloop
 
-@ones:          nop
+ones:          nop
                 sep #20
                 lda 0010
                 sta 0020
@@ -1135,12 +1159,12 @@
 ; $oam_buffer_start = 7e2000
 ;**************************************
 
-%oam_buf_init:  php
+oam_buf_init:  php
                 sep #20
                 rep #10
                 lda #01
                 ldx #0000
-@set_x_lsb:     sta 7e2000,x
+set_x_lsb:     sta 7e2000,x
                 inx
                 inx
                 inx
@@ -1149,7 +1173,7 @@
                 bne @set_x_lsb
 
                 lda #55         ; 01010101
-@set_x_msb:     sta 7e2000,x
+set_x_msb:     sta 7e2000,x
                 inx
                 sta 7e2000,x
                 inx
@@ -1165,7 +1189,7 @@
 ; m8 x16
 ;**************************************
 
-%oam_dat_tsfr:  ldx #0000
+oam_dat_tsfr:  ldx #0000
                 stx 2102        ; OAMDADDL
 
                 lda #04         ; OAMDATA 21*04*
@@ -1196,7 +1220,7 @@
 ; m8 x16
 ;**************************************
 
-%vram_dma_tsfr: phx             ; save stack pointer
+vram_dma_tsfr: phx             ; save stack pointer
                 phd             ; save direct page
                 tsc
                 tcd             ; direct page = stack pointer
@@ -1232,7 +1256,7 @@
 ; m8 x16
 ;**************************************
 
-%cgram_dma_t:   phx             ; save stack pointer
+cgram_dma_t:   phx             ; save stack pointer
                 phd             ; save direct page
                 tsc
                 tcd             ; direct page = stack pointer
@@ -1265,8 +1289,8 @@
 ; def read_joy_pad_1()
 ; Read Joy Pad 1
 ;**************************************
-%read_joy_1:    php
-@read_data:     lda 4212        ; read joypad status (HVBJOY)
+read_joy_1:    php
+read_data:     lda 4212        ; read joypad status (HVBJOY)
                 and #01
                 bne @read_data  ; read done when 0
 
@@ -1290,10 +1314,10 @@
 ;**************************************
 ; def reset_tilemap_buffer()
 ;**************************************
-%rst_tmap_buf:  ldx #0000
+rst_tmap_buf:  ldx #0000
                 lda #00
 
-@reset_tm:      nop
+reset_tm:      nop
                 sta 7e2300,x
                 inx
                 cpx #0800
@@ -1303,7 +1327,7 @@
 ;**************************************
 ; def oam_initial_settings()
 ;**************************************
-%oam_init:      nop
+oam_init:      nop
                 ; Init apple and head positions/sprite name here
                 ; Snake head, first sprite in OAM (name 2, second sprite in rom)
                 ldx #0000
@@ -1354,9 +1378,9 @@
 ;**************************************
 ; def init_game_bg_settings()
 ;**************************************
-%init_bg_set:   nop
+init_bg_set:   nop
 
-                jsr %fade_out
+                jsr @fade_out
 
                 lda #80
                 sta 2100        ; INIDISP
@@ -1392,21 +1416,21 @@
                 ; OAM / VRAM init here
                 ;**************************************
                 ; init a dummy buffer in WRAM
-                jsr %oam_buf_init        ; @oam_buf_init
-                jsr %oam_init        ; @oam_initial_settings
-                jsr %rst_tmap_buf        ; @reset WRAM tilemap buffer
-                jsr %reset_bg3_1        ; @init_bg3_tilemap_buffer
-                jsr %init_score_buf        ; @init_bg3_score_buffer
+                jsr @oam_buf_init        ; @oam_buf_init
+                jsr @oam_init        ; @oam_initial_settings
+                jsr @rst_tmap_buf        ; @reset WRAM tilemap buffer
+                jsr @reset_bg3_1        ; @init_bg3_tilemap_buffer
+                jsr @init_score_buf        ; @init_bg3_score_buffer
 
-                jsr %update_oam_buffer_from_map_coord        ; @update_oam_buffer_from_map_coord()
-                jsr %up_vbuf_map        ; update background buffer as well
+                jsr @update_oam_buffer_from_map_coord        ; @update_oam_buffer_from_map_coord()
+                jsr @up_vbuf_map        ; update background buffer as well
 
                 lda #00
                 sta 2100        ; INIDISP
                 lda #81
                 sta 4200        ; NMITIMEN
 
-                jsr %fade_in
+                jsr @fade_in
 
                 rts
 
@@ -1414,12 +1438,12 @@
 ;**************************************
 ; def fade_in()
 ;**************************************
-%fade_in:       wai
+fade_in:       wai
 
                 lda #00
                 sta 2100        ; INIDISP
 
-@fadein_lp:     nop
+fadein_lp:     nop
                 inc
                 sta 2100
                 cmp #0f
@@ -1430,13 +1454,13 @@
 ;**************************************
 ; def fade_out()
 ;**************************************
-%fade_out:      wai
+fade_out:      wai
 
                 lda #0f
                 sta 2100        ; INIDISP
 
 
-@fadeout_lp:    nop
+fadeout_lp:    nop
                 dec
                 sta 2100
                 bne @fadeout_lp
@@ -1446,15 +1470,15 @@
 ;**************************************
 ; def dma_transfers()
 ;**************************************
-%dma_transfer:  nop
+dma_transfer:  nop
                 ; Copy snake-bg.bin to VRAM
                 tsx             ; save stack pointer
                 pea 0000        ; vram_dest_addr
-                pea %snake_bg        ; rom_src_addr
-                lda #81         ; rom_src_bank
+                pea @snake_bg        ; rom_src_addr
+                lda #^snake_bg         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr %vram_dma_tsfr        ; @vram_dma_transfer
+                jsr @vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy WRAM tilemap buffer to VRAM
                 tsx             ; save stack pointer
@@ -1463,88 +1487,88 @@
                 lda #7e         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr %vram_dma_tsfr        ; @vram_dma_transfer
+                jsr @vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy snake-sprites.bin to VRAM
                 tsx             ; save stack pointer
                 pea 2000        ; vram_dest_addr
-                pea %snake_sprite        ; rom_src_addr
-                lda #81         ; rom_src_bank
+                pea @snake_sprite        ; rom_src_addr
+                lda #^snake_sprite         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr %vram_dma_tsfr        ; @vram_dma_transfer
+                jsr @vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy small-font.bin to VRAM
                 tsx             ; save stack pointer
                 pea 4000        ; vram_dest_addr (@8000 really, word steps)
-                pea %small_font        ; rom_src_addr
-                lda #81         ; rom_src_bank
+                pea @small_font        ; rom_src_addr
+                lda #^small_font         ; rom_src_bank
                 pha
                 pea 0600        ; bytes_to_trasnfer
-                jsr %vram_dma_tsfr        ; @vram_dma_transfer
+                jsr @vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy title-screen.bin to VRAM
                 tsx             ; save stack pointer
                 pea 6000        ; vram_dest_addr (@c000 really, word steps)
-                pea %title_screen        ; rom_src_addr
-                lda #81         ; rom_src_bank
+                pea @title_screen        ; rom_src_addr
+                lda #^title_screen         ; rom_src_bank
                 pha
                 pea 1800        ; bytes_to_trasnfer
-                jsr %vram_dma_tsfr        ; @vram_dma_transfer
+                jsr @vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy title-screen.map to VRAM
                 tsx             ; save stack pointer
                 pea 7000        ; vram_dest_addr (@e000 really, word steps)
-                pea %title_screen_map        ; rom_src_addr
-                lda #81         ; rom_src_bank
+                pea @title_screen_map        ; rom_src_addr
+                lda #^title_screen_map         ; rom_src_bank
                 pha
                 pea 0800        ; bytes_to_trasnfer
-                jsr %vram_dma_tsfr        ; @vram_dma_transfer
+                jsr @vram_dma_tsfr        ; @vram_dma_transfer
                 txs             ; restore stack pointer
 
                 ; Copy snake-bg-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #00
                 pha             ; cgram_dest_addr
-                pea %snake_bg_pal        ; rom_src_addr
-                lda #81
+                pea @snake_bg_pal        ; rom_src_addr
+                lda #^snake_bg_pal
                 pha             ; rom_src_bank
                 lda #20
                 pha             ; bytes_to_trasnfer
-                jsr %cgram_dma_t        ; @cgram_dma_transfer
+                jsr @cgram_dma_t        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy small-font-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #10
                 pha             ; cgram_dest_addr
-                pea %small_font_pal        ; rom_src_addr
-                lda #81
+                pea @small_font_pal        ; rom_src_addr
+                lda #^small_font_pal
                 pha             ; rom_src_bank
                 lda #08
                 pha             ; bytes_to_trasnfer
-                jsr %cgram_dma_t        ; @cgram_dma_transfer
+                jsr @cgram_dma_t        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy title-screen-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #20
                 pha             ; cgram_dest_addr
-                pea %title_screen_pal        ; rom_src_addr
-                lda #81
+                pea @title_screen_pal        ; rom_src_addr
+                lda #^title_screen_pal
                 pha             ; rom_src_bank
                 lda #20
                 pha             ; bytes_to_trasnfer
-                jsr %cgram_dma_t        ; @cgram_dma_transfer
+                jsr @cgram_dma_t        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
                 ; Copy snake-sprites-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #80
                 pha             ; cgram_dest_addr
-                pea %snake_sprite_pal        ; rom_src_addr
-                lda #81
+                pea @snake_sprite_pal        ; rom_src_addr
+                lda #^snake_sprite_pal
                 pha             ; rom_src_bank
                 lda #20
                 pha             ; bytes_to_trasnfer
-                jsr %cgram_dma_t        ; @cgram_dma_transfer
+                jsr @cgram_dma_t        ; @cgram_dma_transfer
                 txs             ; restore stack pointer
                 rts
 
@@ -1554,7 +1578,7 @@
 ; @8e00
 ;**************************************
 
-%cls_reg:       stz 2101
+cls_reg:       stz 2101
                 stz 2102
                 stz 2103
                 stz 2105
@@ -1650,7 +1674,7 @@
 ; def clear_custom_registers()
 ; @8ed0
 ;**************************************
-%cls_cus_reg:   stz 0000        ; clear frame counter
+cls_cus_reg:   stz 0000        ; clear frame counter
                 stz 0001        ; clear random seed
                 lda #02
                 sta 0006        ; init body size
@@ -1697,7 +1721,7 @@
 ;**************************************
 ; write to SRAM
 ;**************************************
-%write_sram:    nop
+write_sram:    nop
 ; 7e0010: score L
 ; 7e0011: score H
                 php
@@ -1720,23 +1744,25 @@
                 sta 0000
                 stz 0002        ; empty score first time
 
-@save_score:    lda 7e0010      ; load score
+save_score:    lda 7e0010      ; load score
                 cmp 0002
                 ; if score < saved score
                 bcc @skip_save_score
                 sta 0002        ; store it
 
-@skip_save_score:     plb
+skip_save_score:     plb
                 plp
                 rts
 
 ;**************************************
 ; SPC upload
 ;**************************************
-; %dummy_spc_data: .db de ad aa bb cc
-%dummy_spc_data: .incbin assets/spc700_prog.bin
+; dummy_spc_data:
+;    .db de,ad,aa,bb,cc
+dummy_spc_data:
+    .incbin assets/spc700_prog.bin
 
-%spc_upload:    php
+spc_upload:    php
 
                 sep #20 ; a 8
                 rep #10 ; i 16
@@ -1744,7 +1770,7 @@
                 ldy #0000       ; retry counter
 
                 ;  1. Wait for a 16-bit read on $2140-1 to return $BBAA.
-@retry_ack:     nop
+retry_ack:     nop
 
                 ldx #bbaa
                 cpx 2140
@@ -1754,7 +1780,7 @@
                 bra @exit_spc_upl
 
                 ; 2. Write the target address to $2142-3.
-@upload_spc:    ldx #0600       ; target spc700 ram address
+upload_spc:    ldx #0600       ; target spc700 ram address
                 stx 2142        ; [2142] = dest_addr (spc700 ram address)
 
                 ; 3. Write non-zero to $2141.
@@ -1763,7 +1789,7 @@
 
                 ; 4. Write $CC to $2140.
                 ; 5. Wait until reading $2140 returns $CC.
-@write_cc:      lda #cc
+write_cc:      lda #cc
                 sta 2140
                 cmp 2140
                 bne @write_cc ; wait until [2140] == cc (kick command)
@@ -1771,7 +1797,7 @@
                 ldx #0005       ; data length
                 ldy #0000       ; loop counter (index)
 
-@transfer_spc:  lda %dummy_spc_data,y      ; src_addr[y]
+transfer_spc:  lda @dummy_spc_data,y      ; src_addr[y]
                 ; 6. Set your first byte to $2141.
                 sta 2141        ; send data byte
                 tya
@@ -1787,7 +1813,7 @@
 
                 ; jump to uploaded code
                 ; Put the target address in $2142-3
-@jmp_upload:    ldx #0600
+jmp_upload:    ldx #0600
                 stx 2142
                 ; Put $00 in $2141
                 lda #00
@@ -1802,7 +1828,7 @@
                 bne @jmp_upload
                 ; Shortly afterwards, your code will be executing.
 
-@exit_spc_upl:  plp
+exit_spc_upl:  plp
                 rts
 
 ;**************************************
@@ -1812,37 +1838,52 @@
 ;**************************************
 
 ; zero bytes
-7fb0: .db 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+
+.org ffb0
+.base 7fb0
+
+;7fb0:
+.db 00,00,00,00,00,00,00,00,00,00,00,00,00,00,00,00
 
 ; game title "SUPER SNAKE          "
-7fc0: .db 53 55 50 45 52 20 53 4e 41 4b 45 20 20 20 20 20 20 20 20 20 20
+;7fc0:
+.db 53,55,50,45,52,20,53,4e,41,4b,45,20,20,20,20,20,20,20,20,20,20
 
 ; map mode
-7fd5: .db 30
+;7fd5:
+.db 30
 
 ; cartridge type
-7fd6: .db 00
+;7fd6:
+.db 00
 
 ; ROM size
-7fd7: .db 09
+;7fd7:
+.db 09
 
 ; RAM size
-7fd8: .db 01
+;7fd8:
+.db 01
 
 ; destination code
-7fd9: .db 00
+;7fd9:
+.db 00
 
 ; fixed value
-7fda: .db 33
+;7fda:
+.db 33
 
 ; mask ROM version
-7fdb: .db 00
+;7fdb:
+.db 00
 
 ; checksum complement
-7fdc: .db 00 00
+;7fdc:
+.db 00,00
 
 ; checksum
-7fde: .db 00 00
+;7fde:
+.db 00,00
 
 ;**************************************
 ;
@@ -1851,23 +1892,39 @@
 ;**************************************
 
 ; zero bytes
-7fe0: .db 00 00 00 00
+.org ffe0
+.base 7fe0
+;7fe0:
+    .db 00,00,00,00
 
 ; 65816 mode
-7fe4: .db 00 00 ; COP
-7fe6: .db 50 81 ; BRK
-7fe8: .db 00 00
-7fea: .db 00 82 ; NMI
-7fec: .db 00 00
-7fee: .db 00 00 ; IRQ
+;7fe4:
+    .db 00,00 ; COP
+;7fe6:
+    .db 50,81 ; BRK
+;7fe8:
+    .db 00,00
+;7fea:
+    .db 00,82 ; NMI
+;7fec:
+    .db 00,00
+;7fee:
+    .db 00,00 ; IRQ
 
 ; zero bytes
-7ff0: .db 00 00 00 00
+;7ff0:
+    .db 00,00,00,00
 
 ; 6502 mode
-7ff4: .db 00 00 ; COP
-7ff6: .db 00 00
-7ff8: .db 00 00
-7ffa: .db 00 00 ; NMI
-7ffc: .db 00 80 ; RESET
-7ffe: .db 00 00 ; IRQ/BRK
+;7ff4:
+    .db 00,00 ; COP
+;7ff6:
+    .db 00,00
+;7ff8:
+    .db 00,00
+;7ffa:
+    .db 00,00 ; NMI
+;7ffc:
+    .db 00,80 ; RESET
+;7ffe:
+    .db 00,00 ; IRQ/BRK

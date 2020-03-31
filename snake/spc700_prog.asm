@@ -1,7 +1,7 @@
 .spc700
 
-.bank 00
-.addr 0000
+.org 0000
+.base 0000
 
 mov a,#10
 jmp ffc0
