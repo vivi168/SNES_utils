@@ -8,10 +8,11 @@ module SnesUtils
     ]
 
     def initialize(filename)
-      raise unless File.file?(filename)
+      raise "File not found" unless File.file?(filename)
 
       @filename = filename
       @label_registry = []
+      @incbin_list = []
       @memory = []
     end
 
@@ -25,6 +26,7 @@ module SnesUtils
         assemble_file(pass)
       end
 
+      incbin
       write
     end
 
@@ -34,18 +36,17 @@ module SnesUtils
         next if @line.empty?
 
         if @line.start_with?(*DIRECTIVE)
-          process_directive
+          process_directive(pass)
           next
         end
 
         if @line.include?(':')
           arr = @line.split(':')
           label = arr[0].strip.chomp
-          unless /^@\w+$/ =~ label
-            puts "Error: invalid label"
-            raise
+          unless /^\w+$/ =~ label
+            raise "Invalid label"
           end
-          @label_registry << [label[1..-1], @program_counter + @origin] if pass == 0
+          register_label(label) if pass == 0
           next unless arr[1]
           instruction = arr[1].strip.chomp
         else
@@ -56,9 +57,9 @@ module SnesUtils
 
         begin
           bytes = LineAssembler.new(instruction, options).assemble
-        rescue
-          puts "Error at line #{line_no + 1}"
-          raise
+        rescue => e
+          puts "Error at line #{line_no + 1}: #{e}"
+          exit(1)
         end
 
         insert(bytes) if pass == 1
@@ -66,9 +67,17 @@ module SnesUtils
       end
     end
 
-    def insert(bytes)
-      insert_at = @program_counter + @base
-      @memory[insert_at..bytes.size] = bytes
+    def register_label(label)
+      raise "Label already defined" if @label_registry.detect { |l| l[0] == label }
+      @label_registry << [label, @program_counter + @origin]
+    end
+
+    def insert(bytes, insert_at = insert_index)
+      @memory[insert_at..insert_at + bytes.size - 1] = bytes
+    end
+
+    def insert_index
+      @program_counter + @base
     end
 
     def write(filename = 'out.smc')
@@ -92,7 +101,7 @@ module SnesUtils
       }
     end
 
-    def process_directive
+    def process_directive(pass)
       directive = @line.split(' ')
 
       case directive[0]
@@ -104,6 +113,8 @@ module SnesUtils
         update_origin(directive[1].to_i(16))
       when '.base'
         @base = directive[1].to_i(16)
+      when '.incbin'
+        @program_counter += prepare_incbin(directive[1].to_s.strip.chomp, pass)
       end
     end
 
@@ -117,6 +128,22 @@ module SnesUtils
       # TODO: automatically update base
       # lorom/hirom scheme
       # spc700 scheme
+    end
+
+    def prepare_incbin(filename, pass)
+      raise "Incbin: file not found: #{filename}" unless File.file?(filename)
+
+      @incbin_list << [filename, insert_index] if pass == 0
+      File.size(filename) || 0
+    end
+
+    def incbin
+      @incbin_list.each do |filename, index|
+        file = File.open(filename)
+        bytes = file.each_byte.to_a
+        @line = filename
+        insert(bytes, index)
+      end
     end
   end
 
@@ -136,7 +163,7 @@ module SnesUtils
       raw_operand = replace_label(raw_operand) if contains_label?(raw_operand)
 
       opcode_data = detect_opcode(mnemonic, raw_operand)
-      raise unless opcode_data
+      raise "Invalid syntax" unless opcode_data
 
       opcode = opcode_data[:opcode]
       @mode = opcode_data[:mode]
@@ -154,7 +181,7 @@ module SnesUtils
     end
 
     def replace_label(operand)
-      raise unless matches = /(@|!)(\w+)/.match(operand)
+      raise "Invalid label syntax"  unless matches = /(@|!)(\w+)/.match(operand)
 
       mode = matches[1]
       label = matches[2]
@@ -208,10 +235,10 @@ module SnesUtils
 
     def process_bit_operand(operand_data)
       m = operand_data[1].to_i(16)
-      raise if m > 0x1fff
+      raise "Out of range" if m > 0x1fff
 
       b = operand_data[2].to_i(16)
-      raise if b > 7
+      raise "Out of range" if b > 7
 
       little_endian(m << 3 | b, 2)
     end
@@ -220,12 +247,12 @@ module SnesUtils
       relative_addr = operand - (@current_address & 0x00ffff) - @length
 
       if @cpu == Vas::WDC65816 && @mode == :rell
-        raise if relative_addr < -32_768 || relative_addr > 32_767
+        raise "Out of range" if relative_addr < -32_768 || relative_addr > 32_767
 
         relative_addr += 0x10000 if relative_addr < 0
         little_endian(relative_addr, 2)
       else
-        raise if relative_addr < -128 || relative_addr > 127
+        raise "Out of range" if relative_addr < -128 || relative_addr > 127
 
         relative_addr += 0x100 if relative_addr < 0
         relative_addr
