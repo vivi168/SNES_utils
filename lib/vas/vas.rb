@@ -15,6 +15,7 @@ module SnesUtils
       @filename = filename
       @label_registry = []
       @incbin_list = []
+      @byte_sequence_list = []
       @memory = []
     end
 
@@ -28,6 +29,7 @@ module SnesUtils
         assemble_file(pass)
       end
 
+      insert_bytes
       incbin
       write
     end
@@ -117,6 +119,8 @@ module SnesUtils
         @base = directive[1].to_i(16)
       when '.incbin'
         @program_counter += prepare_incbin(directive[1].to_s.strip.chomp, pass)
+      when '.db'
+        @program_counter += reserve_bytes(directive[1..-1].join.to_s.strip.chomp, pass)
       end
     end
 
@@ -144,6 +148,23 @@ module SnesUtils
         file = File.open(filename)
         bytes = file.each_byte.to_a
         @line = filename
+        insert(bytes, index)
+      end
+    end
+
+    def reserve_bytes(raw_bytes, pass)
+      bytes = raw_bytes.split(',').map do |b|
+        bv = b.to_i(16)
+        raise "Invalid byte: #{b}" if bv < 0 || bv > 0xff
+        bv
+      end
+
+      @byte_sequence_list << [bytes, insert_index] if pass == 0
+      bytes.size
+    end
+
+    def insert_bytes
+      @byte_sequence_list.each do |bytes, index|
         insert(bytes, index)
       end
     end
