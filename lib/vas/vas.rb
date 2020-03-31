@@ -29,6 +29,9 @@ module SnesUtils
         assemble_file(pass)
       end
 
+      @label_registry.each do |label|
+        puts [label[0], label[1].to_s(16)].inspect
+      end
       insert_bytes
       incbin
       write
@@ -156,7 +159,7 @@ module SnesUtils
     def reserve_bytes(raw_bytes, pass)
       bytes = raw_bytes.split(',').map do |b|
         bv = b.to_i(16)
-        raise "Invalid byte: #{b}" if bv < 0 || bv > 0xff
+        raise "Invalid byte: #{b} : #{@line}" if bv < 0 || bv > 0xff
         bv
       end
 
