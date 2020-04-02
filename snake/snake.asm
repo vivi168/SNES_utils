@@ -46,7 +46,7 @@ small_font_pal:
 ; 7e0008: head y coord
 ; 7e0009: tail x coord
 ; 7e000a: tail y coord
-; 7e000b; last move counter
+; 7e000b: last move counter
 ; 7e000c: base speed
 ; 7e000d: base speed
 ; 7e000e: x velocity
@@ -99,8 +99,6 @@ small_font_pal:
 ;**************************************
 ; Reset @ 8000
 ;**************************************
-
-; 0000 @ bank 80 = 80/8000
 .org 808000
 .base 0000
 
@@ -174,17 +172,16 @@ ResetVector:
 ;**************************************
 ; BRK @ 8150
 ;**************************************
-.org 008150
+.org 808150
 .base 0150
 
 BreakVector:
                 rti
+
 ;**************************************
 ; NMI @ 8200
 ;**************************************
-
-; 0200:
-.org 008200
+.org 808200
 .base 200
 
 NmiVector:
@@ -199,7 +196,6 @@ NmiVector:
                 stz 0017
                 inc 0018        ; increase second counter
 timer_done:
-
                 inc 000b        ; increase snake should move?
 
                 ; update oam
@@ -231,7 +227,6 @@ timer_done:
 ; Menu screen loop (wait for user to press enter)
 ; Can increase/decrease speed with up/down arrows
 ;**************************************
-
 MenuLoop:
                 wai
                 lda 0103        ; JOY1_PRESSH
@@ -246,7 +241,8 @@ MenuLoop:
                 sta 000c
                 bra @speed_done
 
-dec_speed:     lda 0103
+dec_speed:
+                lda 0103
                 bit #04
                 beq @speed_done
                 inc 000c        ; higher base speed, slower snake moves
@@ -256,24 +252,22 @@ dec_speed:     lda 0103
                 lda #13
                 sta 000c
 
-speed_done:    jsr @UpdateMenuSpeedDisplayValue
+speed_done:
+                jsr @UpdateMenuSpeedDisplayValue
 
                 lda 0103
                 bit #10         ; check if start is pressed
                 beq @loop_menu
 
                 ; start has been pressed
-                jsr @InitRandomSeed        ; then init random seed
-                ;then generate apple position
+                jsr @InitRandomSeed
                 jsr @RandomAppleCoordinates
-                ; then update oam buffer to reflect new apple coord
                 jsr @UpdateOamBufferFromMapCoords
-                ; init bg settings for game loop
                 jsr @SetBgInitialSettings
-                ;jump to game loop
                 jmp @GameLoop
 
-loop_menu:     jmp @MenuLoop
+loop_menu:
+                jmp @MenuLoop
 
 ;**************************************
 ; in game loop check for DPAD. change velocity, then
@@ -284,7 +278,7 @@ loop_menu:     jmp @MenuLoop
 ;**************************************
 GameLoop:
                 wai
-                jsr @HandlePlayerInput        ; handle key
+                jsr @HandlePlayerInput
 
                 lda 000b
                 cmp 000c        ; skip if move counter < speed?
@@ -333,7 +327,8 @@ GameOverLoop:
                 adc #02         ; add 2 seconds
                 sta 0019        ; save it
 
-check_time:     lda 0019
+check_time:
+                lda 0019
                 cmp 0018
                 bne @check_time ; have 2 seconds elapsed yet?
 
@@ -345,17 +340,18 @@ check_time:     lda 0019
 ;**************************************
 InitRandomSeed:
                 lda 0012        ; check if seed was read
-                bne @rts_irs   ; if non zero, it was read
+                bne @rts_irs    ; if non zero, it was read
                 lda 0000        ; else, load frame counter
                 bne @save_rs
                 inc             ; ensure non zero result
-save_rs:        sta 0001        ; save it as a random seed
-
+save_rs:
+                sta 0001        ; save it as a random seed
                 sta 0002        ; initial x pointer = seed
                 dec
                 sta 0003        ; initial y pointer = seed - 1
 
-rts_irs:        lda #01         ; seed was read (1)
+rts_irs:
+                lda #01         ; seed was read (1)
                 sta 0012
                 rts
 
@@ -364,9 +360,8 @@ rts_irs:        lda #01         ; seed was read (1)
 ;**************************************
 RandomAppleCoordinates:
                 php
-
-next_appl:      sep #30         ; m8 x8
-
+next_appl:
+                sep #30         ; m8 x8
                 ldx 0002        ; load x pointer
                 lda !random_bin,x    ; load corresponding value
                 lsr
@@ -457,7 +452,8 @@ UpdateOamBufferFromMapCoords:
                 ldy #0006
                 ldx #0000
 
-loop_2a20:     lda (00,x)      ; load sprite map coord
+oam_update_loop:
+                lda (00,x)      ; load sprite map coord
                 pha
                 jsr @MapToScreenCoordinates
                 sta (02,x)      ; save it to oam
@@ -467,7 +463,7 @@ loop_2a20:     lda (00,x)      ; load sprite map coord
                 inx
                 inx
                 dey
-                bne @loop_2a20
+                bne @oam_update_loop
 
                 ; sprites are not vertically aligned with background
                 dec 2001
@@ -505,43 +501,42 @@ HandlePlayerInput:
                 bne @move_right
 
                 rts
-
 move_up:
                 lda 000f        ; don't allow switching direction in same axis
-                bne @return_2a60
+                bne @rts_handle_input
                 lda #ff
                 stz 000e
                 sta 000f
                 rts
 move_down:
                 lda 000f
-                bne @return_2a60
+                bne @rts_handle_input
                 lda #01
                 stz 000e
                 sta 000f
                 rts
 move_left:
                 lda 000e
-                bne @return_2a60
+                bne @rts_handle_input
                 lda #ff
                 sta 000e
                 stz 000f
                 rts
 move_right:
                 lda 000e
-                bne @return_2a60
+                bne @rts_handle_input
                 lda #01
                 sta 000e
                 stz 000f
 
-return_2a60:   rts
+rts_handle_input:
+                rts
 
 
 ;**************************************
 ; TODO maybe refactor, bit ugly?
 ;**************************************
 UpdateSnakeHeadDirection:
-
                 lda 000e        ; xvel
                 beq @check_h_vert
                 ; head xvel != 0, flip accordingly
@@ -568,7 +563,7 @@ skip_head_hf:
 
 check_h_vert:
                 lda 000f        ; yvel
-                beq @ret_2ad0
+                beq @rts_ushd
                 ; head yvel != 0, proceed
 
                 lda #04
@@ -590,7 +585,9 @@ skip_head_vf:
                 and #3f
                 sta 7e2003
 
-ret_2ad0:      rts
+rts_ushd:
+                rts
+
 ;**************************************
 ; TODO: refactor. Can spare cycles by
 ; better branching organization
@@ -623,7 +620,7 @@ UpdateSnakeTailDirection:
                 lda 7e2007
                 and #3f
                 sta 7e2007
-                bra @ret_2b30
+                bra @rts_ustd
 
                 ; body.x < tail.x
 bx_lt_tx:
@@ -631,13 +628,13 @@ bx_lt_tx:
                 and #3f
                 ora #40
                 sta 7e2007
-                bra @ret_2b30
+                bra @rts_ustd
 
 cmp_y:
                 inx
                 lda 7e0200,x    ; last body y
                 cmp 000a
-                beq @ret_2b30
+                beq @rts_ustd
 
                 ; body.y != tail.y
                 lda #08
@@ -652,15 +649,14 @@ cmp_y:
                 and #3f
                 ora #80
                 sta 7e2007
-                bra @ret_2b30
+                bra @rts_ustd
 
                 ; body.y < tail.y
 by_lt_ty:
                 lda 7e2007
                 and #3f
                 sta 7e2007
-
-ret_2b30:
+rts_ustd:
                 plp
                 rts
 
@@ -710,9 +706,9 @@ CheckEatApple:
 
                 ldx 0004        ; apple xy
                 cpx 0007        ; head xy
-                bne @ret_3050
+                bne @did_not_eat_apple
 
-                jsr @RandomAppleCoordinates        ; next apple coord
+                jsr @RandomAppleCoordinates
 
                 ; increase body size and init new body part coords
                 lda 0006        ; load body size
@@ -737,7 +733,7 @@ CheckEatApple:
                 jsr @ConvertScoreToBcd
                 jsr @UpdateScore
 
-ret_3050:
+did_not_eat_apple:
                 plp
                 rts
 
@@ -760,7 +756,8 @@ CheckWallCollision:
 
                 ; top edge < y < bottom edge
                 rts
-wall_hit:       jmp @GameOverLoop
+wall_hit:
+                jmp @GameOverLoop
 
 ;**************************************
 ; check if a xy pair collides with a body xy pair
@@ -787,7 +784,6 @@ CheckBodyCollision:
 
                 ; compare with body loop
 check_collision:
-
                 lda 7e0200,x
                 cmp 08          ; compare param xy to body xy
                 beq @collides
@@ -797,12 +793,10 @@ check_collision:
                 bpl @check_collision
 
                 lda #0000
-                bra @ret_3100
-
+                bra @did_not_collide
 collides:
                 lda #0001
-
-ret_3100:
+did_not_collide:
                 plp
                 pld
                 plx
@@ -812,7 +806,6 @@ ret_3100:
 ; Eat self?
 ;**************************************
 EatSelf:
-
                 ldx 0007
                 phx
                 jsr @CheckBodyCollision
@@ -822,8 +815,8 @@ EatSelf:
                 bne @ate_self
                 jmp @GameOverLoop
 
-ate_self:       rts
-
+ate_self:
+                rts
 
 ;**************************************
 ; this routine update tilemap WRAM buffer
@@ -1119,15 +1112,15 @@ ConvertScoreToBcd:
                 cmp #000a
                 bcc @ones
 
-bcdloop:
-
-thousands:      cmp #03e8
+bcd_loop:
+thousands:
+                cmp #03e8
                 bcc @hundreds
                 sec
                 sbc #03e8
                 sta 0010
                 inc 0023
-                bra @bcdloop
+                bra @bcd_loop
 hundreds:
                 cmp #0064
                 bcc @tens
@@ -1135,7 +1128,7 @@ hundreds:
                 sbc #0064
                 sta 0010
                 inc 0022
-                bra @bcdloop
+                bra @bcd_loop
 tens:
                 cmp #000a
                 bcc @ones
@@ -1143,8 +1136,7 @@ tens:
                 sbc #000a
                 sta 0010
                 inc 0021
-                bra @bcdloop
-
+                bra @bcd_loop
 ones:
                 sep #20
                 lda 0010
@@ -1158,14 +1150,14 @@ ones:
 ; Init OAM Dummy Buffer WRAM
 ; $oam_buffer_start = 7e2000
 ;**************************************
-
 InitOamBuffer:
                 php
                 sep #20
                 rep #10
                 lda #01
                 ldx #0000
-set_x_lsb:      sta 7e2000,x
+set_x_lsb:
+                sta 7e2000,x
                 inx
                 inx
                 inx
@@ -1174,7 +1166,8 @@ set_x_lsb:      sta 7e2000,x
                 bne @set_x_lsb
 
                 lda #55         ; 01010101
-set_x_msb:      sta 7e2000,x
+set_x_msb:
+                sta 7e2000,x
                 inx
                 sta 7e2000,x
                 inx
@@ -1188,7 +1181,6 @@ set_x_msb:      sta 7e2000,x
 ; OAM buffer - DMA Transfer
 ; m8 x16
 ;**************************************
-
 TransferOamBuffer:
                 ldx #0000
                 stx 2102        ; OAMDADDL
@@ -1220,7 +1212,6 @@ TransferOamBuffer:
 ; VRAM - DMA Transfer
 ; m8 x16
 ;**************************************
-
 VramDmaTransfer:
                 phx             ; save stack pointer
                 phd             ; save direct page
@@ -1257,7 +1248,6 @@ VramDmaTransfer:
 ; CGRAM - DMA Transfer
 ; m8 x16
 ;**************************************
-
 CgramDmaTransfer:
                 phx             ; save stack pointer
                 phd             ; save direct page
@@ -1293,7 +1283,8 @@ CgramDmaTransfer:
 ;**************************************
 ReadJoyPad1:
                 php
-read_data:      lda 4212        ; read joypad status (HVBJOY)
+read_data:
+                lda 4212        ; read joypad status (HVBJOY)
                 and #01
                 bne @read_data  ; read done when 0
 
@@ -1312,7 +1303,6 @@ read_data:      lda 4212        ; read joypad status (HVBJOY)
 
                 plp
                 rts
-
 
 ;**************************************
 ; Reset tilemap buffer
@@ -1437,7 +1427,6 @@ SetBgInitialSettings:
 
                 rts
 
-
 ;**************************************
 ; Fade in
 ;**************************************
@@ -1445,7 +1434,6 @@ FadeIn:
                 wai
                 lda #00
                 sta 2100        ; INIDISP
-
 fadein_loop:
                 inc
                 sta 2100
@@ -1461,8 +1449,6 @@ FadeOut:
                 wai
                 lda #0f
                 sta 2100        ; INIDISP
-
-
 fadeout_loop:
                 dec
                 sta 2100
@@ -1477,12 +1463,13 @@ DmaTransfers:
                 ; Copy snake-bg.bin to VRAM
                 tsx             ; save stack pointer
                 pea 0000        ; vram_dest_addr
-                pea @snake_bg        ; rom_src_addr
-                lda #^snake_bg         ; rom_src_bank
+                pea @snake_bg
+                lda #^snake_bg
                 pha
                 pea 0800        ; bytes_to_trasnfer
                 jsr @VramDmaTransfer
                 txs             ; restore stack pointer
+
                 ; Copy WRAM tilemap buffer to VRAM
                 tsx             ; save stack pointer
                 pea 1000        ; vram_dest_addr (@2000 really, word steps)
@@ -1492,38 +1479,42 @@ DmaTransfers:
                 pea 0800        ; bytes_to_trasnfer
                 jsr @VramDmaTransfer
                 txs             ; restore stack pointer
+
                 ; Copy snake-sprites.bin to VRAM
                 tsx             ; save stack pointer
                 pea 2000        ; vram_dest_addr
-                pea @snake_sprite        ; rom_src_addr
-                lda #^snake_sprite         ; rom_src_bank
+                pea @snake_sprite
+                lda #^snake_sprite
                 pha
                 pea 0800        ; bytes_to_trasnfer
                 jsr @VramDmaTransfer
                 txs             ; restore stack pointer
+
                 ; Copy small-font.bin to VRAM
                 tsx             ; save stack pointer
                 pea 4000        ; vram_dest_addr (@8000 really, word steps)
-                pea @small_font        ; rom_src_addr
-                lda #^small_font         ; rom_src_bank
+                pea @small_font
+                lda #^small_font
                 pha
                 pea 0600        ; bytes_to_trasnfer
                 jsr @VramDmaTransfer
                 txs             ; restore stack pointer
+
                 ; Copy title-screen.bin to VRAM
                 tsx             ; save stack pointer
                 pea 6000        ; vram_dest_addr (@c000 really, word steps)
-                pea @title_screen        ; rom_src_addr
-                lda #^title_screen         ; rom_src_bank
+                pea @title_screen
+                lda #^title_screen
                 pha
                 pea 1800        ; bytes_to_trasnfer
                 jsr @VramDmaTransfer
                 txs             ; restore stack pointer
+
                 ; Copy title-screen.map to VRAM
                 tsx             ; save stack pointer
                 pea 7000        ; vram_dest_addr (@e000 really, word steps)
-                pea @title_screen_map        ; rom_src_addr
-                lda #^title_screen_map         ; rom_src_bank
+                pea @title_screen_map
+                lda #^title_screen_map
                 pha
                 pea 0800        ; bytes_to_trasnfer
                 jsr @VramDmaTransfer
@@ -1533,42 +1524,45 @@ DmaTransfers:
                 tsx             ; save stack pointer
                 lda #00
                 pha             ; cgram_dest_addr
-                pea @snake_bg_pal        ; rom_src_addr
+                pea @snake_bg_pal
                 lda #^snake_bg_pal
-                pha             ; rom_src_bank
+                pha
                 lda #20
                 pha             ; bytes_to_trasnfer
                 jsr @CgramDmaTransfer
                 txs             ; restore stack pointer
+
                 ; Copy small-font-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #10
                 pha             ; cgram_dest_addr
-                pea @small_font_pal        ; rom_src_addr
+                pea @small_font_pal
                 lda #^small_font_pal
-                pha             ; rom_src_bank
+                pha
                 lda #08
                 pha             ; bytes_to_trasnfer
                 jsr @CgramDmaTransfer
                 txs             ; restore stack pointer
+
                 ; Copy title-screen-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #20
                 pha             ; cgram_dest_addr
-                pea @title_screen_pal        ; rom_src_addr
+                pea @title_screen_pal
                 lda #^title_screen_pal
-                pha             ; rom_src_bank
+                pha
                 lda #20
                 pha             ; bytes_to_trasnfer
                 jsr @CgramDmaTransfer
                 txs             ; restore stack pointer
+
                 ; Copy snake-sprites-pal.bin to CGRAM
                 tsx             ; save stack pointer
                 lda #80
                 pha             ; cgram_dest_addr
-                pea @snake_sprite_pal        ; rom_src_addr
+                pea @snake_sprite_pal
                 lda #^snake_sprite_pal
-                pha             ; rom_src_bank
+                pha
                 lda #20
                 pha             ; bytes_to_trasnfer
                 jsr @CgramDmaTransfer
@@ -1579,7 +1573,6 @@ DmaTransfers:
 ; Clear each Registers
 ; @8e00
 ;**************************************
-
 ClearRegisters:
                 stz 2101
                 stz 2102
@@ -1723,12 +1716,12 @@ ClearCustomRegisters:
 
 ;**************************************
 ; write to SRAM
-;**************************************
-SaveScoreToSram:
 ; 7e0010: score L
 ; 7e0011: score H
+;**************************************
+SaveScoreToSram:
                 php
-                phb     ; save dbr
+                phb             ; save dbr
 
                 brk 00
 
@@ -1746,14 +1739,14 @@ SaveScoreToSram:
                 beq @save_score
                 sta 0000
                 stz 0002        ; empty score first time
-
-save_score:    lda 7e0010      ; load score
+save_score:
+                lda 7e0010      ; load score
                 cmp 0002
                 ; if score < saved score
                 bcc @skip_save_score
                 sta 0002        ; store it
-
-skip_save_score:     plb
+skip_save_score:
+                plb
                 plp
                 rts
 
@@ -1773,7 +1766,6 @@ SpcUploadRoutine:
 
                 ;  1. Wait for a 16-bit read on $2140-1 to return $BBAA.
 retry_ack:
-
                 ldx #bbaa
                 cpx 2140
                 beq @upload_spc ; wait until [2140] == bbaa (means spc700 is ready)
@@ -1782,7 +1774,8 @@ retry_ack:
                 bra @exit_spc_upl
 
                 ; 2. Write the target address to $2142-3.
-upload_spc:    ldx #0600       ; target spc700 ram address
+upload_spc:
+                ldx #0600       ; target spc700 ram address
                 stx 2142        ; [2142] = dest_addr (spc700 ram address)
 
                 ; 3. Write non-zero to $2141.
@@ -1791,7 +1784,8 @@ upload_spc:    ldx #0600       ; target spc700 ram address
 
                 ; 4. Write $CC to $2140.
                 ; 5. Wait until reading $2140 returns $CC.
-write_cc:      lda #cc
+write_cc:
+                lda #cc
                 sta 2140
                 cmp 2140
                 bne @write_cc ; wait until [2140] == cc (kick command)
@@ -1799,7 +1793,8 @@ write_cc:      lda #cc
                 ldx #0005       ; data length
                 ldy #0000       ; loop counter (index)
 
-transfer_spc:  lda @DummySpcData,y      ; src_addr[y]
+transfer_spc:
+                lda @DummySpcData,y      ; src_addr[y]
                 ; 6. Set your first byte to $2141.
                 sta 2141        ; send data byte
                 tya
@@ -1815,7 +1810,8 @@ transfer_spc:  lda @DummySpcData,y      ; src_addr[y]
 
                 ; jump to uploaded code
                 ; Put the target address in $2142-3
-jmp_upload:    ldx #0600
+jmp_upload:
+                ldx #0600
                 stx 2142
                 ; Put $00 in $2141
                 lda #00
@@ -1830,7 +1826,8 @@ jmp_upload:    ldx #0600
                 bne @jmp_upload
                 ; Shortly afterwards, your code will be executing.
 
-exit_spc_upl:   plp
+exit_spc_upl:
+                plp
                 rts
 
 ;**************************************
@@ -1838,9 +1835,6 @@ exit_spc_upl:   plp
 ; ROM registration data (addresses are offset by 0x8000)
 ;
 ;**************************************
-
-; zero bytes
-
 .org ffb0
 .base 7fb0
 
@@ -1872,8 +1866,6 @@ exit_spc_upl:   plp
 ; Vectors
 ;
 ;**************************************
-
-; zero bytes
 .org ffe0
 .base 7fe0
 
