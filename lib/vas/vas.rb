@@ -4,7 +4,7 @@ module SnesUtils
     SPC700 = :spc700
 
     DIRECTIVE = [
-      '.65816', '.spc700', '.org', '.base', '.db', '.define', '.incbin', '.incsrc'
+      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin', '.incsrc'
     ]
 
     LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
@@ -123,7 +123,9 @@ module SnesUtils
       when '.incbin'
         @program_counter += prepare_incbin(directive[1].to_s.strip.chomp, pass)
       when '.db'
-        @program_counter += reserve_bytes(directive[1..-1].join.to_s.strip.chomp, pass)
+        @program_counter += define_bytes(directive[1..-1].join.to_s.strip.chomp, pass)
+      when '.rb'
+        @program_counter += directive[1].to_i(16)
       end
     end
 
@@ -156,7 +158,7 @@ module SnesUtils
       end
     end
 
-    def reserve_bytes(raw_bytes, pass)
+    def define_bytes(raw_bytes, pass)
       bytes = raw_bytes.split(',').map do |b|
         bv = b.to_i(16)
         raise "Invalid byte: #{b} : #{@line}" if bv < 0 || bv > 0xff
