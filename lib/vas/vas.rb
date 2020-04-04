@@ -42,11 +42,6 @@ module SnesUtils
         @line = raw_line.split(';').first.strip.chomp
         next if @line.empty?
 
-        if @line.start_with?(*DIRECTIVE)
-          process_directive(pass)
-          next
-        end
-
         if @line.include?(':')
           arr = @line.split(':')
           label = arr[0].strip.chomp
@@ -61,6 +56,11 @@ module SnesUtils
         end
 
         next if instruction.empty?
+
+        if instruction.start_with?(*DIRECTIVE)
+          process_directive(instruction, pass)
+          next
+        end
 
         begin
           bytes = LineAssembler.new(instruction, options).assemble
@@ -108,8 +108,8 @@ module SnesUtils
       }
     end
 
-    def process_directive(pass)
-      directive = @line.split(' ')
+    def process_directive(instruction, pass)
+      directive = instruction.split(' ')
 
       case directive[0]
       when '.65816'
