@@ -35,51 +35,71 @@ small_font_pal:
 ;**************************************
 ; all coord are stored as map coordinate ([0,15], [0,13])
 ; map coord = random coord >> 4
+.org 7e0000
 ; 7e0000: frame counter
+frame_counter:   .rb 1
 ; 7e0001: random seed
+random_seed:   .rb 1
 ; 7e0002: random x pointer
+random_x_pointer:   .rb 1
 ; 7e0003: random y pointer
+random_y_pointer:   .rb 1
 ; 7e0004: apple x coord
+apple_x:   .rb 1
 ; 7e0005: apple y coord
+apple_y:   .rb 1
 ; 7e0006: body size
+body_size:   .rb 1
 ; 7e0007: head x coord
+head_x:   .rb 1
 ; 7e0008: head y coord
+head_y:   .rb 1
 ; 7e0009: tail x coord
+tail_x:   .rb 1
 ; 7e000a: tail y coord
+tail_y:   .rb 1
 ; 7e000b: last move counter
+last_move_counter:   .rb 1
 ; 7e000c: base speed
-; 7e000d: base speed
+base_speed:   .rb 2
 ; 7e000e: x velocity
+x_velocity:   .rb 1
 ; 7e000f: y velocity
+y_velocity:   .rb 1
 ; 7e0010: score L
-; 7e0011: score H
+score:   .rb 2
 ; 7e0012: seed read?
+seed_read:   .rb 1
 
 ; 7e0013: body size buffer
-; 7e0014: body size buffer
+body_size_buffer:   .rb 2
 ; 7e0015: tile coord buffer
-; 7e0016: tile coord buffer
+tile_coord_buffer:   .rb 2
 
 ; 7e0017: timer frame counter
+timer_frame_counter:   .rb 1
 ; 7e0018: timer second
+timer_second:   .rb 1
 ; 7e0019: timer buffer
+timer_buffer:   .rb 1
 
-; 7e0020: score ones
-; 7e0021: score tens
-; 7e0022: score hundreds
-; 7e0023: score thousands
-
+; 7e001a: score ones
+score_bcd:      .rb 4
 ; 7e0100: JOY1_RAW
+joy1_raw:   .rb 2
 ; 7e0102: JOY1_PRESSL
-; 7e0103: JOY1_PRESSH
+joy1_press:   .rb 2
 ; 7e0104: JOY1_HELDL
-; 7e0105: JOY1_HELDH
+joy1_held:   .rb 2
 
 ; 7e0200: snake body xy coord
+snake_body_xy_coords:   .rb 1
 
+.org 7e2000
 ; coord converted from map coord to screen coord
 ; screen coord = map coord << 4
 ; 7e2000: oam buffer
+oam_buffer:   .rb 300
 ; map coord to VRAM tile index:
 ; 16x16 tile is composed of 4 8x8 tiles:
 ; 0|1 => tile 0 = (x << 2) + (y << 7), tile 1 = tile 0 + 2
@@ -87,7 +107,9 @@ small_font_pal:
 ; 2|3 => tile 2 = tile 0 + 0x40, tile 3 = tile 2 + 2
 ;
 ; 7e2300: snake body tile buffer
+snake_body_tile_buffer:   .rb d00
 ; 7e3000: BG3 tile buffer
+bg3_tile_buffer:         .rb 1
 ; BG tile = vhopppcc cccccccc
 ;**************************************
 ; ROUTINES LOCATION
@@ -977,22 +999,22 @@ UpdateScore:
                 php
                 sep #20
 
-                lda 0023
+                lda @score_bcd+3
                 clc
                 adc #10
                 sta 7e300c
 
-                lda 0022
+                lda @score_bcd+2
                 clc
                 adc #10
                 sta 7e300e
 
-                lda 0021
+                lda @score_bcd+1
                 clc
                 adc #10
                 sta 7e3010
 
-                lda 0020
+                lda @score_bcd
                 clc
                 adc #10
                 sta 7e3012
@@ -1066,8 +1088,8 @@ UpdateMenuSpeedDisplayValue:
                 lda 000c        ; load speed
                 pha             ; save it
 
-                stz 0020        ; bcd ones
-                stz 0021        ; bcd tens
+                stz @score_bcd        ; bcd ones
+                stz @score_bcd+1      ; bcd tens
 
                 lda #14
                 sec
@@ -1078,14 +1100,14 @@ UpdateMenuSpeedDisplayValue:
                 sec
                 sbc #0a
                 sta 000c
-                inc 0021
+                inc @score_bcd+1
 
 speed_one:
                 clc
                 adc #10
                 sta 7e3016
 
-                lda 0021
+                lda @score_bcd+1
                 clc
                 adc #10
                 sta 7e3014
@@ -1102,10 +1124,10 @@ speed_one:
 ConvertScoreToBcd:
                 php
 
-                stz 0020        ; score bcd ones
-                stz 0021        ; score bcd tens
-                stz 0022        ; score bcd hundreds
-                stz 0023        ; score bcd thousands
+                stz @score_bcd        ; score bcd ones
+                stz @score_bcd+1      ; score bcd tens
+                stz @score_bcd+2      ; score bcd hundreds
+                stz @score_bcd+3      ; score bcd thousands
 
                 lda 0010
                 tax
@@ -1118,30 +1140,30 @@ thousands:
                 bcc @hundreds
                 sec
                 sbc #03e8
-                sta 0010
-                inc 0023
+                sta @score
+                inc @score_bcd+3
                 bra @bcd_loop
 hundreds:
                 cmp #0064
                 bcc @tens
                 sec
                 sbc #0064
-                sta 0010
-                inc 0022
+                sta @score
+                inc @score_bcd+2
                 bra @bcd_loop
 tens:
                 cmp #000a
                 bcc @ones
                 sec
                 sbc #000a
-                sta 0010
-                inc 0021
+                sta @score
+                inc @score_bcd+1
                 bra @bcd_loop
 ones:
                 sep #20
-                lda 0010
-                sta 0020
-                stx 0010
+                lda @score
+                sta @score_bcd
+                stx @score
 
                 plp
                 rts

@@ -210,14 +210,19 @@ module SnesUtils
     end
 
     def replace_label(operand)
-      raise "Invalid label syntax: #{operand}"  unless matches = /(#{Vas::LABEL_OPERATORS.join('|')})(\w+)/.match(operand)
+      unless matches = /(#{Vas::LABEL_OPERATORS.join('|')})(\w+)(\+(\d+))?/.match(operand)
+          raise "Invalid label syntax: #{operand}"
+      end
 
       mode = matches[1]
       label = matches[2]
+      offset = matches[4].to_i
 
       label_data = @label_registry.detect { |l| l[0] == label }
 
       value = label_data ? label_data[1] : @current_address
+
+      value += offset
 
       case mode
       when '@'
@@ -239,7 +244,7 @@ module SnesUtils
         raise "Mode error: #{mode}"
       end
 
-      operand.gsub(/(#{Vas::LABEL_OPERATORS.join('|')})\w+/, new_value)
+      operand.gsub(/(#{Vas::LABEL_OPERATORS.join('|')})\w+(\+(\d+))?/, new_value)
     end
 
     def detect_opcode(mnemonic, operand)
