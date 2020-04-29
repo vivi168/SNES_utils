@@ -242,6 +242,9 @@ timer_done:
                 jsr @VramDmaTransfer
                 txs             ; restore stack pointer
 
+                ; HDMA test here
+                jsr @HdmaTest
+
                 jsr @ReadJoyPad1
                 rti
 
@@ -1300,6 +1303,38 @@ CgramDmaTransfer:
                 plx
                 rts
 
+; HDMA test
+HdmaTest:
+                php
+                sep #20 ; a 8
+                rep #10 ; i 16
+
+                ; via channel 3
+                lda #^HdmaTable     ; source bank
+                sta 4334
+                ldx #@HdmaTable    ; source address
+                stx 4332
+                lda #00      ; via port 21*26*
+                sta 4331
+                lda #00     ; ch3 properties
+                sta 4330
+                lda #08     ; activate channel 3 (0000 1000)
+                sta 420c
+
+                plp
+                rts
+
+HdmaTable:
+    .db 18, 0f
+    .db 18, 0e
+    .db 18, 0d
+    .db 18, 0c
+    .db 18, 0b
+    .db 18, 0a
+    .db 18, 09
+    .db 18, 08
+    .db 18, 07, 00
+
 ;**************************************
 ; Read Joy Pad 1
 ;**************************************
@@ -1383,7 +1418,7 @@ SetOamBufferInitialValues:
                 lda #00
                 sta 7e2000,x    ; name lsb
                 inx
-                lda #00         ; low priority
+                lda #30         ; low priority
                 sta 7e2000,x    ; flip/prio/color/name msb
                 inx
 
