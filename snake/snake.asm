@@ -162,6 +162,20 @@ ResetVector:
                 lda #04         ; BG3 tiles @ VRAM[8000]
                 sta 210c        ; BG34NBA
 
+                ; window setting start
+                ; lda #33
+                ; sta 2123
+                ; sta 2124
+                ; sta 2125
+
+                ; lda #08
+                ; sta 2126
+                ; lda #f7
+                ; sta 2127
+                ; lda #1f
+                ; sta 212e
+                ; windowing setting end
+
                 lda #05         ; enable BG1&3
                 sta 212c        ; TM
 
@@ -189,6 +203,7 @@ ResetVector:
                 lda #81
                 sta 4200        ; NMITIMEN
 
+                cli
                 jmp @MenuLoop
 
 ;**************************************
@@ -1847,7 +1862,7 @@ write_cc:
                 cmp 2140
                 bne @write_cc ; wait until [2140] == cc (kick command)
 
-                ldx #0005       ; data length
+                ldx #0039       ; data length (program size)
                 ldy #0000       ; loop counter (index)
 
 transfer_spc:
