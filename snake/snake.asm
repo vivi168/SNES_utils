@@ -222,6 +222,15 @@ BreakVector:
 .base 200
 
 NmiVector:
+                php
+                rep #30         ; A 16, X 16
+                pha
+                phx
+                phy
+
+                sep #20         ; M8
+                rep #10         ; X16
+
                 lda 4210        ; RDNMI
                 inc 0000        ; increase frame counter
 
@@ -261,6 +270,12 @@ timer_done:
                 jsr @HdmaTest
 
                 jsr @ReadJoyPad1
+
+                rep #30
+                ply
+                plx
+                pla
+                plp
                 rti
 
 ;**************************************
@@ -370,7 +385,7 @@ GameOverLoop:
 check_time:
                 lda 0019
                 cmp 0018
-                bne @check_time ; have 2 seconds elapsed yet?
+                bcs @check_time ; have 3 seconds elapsed yet?
 
                 jmp @ResetVector
 
@@ -999,7 +1014,6 @@ InitBg3ScoreText:
                 ldx #0000
 
 init_default_txt:
-                brk 00
                 lda @ScoreText,x
                 sta 7e3000,x
                 inx
@@ -1794,8 +1808,6 @@ ClearCustomRegisters:
 SaveScoreToSram:
                 php
                 phb             ; save dbr
-
-                brk 00
 
                 sep #20
                 lda #f0
