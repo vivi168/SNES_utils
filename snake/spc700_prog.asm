@@ -11,92 +11,99 @@ Reset:
 
         ; general initialization
 
-        mov a,#00
-
-        mov y,#2c
-        call @WriteDSP  ; zero echo vol
-        mov y,#3c
+        ;Reset, Mute, Echo-Write Flags + Noise Clock FLG
+        mov y,#6c
+        mov a,#20
         call @WriteDSP
 
-        mov y,#3d
-        call @WriteDSP  ; disable noise
-
+        ;Key On Flags for Voice 0..7 KON
         mov y,#4c
-        call @WriteDSP  ; zero key on
+        mov a,#00
+        call @WriteDSP
 
+        ;Key Off Flags for Voice 0..7 KOF
         mov y,#5c
-        call @WriteDSP  ; zero key off
+        mov a,#ff
+        call @WriteDSP
 
-        mov a,#20
-        mov y,#6c
-        call @WriteDSP  ; noise off, echo buffer writes off
-
-        mov a,#00
-        mov y,#0d
-        call @WriteDSP  ; zero echo feedback vol
-
-        mov y,#2d
-        call @WriteDSP  ; disable pitch modulation
-
-        mov y,#4d
-        call @WriteDSP  ; disable echo
-
-        mov a,#d0
-        mov y,#6d
-        call @WriteDSP  ; echo buffer out of the way
-
-        mov a,#7f
-        mov y,#0c
-        call @WriteDSP  ; master vol max (left)
-        mov y,#1c
-        call @WriteDSP  ; master vol max (right)
-
-        ; channel 0 initialization
-
-        mov a,#3f
-        mov y,#07
-        call @WriteDSP  ; channel 0 gain
-        mov a,#30
-        mov y,#00
-        call @WriteDSP  ; channel 0 vol (left)
-        mov y,#01
-        call @WriteDSP  ; channel 0 vol (right)
-        ; pitch: 32000 hz
-        mov a,#00
-        mov y,#02
-        call @WriteDSP  ; pitch low byte
-        mov a,#10
-        mov y,#03
-        call @WriteDSP  ; pitch high byte
-
-        ; channel 1 initialization
-        mov a,#3f
-        mov y,#17
-        call @WriteDSP  ; channel 1 gain
-        mov a,#30
-        mov y,#10
-        call @WriteDSP  ; channel 1 vol (left)
-        mov y,#11
-        call @WriteDSP  ; channel 1 vol (right)
-        ; pitch: 32000 hz
-        mov a,#00
-        mov y,#12
-        call @WriteDSP  ; pitch low byte
-        mov a,#10
-        mov y,#13
-        call @WriteDSP  ; pitch high byte
-
-        mov a,#0c
+        ;Sample directory offset address DIR
         mov y,#5d
-        call @WriteDSP  ; brr directory
+        mov a,#0c
+        call @WriteDSP
 
+        ;Key Off Flags for Voice 0..7 KOF
+        mov y,#5c
         mov a,#00
-        mov y,#04
-        call @WriteDSP  ; brr index channel 0
+        call @WriteDSP
 
-Main:
-        mov a,#16
-        jmp @Main
+        ; DSP_set NON,      #00
+        mov y,#3d
+        mov a,#00
+        call @WriteDSP
+
+        ; DSP_set EON,      #00
+        mov y,#4d
+        mov a,#00
+        call @WriteDSP
+
+        ; DSP_set MVOLL,    #$7F
+        mov y,#0c
+        mov a,#7f
+        call @WriteDSP
+
+        ; DSP_set MVOLR,    #$7F
+        mov y,#1c
+        mov a,#7f
+        call @WriteDSP
+
+        ; DSP_set EVOLL,    #00
+        mov y,#2c
+        mov a,#00
+        call @WriteDSP
+
+        ; DSP_set EVOLR,    #00
+        mov y,#3c
+        mov a,#00
+        call @WriteDSP
+
+
+        ; DSP_set V0SRCN,   #$00
+        mov y,#04
+        mov a,#00
+        call @WriteDSP
+
+        ; DSP_set V0VOLL,   #$7f
+        mov y,#00
+        mov a,#7f
+        call @WriteDSP
+
+        ; DSP_set V0VOLR,   #$7f
+        mov y,#01
+        mov a,#7f
+        call @WriteDSP
+
+        ; DSP_set V0GAIN,   #$7f
+        mov y,#07
+        mov a,#7f
+        call @WriteDSP
+
+
+        ;Play sample
+        ; DSP_set V0PITCHL, #<(3000)
+        mov y,#02
+        mov a,#00
+        call @WriteDSP
+
+        ; DSP_set V0PITCHH, #>(3000)
+        mov y,#03
+        mov a,#30
+        call @WriteDSP
+
+        ; DSP_set KON,      #7
+        mov y,#4c
+        mov a,#07
+        call @WriteDSP
+
 
 ; little routine to store value A into DSP register Y
 WriteDSP:
@@ -107,7 +114,7 @@ WriteDSP:
 .org 0c00
 .base 600
 
-.db 02, c0
+.db 04, 0c, 04, 0c
 
 BrrSample:
         .incbin assets/Sample1.brr
