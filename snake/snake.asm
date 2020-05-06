@@ -1874,7 +1874,7 @@ write_cc:
                 cmp 2140
                 bne @write_cc ; wait until [2140] == cc (kick command)
 
-                ldx #0039       ; data length (program size)
+                ldx #2ad1       ; data length (program size)
                 ldy #0000       ; loop counter (index)
 
 transfer_spc:
