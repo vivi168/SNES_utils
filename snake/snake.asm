@@ -267,7 +267,7 @@ timer_done:
                 txs             ; restore stack pointer
 
                 ; HDMA test here
-                jsr @HdmaTest
+                ; jsr @HdmaTest
 
                 jsr @ReadJoyPad1
 
@@ -1874,7 +1874,7 @@ write_cc:
                 cmp 2140
                 bne @write_cc ; wait until [2140] == cc (kick command)
 
-                ldx #2ad1       ; data length (program size)
+                ldx #3004       ; data length (program size)
                 ldy #0000       ; loop counter (index)
 
 transfer_spc:
