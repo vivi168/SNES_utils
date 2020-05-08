@@ -8,6 +8,9 @@ Reset:
     mov f2,#6c    ; FLG
     mov f3,#20
 
+    mov f2,#5c    ; KOF
+    mov f3,#00
+
     mov f2,#5d    ; DIR
     mov f3,#>BrrDirectory
 
@@ -37,10 +40,12 @@ Reset:
     mov f3,#7f
     mov f2,#07    ; V0GAIN
     mov f3,#7f
-    mov f2,#02    ; V0PITCHL
+    ; mov f2,#02    ; V0PITCHL
+    ; mov f3,#00
+    ; mov f2,#03    ; V0PITCHH
+    ; mov f3,#10
+    mov f2,#04    ; V0SRCN
     mov f3,#00
-    mov f2,#03    ; V0PITCHH
-    mov f3,#10
 
     ; Voice 1 settings
     mov f2,#10    ; V1VOLL
@@ -49,48 +54,64 @@ Reset:
     mov f3,#7f
     mov f2,#17    ; V1GAIN
     mov f3,#7f
-    mov f2,#12    ; V1PITCHL
-    mov f3,#00
-    mov f2,#13    ; V1PITCHH
-    mov f3,#10
-
-; target song
-; main (bass): c-4 . c-4 . c-4 . d-4 . e-4 . d-4 . c-4 . e-4 . d-4 . d-4 . c-4 ....
-; rythm (drum): c-4 .. d-5 ..
-
-    ; Play Sample
-    mov f2,#14    ; V1SRCN
-    mov f3,#00
-
-    mov f2,#04    ; V0SRCN
-    mov f3,#01
-    mov f2,#4c    ; KON
-    mov f3,#03
-
-    mov y,#7f
-    call  @wait
-
-    mov f2,#02    ; V0PITCHL
-    mov f3,#00
-    mov f2,#03    ; V0PITCHH
-    mov f3,#0d
-
-    mov f2,#4c    ; KON
-    mov f3,#03
-
-    mov y,#7f
-    call  @wait
-
+    ; mov f2,#12    ; V1PITCHL
+    ; mov f3,#00
+    ; mov f2,#13    ; V1PITCHH
+    ; mov f3,#10
     mov f2,#14    ; V1SRCN
     mov f3,#01
-    mov f2,#4c    ; KON
-    mov f3,#02
+
+    ; Play Song
+PlayMoonSong:
+    mov x,#00
+    mov y,#0b
+
+song_loop:
+    ; V0PITCHL
+    mov f2,#02
+    mov a,@MoonSong+x
+    mov f3,a
+    inc x
+    ; V0PITCHH
+    mov f2,#03
+    mov a,@MoonSong+x
+    mov f3,a
+    inc x
+
+    ; V1PITCHL
+    mov f2,#12
+    mov a,@MoonSong+x
+    mov f3,a
+    inc x
+    ; V1PITCHH
+    mov f2,#13
+    mov a,@MoonSong+x
+    mov f3,a
+    inc x
+
+    ; KON
+    mov f2,#4c
+    mov a,@MoonSong+x
+    mov f3,a
+    inc x
+
+    push y
+    push x
 
     mov y,#7f
     call @wait
 
-loop:
-    jmp @loop
+    pop x
+    pop y
+
+    dec y
+    cmp y,#00
+    bne @song_loop
+
+    mov y,#7f
+    call @wait
+
+    jmp @PlayMoonSong
 
 wait:
     mov x,#ff
@@ -103,6 +124,20 @@ wait_loop:
     dec y
     bne @wait_loop
     ret
+
+MoonSong:
+    ; V0PITCH, V1PITCH, KON
+    .db 0800, 0800, 03
+    .db 0000, 0800, 02
+    .db 1c00, 0800, 03
+    .db 0000, 0c00, 02
+    .db 0800, 1000, 03
+    .db 0000, 0c00, 02
+    .db 1c00, 0800, 03
+    .db 0000, 1000, 02
+    .db 0800, 0c00, 03
+    .db 0000, 0c00, 02
+    .db 1c00, 0800, 03
 
 Drum:
     .incbin assets/drum.brr
