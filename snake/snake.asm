@@ -1957,9 +1957,9 @@ exit_spc_upl:
     .db 00,00,00,00
 ; 65816 mode
     .db 00,00 ; COP
-    .db 50,81 ; BRK
+    .db @BreakVector ; BRK
     .db 00,00
-    .db 00,82 ; NMI
+    .db @NmiVector ; NMI
     .db 00,00
     .db 00,00 ; IRQ
 
@@ -1970,5 +1970,5 @@ exit_spc_upl:
     .db 00,00
     .db 00,00
     .db 00,00 ; NMI
-    .db 00,80 ; RESET
+    .db @ResetVector ; RESET
     .db 00,00 ; IRQ/BRK

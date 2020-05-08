@@ -123,7 +123,10 @@ module SnesUtils
       when '.incbin'
         @program_counter += prepare_incbin(directive[1].to_s.strip.chomp, pass)
       when '.db'
-        @program_counter += define_bytes(directive[1..-1].join.to_s.strip.chomp, pass)
+        raw_line = directive[1..-1].join.to_s.strip.chomp
+        line = LineAssembler.new(raw_line, options).replace_labels(raw_line)
+
+        @program_counter += define_bytes(line, pass)
       when '.rb'
         @program_counter += directive[1].to_i(16)
       end
@@ -159,7 +162,7 @@ module SnesUtils
     end
 
     def define_bytes(raw_bytes, pass)
-      bytes = raw_bytes.split(',').map do |b|
+      bytes = raw_bytes.split(',').map { |rb| rb.scan(/.{2}/).reverse }.flatten.map do |b|
         bv = b.to_i(16)
         raise "Invalid byte: #{b} : #{@line}" if bv < 0 || bv > 0xff
         bv
@@ -189,7 +192,7 @@ module SnesUtils
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
 
-      raw_operand = replace_label(raw_operand) if contains_label?(raw_operand)
+      raw_operand = replace_label(raw_operand)
 
       opcode_data = detect_opcode(mnemonic, raw_operand)
       raise "Invalid syntax" unless opcode_data
@@ -209,7 +212,17 @@ module SnesUtils
       Vas::LABEL_OPERATORS.any? { |s| operand.include?(s[-1,1]) }
     end
 
+    def replace_labels(operand)
+      while contains_label?(operand)
+        operand = replace_label(operand)
+      end
+
+      operand
+    end
+
     def replace_label(operand)
+      return operand unless contains_label?(operand)
+
       unless matches = /(#{Vas::LABEL_OPERATORS.join('|')})(\w+)(\+(\d+))?/.match(operand)
           raise "Invalid label syntax: #{operand}"
       end
@@ -238,13 +251,14 @@ module SnesUtils
         value = (value & 0x00ff00) >> 8
         new_value = Vas::hex(value)
       when '^'
+        mode = '\^'
         value = (value & 0xff0000) >> 16
         new_value = Vas::hex(value)
       else
         raise "Mode error: #{mode}"
       end
 
-      operand.gsub(/(#{Vas::LABEL_OPERATORS.join('|')})\w+(\+(\d+))?/, new_value)
+      operand.gsub(/(#{mode})\w+(\+(\d+))?/, new_value)
     end
 
     def detect_opcode(mnemonic, operand)

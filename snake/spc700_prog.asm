@@ -14,7 +14,7 @@ Reset:
     mov   f3,#ff
 
     mov   f2,#5d    ; DIR
-    mov   f3,#36
+    mov   f3,#>BrrDirectory
 
     mov   f2,#5c    ; KOF
     mov   f3,#00
@@ -70,4 +70,4 @@ BrrSample:
 .base 3000
 
 BrrDirectory:
-    .db 6f, 06, 6f, 06
+    .db @BrrSample, @BrrSample
