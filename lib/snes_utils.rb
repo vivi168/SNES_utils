@@ -12,5 +12,7 @@ require 'mini_assembler/spc700/definitions'
 require 'png2snes/png2snes'
 require 'tmx2snes/tmx2snes'
 
+require 'vas/vas'
+
 module SnesUtils
 end
