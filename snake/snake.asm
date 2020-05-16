@@ -120,7 +120,7 @@ bg3_tile_buffer:         .rb 1
 
 
 ;**************************************
-; Reset @ 8000
+; Reset
 ;**************************************
 .org 808000
 .base 0000
@@ -208,20 +208,14 @@ ResetVector:
                 jmp @MenuLoop
 
 ;**************************************
-; BRK @ 8150
+; BRK
 ;**************************************
-.org 808150
-.base 0150
-
 BreakVector:
                 rti
 
 ;**************************************
-; NMI @ 8200
+; NMI
 ;**************************************
-.org 808200
-.base 200
-
 NmiVector:
                 php
                 rep #30         ; A 16, X 16
@@ -1078,7 +1072,6 @@ MenuCopyrightText:
     .db 5f,30,56,30,49,30,56,30,49,30,11,30,16,30,18,30,00,30,12,30,10,30,11,30,19,30
 
 InitBg3MenuText:
-                ; @ a008
                 ldx #0000
 speed_txt:
                 lda @MenuSpeedText,x
@@ -1088,7 +1081,6 @@ speed_txt:
                 cpx #0010
                 bcc @speed_txt
 
-                ; @ a080
                 ldx #0000
 start_txt:
                 lda @MenuPushStart,x
@@ -1098,7 +1090,6 @@ start_txt:
                 cpx #0022
                 bcc @start_txt
 
-                ; @ a104
                 ldx #0000
 copyr_txt:
                 lda @MenuCopyrightText,x
