@@ -94,6 +94,7 @@ joy1_held:   .rb 2
 
 ; 7e0200: snake body xy coord
 snake_body_xy_coords:   .rb 1
+play_apple_sound:   .rb 1
 
 .org 7e2000
 ; coord converted from map coord to screen coord
@@ -233,6 +234,10 @@ NmiVector:
 
                 lda 4210        ; RDNMI
                 inc 0000        ; increase frame counter
+
+                lda @play_apple_sound
+                sta 2140
+                ; stz @play_apple_sound
 
                 ; timer
                 inc 0017
@@ -764,6 +769,9 @@ CheckEatApple:
                 bne @did_not_eat_apple
 
                 jsr @RandomAppleCoordinates
+
+                lda #42
+                sta @play_apple_sound
 
                 ; increase body size and init new body part coords
                 lda 0006        ; load body size
@@ -1874,7 +1882,7 @@ write_cc:
                 cmp 2140
                 bne @write_cc ; wait until [2140] == cc (kick command)
 
-                ldx #5008       ; data length (program size)
+                ldx #500c       ; data length (program size)
                 ldy #0000       ; loop counter (index)
 
 transfer_spc:

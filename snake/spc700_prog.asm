@@ -40,10 +40,6 @@ Reset:
     mov f3,#7f
     mov f2,#07    ; V0GAIN
     mov f3,#7f
-    ; mov f2,#02    ; V0PITCHL
-    ; mov f3,#00
-    ; mov f2,#03    ; V0PITCHH
-    ; mov f3,#10
     mov f2,#04    ; V0SRCN
     mov f3,#00
 
@@ -54,12 +50,20 @@ Reset:
     mov f3,#7f
     mov f2,#17    ; V1GAIN
     mov f3,#7f
-    ; mov f2,#12    ; V1PITCHL
-    ; mov f3,#00
-    ; mov f2,#13    ; V1PITCHH
-    ; mov f3,#10
     mov f2,#14    ; V1SRCN
     mov f3,#01
+
+
+MainLoop:
+Read2140:
+    mov x,f4
+    cmp x,f4
+    bne @Read2140
+
+    cmp x,#42
+    bne @PlayMoonSong
+    mov f2,#14
+    mov f3,#02
 
     ; Play Song
 PlayMoonSong:
@@ -111,7 +115,7 @@ song_loop:
     mov y,#7f
     call @wait
 
-    jmp @PlayMoonSong
+    jmp @MainLoop
 
 wait:
     mov x,#ff
@@ -143,6 +147,8 @@ Drum:
     .incbin assets/drum.brr
 BassGuitar:
     .incbin assets/bass_guitar.brr
+Bell:
+    .incbin assets/bell.brr
 
 .org 5600
 .base 5000
@@ -150,3 +156,4 @@ BassGuitar:
 BrrDirectory:
     .db @Drum, @Drum
     .db @BassGuitar, @BassGuitar
+    .db @Bell, @Bell
