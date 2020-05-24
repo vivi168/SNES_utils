@@ -13,6 +13,7 @@ module SnesUtils
       raise "File not found: #{filename}" unless File.file?(filename)
 
       @filename = filename
+      @file = []
       @label_registry = []
       @incbin_list = []
       @byte_sequence_list = []
@@ -20,6 +21,8 @@ module SnesUtils
     end
 
     def assemble
+      construct_file
+
       2.times do |pass|
         @program_counter = 0
         @origin = 0
@@ -37,10 +40,25 @@ module SnesUtils
       write
     end
 
+    def construct_file(filename = @filename)
+      File.open(filename).each do |raw_line|
+        line = raw_line.split(';').first.strip.chomp
+        next if line.empty?
+
+        if line.start_with?('.include')
+          directive = line.split(' ')
+          inc_filename = directive[1].to_s.strip.chomp
+
+          construct_file(inc_filename)
+        else
+          @file.append(line)
+        end
+      end
+    end
+
     def assemble_file(pass)
-      File.open(@filename).each_with_index do |raw_line, line_no|
-        @line = raw_line.split(';').first.strip.chomp
-        next if @line.empty?
+      @file.each_with_index do |raw_line, line_no|
+        @line = raw_line
 
         if @line.include?(':')
           arr = @line.split(':')
