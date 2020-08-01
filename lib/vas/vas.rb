@@ -81,7 +81,7 @@ module SnesUtils
         end
 
         begin
-          bytes = LineAssembler.new(instruction, options).assemble
+          bytes = LineAssembler.new(instruction, **options).assemble
         rescue => e
           puts "Error at line #{line_no + 1}: #{e}"
           exit(1)
@@ -142,7 +142,7 @@ module SnesUtils
         @program_counter += prepare_incbin(directive[1].to_s.strip.chomp, pass)
       when '.db'
         raw_line = directive[1..-1].join.to_s.strip.chomp
-        line = LineAssembler.new(raw_line, options).replace_labels(raw_line)
+        line = LineAssembler.new(raw_line, **options).replace_labels(raw_line)
 
         @program_counter += define_bytes(line, pass)
       when '.rb'
