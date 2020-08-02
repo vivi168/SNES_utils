@@ -32,9 +32,7 @@ module SnesUtils
         assemble_file(pass)
       end
 
-      @label_registry.each do |label|
-        puts [label[0], label[1].to_s(16)].inspect
-      end
+      write_label_registry
       insert_bytes
       incbin
       write
@@ -193,6 +191,19 @@ module SnesUtils
     def insert_bytes
       @byte_sequence_list.each do |bytes, index|
         insert(bytes, index)
+      end
+    end
+
+    def write_label_registry
+      longest = @label_registry.map{|r| r[0] }.max_by(&:length)
+
+      File.open('labels.txt', 'w+b') do |file|
+        @label_registry.each do |label|
+          adjusted_label = label[0].ljust(longest.length, ' ')
+          raw_address = Vas::hex(label[1], 6)
+          address = "#{raw_address[0..1]}/#{raw_address[2..-1]}"
+          file.write "#{adjusted_label} #{address}\n"
+        end
       end
     end
   end
