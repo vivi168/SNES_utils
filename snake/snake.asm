@@ -125,11 +125,15 @@ bg3_tile_buffer:         .rb 1
 .org 808000
 .base 0000
 
+.define SET_M8      sep #20     ; test
+.define SET_I16     rep #10     ; macro test
+.define INIDISP     2100
+
 ResetVector:
                 sei
                 clc
                 xce
-                sep #20         ; M8
+                SET_M8          ; M8
                 rep #10         ; X16
 
                 ldx #1fff
@@ -137,7 +141,7 @@ ResetVector:
 
                 ; Forced Blank
                 lda #80
-                sta 2100        ; INIDISP
+                sta INIDISP     ; INIDISP
 
                 jsr @ClearRegisters
                 jsr @ClearCustomRegisters
