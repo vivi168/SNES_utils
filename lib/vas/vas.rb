@@ -17,7 +17,7 @@ module SnesUtils
       @filename = filename
       @file = {}
       @label_registry = []
-      @define_registry = []
+      @define_registry = {}
       @incbin_list = []
       @byte_sequence_list = []
       @memory = []
@@ -52,15 +52,29 @@ module SnesUtils
 
           construct_file(inc_filename)
         elsif line.start_with?('.define')
-          # TODO register define macro
-          # .define name value
+          args = line.split(' ')
+          key = "#{args[1]}"
+          val = args[2..-1].join(' ').split(';').first.strip.chomp
+
+          raise "Already defined: #{key}" unless @define_registry[key].nil?
+          @define_registry[key] = val
         else
-          # TODO append original line and line after define has been replaced
-          # TODO : here, file shoud be hash { line: 'abc' , orig_line: 'abc', orig_line_no: xx }
-          @file[SecureRandom.uuid] = { line: line, line_no: line_no + 1, filename: filename }
+          new_line = replace_define(line)
+
+          @file[SecureRandom.uuid] = { line: new_line, orig_line: line, line_no: line_no + 1, filename: filename }
         end
       end
 
+    end
+
+    def replace_define(line)
+      common_el = line.split(' ') & @define_registry.keys
+      return line if common_el.empty?
+
+      found = common_el[0]
+      val = @define_registry[found]
+
+      line.gsub(/\b#{found}/, val)
     end
 
     def assemble_file(pass)
@@ -90,7 +104,7 @@ module SnesUtils
         begin
           bytes = LineAssembler.new(instruction, **options).assemble
         rescue => e
-          puts "Error at line #{val[:filename]}##{val[:line_no]} - (#{val[:line]}) : #{e}"
+          puts "Error at line #{val[:filename]}##{val[:line_no]} - (#{val[:orig_line]}) : #{e}"
           exit(1)
         end
 
