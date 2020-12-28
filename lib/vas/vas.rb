@@ -68,10 +68,18 @@ module SnesUtils
     end
 
     def replace_define(line)
-      common_el = line.split(' ') & @define_registry.keys
-      return line if common_el.empty?
+      found = nil
 
-      found = common_el[0]
+      @define_registry.keys.each do |key|
+        if line.match(/\b#{key}\b/)
+          found = key
+          break
+        end
+      end
+
+
+      return line if found.nil?
+
       val = @define_registry[found]
 
       line.gsub(/\b#{found}/, val)
