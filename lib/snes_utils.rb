@@ -1,8 +1,7 @@
 require 'readline'
 require 'chunky_png'
 require 'matrix'
-require 'nokogiri'
-
+require 'csv'
 require 'byebug'
 
 require 'mini_assembler/mini_assembler'

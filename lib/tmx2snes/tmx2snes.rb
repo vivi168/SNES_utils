@@ -14,14 +14,9 @@ module SnesUtils
       tnm = big_char ? 2 : 1 # big_char : 16x16 tiles. otherwise, 8x8 tiles
       row_offset = 16 * (tnm - 1) # Skip a row in case of 16x16 tiles ( tile #9 starts at index 32)
 
-      doc = Nokogiri::XML(File.open(@file_path))
-      csv_node = doc.xpath('//data').children.first.to_s
-
-      csv = csv_node.split("\n").compact.reject { |e| e.empty? }.map { |row| row.split(',') }
-
-      csv.each do |row|
+      CSV.foreach(@file_path) do |row|
         raise if row.length != 32
-        @tilemap += row.map { |r| (r.to_i - 1)*tnm + row_offset * ((r.to_i - 1)/8).to_i }
+        @tilemap += row.map { |r| (r.to_i)*tnm + row_offset * ((r.to_i)/8).to_i }
       end
 
       raise if @tilemap.length != 32*32
