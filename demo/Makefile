@@ -36,7 +36,7 @@ dir:
 	@mkdir -p $(OBJDIR)
 
 $(ASSETS_DIR)/%.bin: $(ASSETS_DIR)/%.png
-	png2snes -f $<
+	png2snes -f $< -b 4
 
 $(ASSETS_DIR)/%.map: $(ASSETS_DIR)/%.tmx
-	tmx2snes -s 8 -f $<
+	tmx2snes -f $< -p 2 -s 8
