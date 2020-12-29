@@ -1,10 +1,12 @@
+require 'securerandom'
+
 module SnesUtils
   class Vas
     WDC65816 = :wdc65816
     SPC700 = :spc700
 
     DIRECTIVE = [
-      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin', '.incsrc'
+      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin', '.incsrc', '.define'
     ]
 
     LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
@@ -13,8 +15,9 @@ module SnesUtils
       raise "File not found: #{filename}" unless File.file?(filename)
 
       @filename = filename
-      @file = []
+      @file = {}
       @label_registry = []
+      @define_registry = {}
       @incbin_list = []
       @byte_sequence_list = []
       @memory = []
@@ -39,7 +42,7 @@ module SnesUtils
     end
 
     def construct_file(filename = @filename)
-      File.open(filename).each do |raw_line|
+      File.open(filename).each_with_index do |raw_line, line_no|
         line = raw_line.split(';').first.strip.chomp
         next if line.empty?
 
@@ -48,15 +51,43 @@ module SnesUtils
           inc_filename = directive[1].to_s.strip.chomp
 
           construct_file(inc_filename)
+        elsif line.start_with?('.define')
+          args = line.split(' ')
+          key = "#{args[1]}"
+          val = args[2..-1].join(' ').split(';').first.strip.chomp
+
+          raise "Already defined: #{key}" unless @define_registry[key].nil?
+          @define_registry[key] = val
         else
-          @file.append(line)
+          new_line = replace_define(line)
+
+          @file[SecureRandom.uuid] = { line: new_line, orig_line: line, line_no: line_no + 1, filename: filename }
         end
       end
+
+    end
+
+    def replace_define(line)
+      found = nil
+
+      @define_registry.keys.each do |key|
+        if line.match(/\b#{key}\b/)
+          found = key
+          break
+        end
+      end
+
+
+      return line if found.nil?
+
+      val = @define_registry[found]
+
+      line.gsub(/\b#{found}/, val)
     end
 
     def assemble_file(pass)
-      @file.each_with_index do |raw_line, line_no|
-        @line = raw_line
+      @file.each do |key, val|
+        @line = val[:line]
 
         if @line.include?(':')
           arr = @line.split(':')
@@ -81,7 +112,7 @@ module SnesUtils
         begin
           bytes = LineAssembler.new(instruction, **options).assemble
         rescue => e
-          puts "Error at line #{line_no + 1}: #{e}"
+          puts "Error at line #{val[:filename]}##{val[:line_no]} - (#{val[:orig_line]}) : #{e}"
           exit(1)
         end
 
@@ -145,6 +176,8 @@ module SnesUtils
         @program_counter += define_bytes(line, pass)
       when '.rb'
         @program_counter += directive[1].to_i(16)
+      when '.define'
+        # TODO
       end
     end
 
