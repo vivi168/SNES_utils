@@ -1,0 +1,25 @@
+{
+    "name": "sfc-asm-syntax",
+    "displayName": "SFC asm syntax",
+    "description": "SFC 65816 & spc700 syntax highlighting",
+    "version": "0.0.1",
+    "engines": {
+        "vscode": "^1.52.0"
+    },
+    "categories": [
+        "Programming Languages"
+    ],
+    "contributes": {
+        "languages": [{
+            "id": "sfc-asm",
+            "aliases": ["SFC assembly", "sfc-asm"],
+            "extensions": [".asm", ".inc"],
+            "configuration": "./language-configuration.json"
+        }],
+        "grammars": [{
+            "language": "sfc-asm",
+            "scopeName": "source.asm",
+            "path": "./syntaxes/sfc-asm.tmLanguage.json"
+        }]
+    }
+}

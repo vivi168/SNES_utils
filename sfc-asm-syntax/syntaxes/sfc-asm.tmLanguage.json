@@ -1,0 +1,134 @@
+{
+	"$schema": "https://raw.githubusercontent.com/martinring/tmlanguage/master/tmlanguage.json",
+	"name": "SFC assembly",
+	"patterns": [
+		{
+			"include": "#file-path"
+		},
+		{
+			"include": "#65816-mnemonics"
+		},
+		{
+			"include": "#65816-registers"
+		},
+		{
+			"include": "#spc700-mnemonics"
+		},
+		{
+			"include": "#spc700-registers"
+		},
+		{
+			"include": "#directives"
+		},
+		{
+			"include": "#strings"
+		},
+		{
+			"include": "#comments"
+		},
+		{
+			"include": "#todo-keyword"
+		},
+		{
+			"include": "#numbers"
+		},
+		{
+			"include": "#constants"
+		},
+		{
+			"include": "#routine-declarations"
+		},
+		{
+			"include": "#label-declarations"
+		}
+	],
+	"repository": {
+		"file-path": {
+			"patterns": [{
+				"name": "string.quoted.character.escape.sfc-asm",
+				"match": "\\b[a-z0-9][a-z0-9-_]*(\\.|\\/).+\\b"
+			}]
+		},
+		"65816-mnemonics": {
+			"patterns": [{
+				"name": "keyword.control.65816-mnemonics.sfc-asm",
+				"match": "\\b(adc|sbc|cmp|cpx|cpy|dec|dex|dey|inc|inx|iny|and|eor|ora|bit|trb|tsb|asl|lsr|rol|ror|bcc|bcs|beq|bmi|bne|bpl|bra|bvc|bvs|brl|jmp|jsl|jsr|rtl|rts|brk|cop|rti|clc|cld|cli|clv|sec|sed|sei|rep|sep|lda|ldx|ldy|sta|stx|sty|stz|mvn|mvp|nop|wdm|pea|pei|per|pha|phx|phy|pla|plx|ply|phb|phd|phk|php|plb|pld|plp|stp|wai|tax|tay|tsx|txa|txs|txy|tya|tyx|tcd|tcs|tdc|tsc|xba|xce)\\b"
+			}]
+		},
+		"65816-registers": {
+			"patterns": [{
+				"name": "keyword.65816-registers.sfc-asm",
+				"match": "\\b(a|x|y|s)\\b"
+			}]
+		},
+		"spc700-mnemonics": {
+			"patterns": [{
+				"name": "keyword.control.spc700-mnemonics.sfc-asm",
+				"match": "\\b(adc|addw|and|and1|asl|bbc|bbs|bcc|bcs|beq|bmi|bne|bpl|bvc|bvs|bra|brk|call|cbne|clr1|clrc|clrp|clrv|cmp|cmpw|daa|das|dbnz|dec|decw|di|div|ei|eor|eor1|inc|incw|jmp|lsr|mov|mov1|movw|mul|nop|not1|notc|or|or1|pcall|pop|push|ret|ret1|rol|ror|sbc|set1|setc|setp|sleep|stop|subw|tcall|tclr1|tset1|xcn)\\b"
+			}]
+		},
+		"spc700-registers": {
+			"patterns": [{
+				"name": "keyword.spc700-registers.sfc-asm",
+				"match": "\\b(a|x|y|ya|s|sp|psw)\\b"
+			}]
+		},
+		"directives": {
+			"patterns": [{
+				"name": "keyword.control.directive.sfc-asm",
+				"match": "\\.\\b(65816|spc700|org|base|db|rb|incbin|include|define)\\b"
+			}]
+		},
+		"comments": {
+			"patterns": [{
+				"captures": {
+					"1": {
+						"name": "punctuation.definition.comment.json"
+					}
+				},
+				"match": "(;).*$\\n?",
+				"name": "comment.line.semi-colon.sfc-asm"
+			}]
+		},
+		"strings": {
+			"name": "string.quoted.double.sfc-asm",
+			"begin": "\"",
+			"end": "\"",
+			"patterns": [
+				{
+					"name": "constant.character.escape.sfc-asm",
+					"match": "\\\\."
+				}
+			]
+		},
+		"todo-keyword": {
+			"match": "TODO",
+			"name": "keyword.todo"
+		},
+		"numbers": {
+			"patterns": [{
+				"name": "constant.numeric.sfc-asm",
+				"match": "\\b([0-9a-fA-F]+)\\b"
+			}]
+		},
+		"constants": {
+			"patterns": [{
+				"name": "variable.other.constant.sfc-asm",
+				"match": "\\b([A-Z0-9_]+)\\b"
+			}]
+		},
+		"routine-declarations": {
+			"patterns": [{
+				"name": "entity.name.function.sfc-asm",
+				"match": "\\b([A-Z][A-Za-z0-9_]+)+\\b"
+			}]
+		},
+		"label-declarations": {
+			"patterns": [{
+				"name": "variable.other.label.sfc-asm",
+				"match": "\\b([a-z0-9_]+)+\\b"
+			}]
+		}
+	},
+	"scopeName": "source.asm"
+}
