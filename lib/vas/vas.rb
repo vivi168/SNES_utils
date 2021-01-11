@@ -304,7 +304,7 @@ module SnesUtils
         value = value & 0x00ffff
         new_value = Vas::hex(value, 4)
       when '!'
-        value = value | (((@current_address >> 16) & 0xff) << 16)
+        value = value # | (((@current_address >> 16) & 0xff) << 16) # BUG HERE
         new_value = Vas::hex(value, 6)
       when '<'
         value = value & 0x0000ff
