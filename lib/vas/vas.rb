@@ -123,10 +123,9 @@ module SnesUtils
         if line.include?('%')
           # replace variable with arg
           matches = line.match(/%(\w+)/)
-          byebug
           raise "line #{line_no}: undefined variable `#{matches[1]}` for macro `#{name}`" if args[matches[1]].nil?
           replaced_line = line.gsub(/#{matches[0]}/, args[matches[1]])
-          @file << line_info.merge(line: replaced_line)
+          @file << line_info.merge(line: replace_define(replaced_line))
         else
           @file << line_info
         end
@@ -178,7 +177,7 @@ module SnesUtils
         begin
           bytes = LineAssembler.new(instruction, **options).assemble
         rescue => e
-          puts "Error at line #{val[:filename]}##{val[:line_no]} - (#{val[:orig_line]}) : #{e}"
+          puts "Error at line #{line[:filename]}##{line[:line_no]} - (#{line[:orig_line]}) : #{e}"
           exit(1)
         end
 

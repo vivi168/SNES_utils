@@ -76,7 +76,7 @@
 		"directives": {
 			"patterns": [{
 				"name": "keyword.control.directive.sfc-asm",
-				"match": "\\.\\b(65816|spc700|org|base|db|rb|incbin|include|define)\\b"
+				"match": "\\.\\b(65816|spc700|org|base|db|rb|incbin|include|define|macro|endm)\\b"
 			}]
 		},
 		"comments": {
