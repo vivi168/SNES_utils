@@ -232,10 +232,17 @@ module SnesUtils
 
       File.open('labels.txt', 'w+b') do |file|
         @label_registry.each do |label|
-          adjusted_label = label[0].ljust(longest.length, ' ')
-          raw_address = Vas::hex(label[1], 6)
-          address = "#{raw_address[0..1]}/#{raw_address[2..-1]}"
-          file.write "#{adjusted_label} #{address}\n"
+          if label[1] >= 0x7e0000 && label[1] <= 0x7fffff
+            bank = label[1] & 0xff0000
+            address = "WORK:#{Vas::hex(label[1] - bank)}:#{label[0]}:"
+          else
+            bank = label[1] & 0xff0000
+            bank_i = bank >> 16 & 0xf
+            # low rom only for now
+            prg_addr = label[1] - bank - 0x8000 + bank_i * 0x8000
+            address = "PRG:#{Vas::hex(prg_addr)}:#{label[0]}:"
+          end
+          file.write "#{address}\n"
         end
       end
     end
