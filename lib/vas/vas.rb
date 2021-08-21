@@ -297,6 +297,14 @@ module SnesUtils
 
       File.open('labels.txt', 'w+b') do |file|
         @label_registry.each do |label|
+          adjusted_label = label[0].ljust(longest.length, ' ')
+          raw_address = Vas::hex(label[1], 6)
+          address = "#{raw_address[0..1]}/#{raw_address[2..-1]}"
+          file.write "#{adjusted_label} #{address}\n"
+        end
+      end
+      File.open('labels.msl', 'w+b') do |file|
+        @label_registry.each do |label|
           if label[1] >= 0x7e0000 && label[1] <= 0x7fffff
             bank = label[1] & 0xff0000
             address = "WORK:#{Vas::hex(label[1] - bank)}:#{label[0]}:"
