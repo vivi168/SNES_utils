@@ -6,7 +6,7 @@ module SnesUtils
     SPC700 = :spc700
 
     DIRECTIVE = [
-      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin', '.incsrc', '.define'
+      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin', '.incsrc'
     ]
 
     LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
@@ -15,8 +15,11 @@ module SnesUtils
       raise "File not found: #{filename}" unless File.file?(filename)
 
       @filename = filename
-      @file = {}
+      @file = []
       @label_registry = []
+      @reading_macro = false
+      @current_macro = nil
+      @macros_registry = {}
       @define_registry = {}
       @incbin_list = []
       @byte_sequence_list = []
@@ -47,24 +50,87 @@ module SnesUtils
         next if line.empty?
 
         if line.start_with?('.include')
+          raise "can't include file within macro" if @reading_macro
+
           directive = line.split(' ')
           inc_filename = directive[1].to_s.strip.chomp
 
           construct_file(inc_filename)
         elsif line.start_with?('.define')
+          raise "can't define variable within macro" if @reading_macro
+
           args = line.split(' ')
           key = "#{args[1]}"
           val = args[2..-1].join(' ').split(';').first.strip.chomp
 
           raise "Already defined: #{key}" unless @define_registry[key].nil?
           @define_registry[key] = val
+        elsif line.start_with?('.call')
+          raise "can't call macro within macro" if @reading_macro
+
+          args = line.split(' ')
+          macro_name = args[1]
+          macro_args = args[2..-1].join.split(',')
+          call_macro(macro_name, macro_args, line_no + 1)
+        elsif line.start_with?('.macro')
+          raise "can't have nested macro" if @reading_macro
+
+          args = line.split(' ')
+          macro_name = args[1]
+          macro_args = args[2..-1].join.split(',')
+          init_macro(macro_name, macro_args)
         else
           new_line = replace_define(line)
+          line_info = { line: new_line, orig_line: line, line_no: line_no + 1, filename: filename }
 
-          @file[SecureRandom.uuid] = { line: new_line, orig_line: line, line_no: line_no + 1, filename: filename }
+          if @reading_macro
+            line.start_with?('.endm') ? save_macro : @current_macro[:lines] << line_info
+          else
+            @file << line_info
+          end
         end
       end
+    end
 
+    def init_macro(name, args)
+      @current_macro = { name: name, args: args, lines: [] }
+      @reading_macro = true
+    end
+
+    def save_macro
+      name = @current_macro[:name]
+      raise "macro `#{name}` already defined" unless @macros_registry[name].nil?
+      @macros_registry[name] = @current_macro
+      @reading_macro = false
+    end
+
+    def call_macro(name, raw_args, line_no)
+      macro = @macros_registry[name]
+      raise "line #{line_no}: call of undefined macro `#{name}`" if macro.nil?
+
+      args_names = @macros_registry[name][:args]
+      if args_names.count != raw_args.count
+        raise "line #{line_no}: wrong number of arguments for macro `#{name}` expected : #{args_names.count}, given: #{raw_args.count}"
+      end
+      args = {}
+      args_names.count.times do |i|
+        args[args_names[i]] = raw_args[i]
+      end
+
+      macro[:lines].each_with_index do |line_info|
+        line = line_info[:line]
+
+        if line.include?('%')
+          # replace variable with arg
+          matches = line.match(/%(\w+)/)
+          byebug
+          raise "line #{line_no}: undefined variable `#{matches[1]}` for macro `#{name}`" if args[matches[1]].nil?
+          replaced_line = line.gsub(/#{matches[0]}/, args[matches[1]])
+          @file << line_info.merge(line: replaced_line)
+        else
+          @file << line_info
+        end
+      end
     end
 
     def replace_define(line)
@@ -86,8 +152,8 @@ module SnesUtils
     end
 
     def assemble_file(pass)
-      @file.each do |key, val|
-        @line = val[:line]
+      @file.each do |line|
+        @line = line[:line]
 
         if @line.include?(':')
           arr = @line.split(':')
