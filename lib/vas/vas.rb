@@ -11,10 +11,11 @@ module SnesUtils
 
     LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
 
-    def initialize(filename)
+    def initialize(filename, outfile)
       raise "File not found: #{filename}" unless File.file?(filename)
 
       @filename = filename
+      @outfile = outfile
       @file = []
       @label_registry = []
       @reading_macro = false
@@ -41,7 +42,7 @@ module SnesUtils
       write_label_registry
       insert_bytes
       incbin
-      write
+      write(@outfile)
     end
 
     def construct_file(filename = @filename)
@@ -199,7 +200,12 @@ module SnesUtils
       @program_counter + @base
     end
 
-    def write(filename = 'out.smc')
+    def write(filename)
+      if filename.nil?
+        dir = File.dirname(@filename)
+        filename = File.join(dir, 'out.sfc')
+      end
+
       File.open(filename, 'w+b') do |file|
         file.write([@memory.map { |i| Vas::hex(i) }.join].pack('H*'))
       end
@@ -295,7 +301,13 @@ module SnesUtils
     def write_label_registry
       longest = @label_registry.map{|r| r[0] }.max_by(&:length)
 
-      File.open('labels.txt', 'w+b') do |file|
+      if @outfile.nil?
+        dir = File.dirname(@filename)
+      else
+        dir = File.dirname(@outfile)
+      end
+
+      File.open(File.join(dir, 'labels.txt'), 'w+b') do |file|
         @label_registry.each do |label|
           adjusted_label = label[0].ljust(longest.length, ' ')
           raw_address = Vas::hex(label[1], 6)
@@ -303,7 +315,7 @@ module SnesUtils
           file.write "#{adjusted_label} #{address}\n"
         end
       end
-      File.open('labels.msl', 'w+b') do |file|
+      File.open(File.join(dir, 'labels.msl'), 'w+b') do |file|
         @label_registry.each do |label|
           if label[1] >= 0x7e0000 && label[1] <= 0x7fffff
             bank = label[1] & 0xff0000
