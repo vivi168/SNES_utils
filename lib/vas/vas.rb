@@ -124,7 +124,7 @@ module SnesUtils
 
         if line.include?('%')
           # replace variable with arg
-          matches = line.match(/%(\w+)/)
+          matches = line.match(/%(\w+)%?/)
           raise "line #{line_no}: undefined variable `#{matches[1]}` for macro `#{name}`" if args[matches[1]].nil?
           replaced_line = line.gsub(/#{matches[0]}/, args[matches[1]])
           @file << line_info.merge(line: replace_define(replaced_line))
