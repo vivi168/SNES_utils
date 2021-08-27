@@ -6,7 +6,7 @@ module SnesUtils
     SPC700 = :spc700
 
     DIRECTIVE = [
-      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin', '.incsrc'
+      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin'
     ]
 
     LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
@@ -55,8 +55,9 @@ module SnesUtils
 
           directive = line.split(' ')
           inc_filename = directive[1].to_s.strip.chomp
+          dir = File.dirname(filename)
 
-          construct_file(inc_filename)
+          construct_file(File.join(dir, inc_filename))
         elsif line.start_with?('.define')
           raise "can't define variable within macro" if @reading_macro
 
@@ -171,7 +172,7 @@ module SnesUtils
         next if instruction.empty?
 
         if instruction.start_with?(*DIRECTIVE)
-          process_directive(instruction, pass)
+          process_directive(instruction, pass, line)
           next
         end
 
@@ -226,7 +227,7 @@ module SnesUtils
       }
     end
 
-    def process_directive(instruction, pass)
+    def process_directive(instruction, pass, line_info)
       directive = instruction.split(' ')
 
       case directive[0]
@@ -239,7 +240,9 @@ module SnesUtils
       when '.base'
         @base = directive[1].to_i(16)
       when '.incbin'
-        @program_counter += prepare_incbin(directive[1].to_s.strip.chomp, pass)
+        inc_filename = directive[1].to_s.strip.chomp
+        dir = File.dirname(line_info[:filename])
+        @program_counter += prepare_incbin(File.join(dir, inc_filename), pass)
       when '.db'
         raw_line = directive[1..-1].join.to_s.strip.chomp
         line = LineAssembler.new(raw_line, **options).replace_labels(raw_line)
@@ -247,8 +250,6 @@ module SnesUtils
         @program_counter += define_bytes(line, pass)
       when '.rb'
         @program_counter += directive[1].to_i(16)
-      when '.define'
-        # TODO
       end
     end
 
