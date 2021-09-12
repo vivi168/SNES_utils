@@ -63,7 +63,10 @@ module SnesUtils
 
           args = line.split(' ')
           key = "#{args[1]}"
-          val = args[2..-1].join(' ').split(';').first.strip.chomp
+          raw_val = args[2..-1].join(' ').split(';').first
+          raise "Missing value for : #{key}" if raw_val.nil?
+
+          val = raw_val.strip.chomp
 
           raise "Already defined: #{key}" unless @define_registry[key].nil?
           @define_registry[key] = val
