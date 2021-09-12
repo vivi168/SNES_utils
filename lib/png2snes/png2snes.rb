@@ -1,6 +1,6 @@
 module SnesUtils
   class Png2Snes
-    def initialize(file_path, bpp:4, alpha:nil)
+    def initialize(file_path, bpp:4, alpha:nil, mode7: false)
       @file_path = file_path
       @file_dir = File.dirname(@file_path)
       @file_name = File.basename(@file_path, File.extname(@file_path))
@@ -49,7 +49,7 @@ module SnesUtils
 
     def write_palette
       palette_hex = @palette.map { |c| ('%04x' % c).scan(/.{2}/).reverse.join }
-      write palette_hex, File.expand_path("#{@file_name}-pal.bin", @file_dir)
+      write palette_hex, File.expand_path("#{@file_name}.pal", @file_dir)
     end
 
     def pixel_indices
@@ -108,7 +108,7 @@ module SnesUtils
       end
 
       image_hex = image_bits.scan(/.{8}/).map { |b| "%02x" % b.to_i(2) }
-      write image_hex, File.expand_path("#{@file_name}.bin", @file_dir)
+      write image_hex, File.expand_path("#{@file_name}.tiles", @file_dir)
     end
 
   end
