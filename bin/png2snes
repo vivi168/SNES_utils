@@ -8,6 +8,7 @@ OptionParser.new do |opts|
   opts.on('-f', '--file FILENAME', 'PNG source file') { |o| options[:filename] = o }
   opts.on('-b', '--bpp BPP', 'BPP') { |o| options[:bpp] = o }
   opts.on('-a', '--alpha ALPHA', 'ALPHA') { |o| options[:alpha] = o }
+  opts.on('-m', '--mode7', 'mode 7') { |o| options[:mode7] = o }
 end.parse!
 
 raise OptionParser::MissingArgument, 'Must specify PNG source file' if options[:filename].nil?
@@ -18,6 +19,6 @@ else
   alpha = nil
 end
 
-c = SnesUtils::Png2Snes.new options[:filename], bpp: options[:bpp].to_i, alpha: alpha
+c = SnesUtils::Png2Snes.new options[:filename], bpp: options[:bpp].to_i, alpha: alpha, mode7: options[:mode7]
 c.write_palette
 c.write_image
