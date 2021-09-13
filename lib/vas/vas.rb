@@ -111,6 +111,7 @@ module SnesUtils
 
     def call_macro(name, raw_args, line_no)
       macro = @macros_registry[name]
+      uuid = SecureRandom.uuid
       raise "line #{line_no}: call of undefined macro `#{name}`" if macro.nil?
 
       args_names = @macros_registry[name][:args]
@@ -128,8 +129,13 @@ module SnesUtils
         if line.include?('%')
           # replace variable with arg
           matches = line.match(/%(\w+)%?/)
-          raise "line #{line_no}: undefined variable `#{matches[1]}` for macro `#{name}`" if args[matches[1]].nil?
-          replaced_line = line.gsub(/#{matches[0]}/, args[matches[1]])
+          if matches[1] == 'MACRO_ID'
+            value = uuid.delete('-')
+          else
+            value = args[matches[1]]
+          end
+          raise "line #{line_no}: undefined variable `#{matches[1]}` for macro `#{name}`" if value.nil?
+          replaced_line = line.gsub(/#{matches[0]}/, value)
           @file << line_info.merge(line: replace_define(replaced_line))
         else
           @file << line_info
