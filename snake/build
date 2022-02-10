@@ -8,6 +8,8 @@ ruby -I../lib/ ../bin/png2snes -f assets/title-screen.png -b 4 -a 0x0000
 ruby -I../lib/ ../bin/tmx2snes -f assets/title-screen.csv -p 2 -s 8
 
 ruby -I../lib ../bin/vas -f spc700_prog.asm
-mv out.smc assets/spc700_prog.bin
+mv out.sfc assets/spc700_prog.bin
 mv labels.txt spc700_labels.txt
 ruby -I../lib ../bin/vas -f snake.asm
+
+truncate -s 64K out.sfc

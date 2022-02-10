@@ -1,4 +1,7 @@
 GEM
+  specs:
+
+GEM
   remote: https://rubygems.org/
   specs:
     byebug (11.0.1)
@@ -29,4 +32,4 @@ DEPENDENCIES
   rspec!
 
 BUNDLED WITH
-   2.1.4
+   2.2.32
