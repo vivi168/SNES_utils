@@ -2,7 +2,7 @@ module SnesUtils
   class Png2Snes
     CHAR_SIZE = 8
 
-    def initialize(file_path, bpp:4, alpha:nil, mode7: false)
+    def initialize(file_path, bpp:4, alpha:nil, mode7: false, m7_palette_offset: nil)
       @file_path = file_path
       @file_dir = File.dirname(@file_path)
       @file_name = File.basename(@file_path, File.extname(@file_path))
@@ -15,8 +15,11 @@ module SnesUtils
       @pixels = pixels_to_bgr5
       @palette = @pixels.uniq
 
-
       if @mode7
+        raise ArgumentError, 'mode 7 palette offset must be multiple of 16' if m7_palette_offset % 16 != 0
+        raise ArgumentError, 'mode 7 palette offset must be less than 112' if m7_palette_offset > 112
+        @m7_palette_offset = m7_palette_offset
+
         unshift_alpha(alpha) if alpha
         fill_palette
       else
@@ -43,11 +46,15 @@ module SnesUtils
     end
 
     def fill_palette
-      target_size = @mode7 ? 128 : 2**@bpp
+      target_size = @mode7 ? mode_7_pal_size : 2**@bpp
       missing_colors = target_size - @palette.count
       raise ArgumentError, "Palette size too large for target BPP (#{@palette.count})" if missing_colors < 0
 
       @palette += [0] * missing_colors
+    end
+
+    def mode_7_pal_size
+      128 - @m7_palette_offset
     end
 
     def write hex, file_path
@@ -131,7 +138,7 @@ module SnesUtils
     def write_image_m7
       sprites = extract_sprites
 
-      indices = sprites.flatten.map { |color| "%02x" % @palette.index(color) }
+      indices = sprites.flatten.map { |color| "%02x" % (@palette.index(color) + @m7_palette_offset) }
 
       write indices, File.expand_path("#{@file_name}.tiles", @file_dir)
     end
