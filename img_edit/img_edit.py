@@ -85,8 +85,6 @@ class ColorSlider(tk.Frame):
 
         self.palette_viewer = None
 
-        print("init")
-
         self.update_color()
 
 
@@ -99,13 +97,9 @@ class ColorSlider(tk.Frame):
         if self.palette_viewer == None:
             return
 
-        print("2")
-
         self.palette_viewer.update_selected_color(color_hex)
 
     def set_color(self, rgb):
-        print("1")
-
         self.red_slider.set(rgb[0])
         self.green_slider.set(rgb[1])
         self.blue_slider.set(rgb[2])
@@ -141,14 +135,16 @@ class PaletteViewer(tk.Frame):
         self.selected_color = None
 
     def init_colors(self):
-        self.color_list = [None for i in range(16 * 8)]
+        self.color_list = [(128, 128, 128) for i in range(16 * 8)]
 
         i = 0
         for color in self.color_list:
             x = i % 16
             y = i // 16
 
-            self.canvas.create_rectangle(x * 16, y * 16, (x * 16)+self.CELL_SIZE, (y * 16)+self.CELL_SIZE, fill='#808080', outline='#808080')
+            color_hex = rgb_to_hex(self.color_list[i])
+
+            self.canvas.create_rectangle(x * 16, y * 16, (x * 16)+self.CELL_SIZE, (y * 16)+self.CELL_SIZE, fill=color_hex, outline=color_hex)
 
             i += 1
 
