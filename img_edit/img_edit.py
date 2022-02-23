@@ -70,7 +70,6 @@ class ColorSlider(tk.Frame):
         self.red_slider = tk.Scale(self, from_=0, to=255, orient=tk.HORIZONTAL, command=self.update_color, length=256)
         self.red_slider.pack()
 
-
         self.green_slider = tk.Scale(self, from_=0, to=255, orient=tk.HORIZONTAL, command=self.update_color, length=256)
         self.green_slider.pack()
 
@@ -86,6 +85,8 @@ class ColorSlider(tk.Frame):
 
         self.palette_viewer = None
 
+        print("init")
+
         self.update_color()
 
 
@@ -98,17 +99,16 @@ class ColorSlider(tk.Frame):
         if self.palette_viewer == None:
             return
 
-        self.palette_viewer.canvas.itemconfig(self.palette_viewer.selected_color, fill=color_hex, outline=color_hex)
+        print("2")
 
-        new_color = hex_to_rgb(color_hex)
+        self.palette_viewer.update_selected_color(color_hex)
 
-        coords = self.palette_viewer.canvas.coords(self.palette_viewer.selected_color)
+    def set_color(self, rgb):
+        print("1")
 
-        x = coords[0] // 16
-        y = coords[1] // 16
-        i = x + y * PaletteViewer.PALETTE_WIDTH
-
-        self.palette_viewer.color_list[int(i)] = new_color
+        self.red_slider.set(rgb[0])
+        self.green_slider.set(rgb[1])
+        self.blue_slider.set(rgb[2])
 
 
 class PaletteViewer(tk.Frame):
@@ -141,16 +141,14 @@ class PaletteViewer(tk.Frame):
         self.selected_color = None
 
     def init_colors(self):
-        self.color_list = [(128, 128, 128) for i in range(16 * 8)]
+        self.color_list = [None for i in range(16 * 8)]
 
         i = 0
         for color in self.color_list:
             x = i % 16
             y = i // 16
 
-            color_hex = rgb_to_hex(color)
-
-            self.canvas.create_rectangle(x * 16, y * 16, (x * 16)+self.CELL_SIZE, (y * 16)+self.CELL_SIZE, fill=color_hex, outline=color_hex)
+            self.canvas.create_rectangle(x * 16, y * 16, (x * 16)+self.CELL_SIZE, (y * 16)+self.CELL_SIZE, fill='#808080', outline='#808080')
 
             i += 1
 
@@ -166,13 +164,28 @@ class PaletteViewer(tk.Frame):
         selected_color_code = self.canvas.itemcget(self.selected_color, 'fill')
         rgb = hex_to_rgb(selected_color_code)
 
-        self.color_slider.red_slider.set(rgb[0])
-        self.color_slider.green_slider.set(rgb[1])
-        self.color_slider.blue_slider.set(rgb[2])
+
+        self.color_slider.set_color(rgb)
 
         self.canvas.coords(self.select_box, x, y, x + self.CELL_SIZE, y + self.CELL_SIZE)
         self.canvas.itemconfig(self.select_box, state='normal')
 
+
+    def update_selected_color(self, color_hex):
+        if self.selected_color == None:
+            return
+
+        self.canvas.itemconfig(self.selected_color, fill=color_hex, outline=color_hex)
+
+        new_color = hex_to_rgb(color_hex)
+
+        coords = self.canvas.coords(self.selected_color)
+
+        x = coords[0] // 16
+        y = coords[1] // 16
+        i = x + y * self.PALETTE_WIDTH
+
+        self.color_list[int(i)] = new_color
 
 class VRAMViewer(tk.Frame):
     # VRAM in 2bpp   -> 128px x 2048px
