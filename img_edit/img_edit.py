@@ -40,7 +40,7 @@ class ImageEditor(tk.Frame):
         message = tk.Label(self, text="Hello world")
         message.place(x=10, y=0)
 
-        button = tk.Button(self, text="Display palette", command=self.issoufle)
+        button = tk.Button(self, text="Current color", command=self.print_selected_color)
         button.place(x=10, y=40)
 
         vram_viewer = VRAMViewer(self)
@@ -50,17 +50,15 @@ class ImageEditor(tk.Frame):
         edit_zone.place(x=286, y=100)
 
         color_slider = ColorSlider(self)
-        palette_viewer = PaletteViewer(self, color_slider=color_slider)
+        self.palette_viewer = PaletteViewer(self, color_slider=color_slider)
 
-        color_slider.palette_viewer = palette_viewer
+        color_slider.palette_viewer = self.palette_viewer
 
-        self.palettes = palette_viewer.color_list
-
-        palette_viewer.place(x=286, y=376)
+        self.palette_viewer.place(x=286, y=376)
         color_slider.place(x=286, y=524)
 
-    def issoufle(self):
-        print(self.palettes)
+    def print_selected_color(self):
+        print(self.palette_viewer.selected_color_hex())
 
 
 class ColorSlider(tk.Frame):
@@ -160,7 +158,6 @@ class PaletteViewer(tk.Frame):
         selected_color_code = self.canvas.itemcget(self.selected_color, 'fill')
         rgb = hex_to_rgb(selected_color_code)
 
-
         self.color_slider.set_color(rgb)
 
         self.canvas.coords(self.select_box, x, y, x + self.CELL_SIZE, y + self.CELL_SIZE)
@@ -175,13 +172,25 @@ class PaletteViewer(tk.Frame):
 
         new_color = hex_to_rgb(color_hex)
 
+        i = self.selected_color_index()
+
+        self.color_list[int(i)] = new_color
+
+    def selected_color_index(self):
+        if self.selected_color == None: return
+
         coords = self.canvas.coords(self.selected_color)
 
         x = coords[0] // 16
         y = coords[1] // 16
-        i = x + y * self.PALETTE_WIDTH
+        return x + y * self.PALETTE_WIDTH
 
-        self.color_list[int(i)] = new_color
+    def selected_color_hex(self):
+        i = self.selected_color_index()
+
+        if i == None: return
+
+        return rgb_to_hex(self.color_list[int(i)])
 
 class VRAMViewer(tk.Frame):
     # VRAM in 2bpp   -> 128px x 2048px
