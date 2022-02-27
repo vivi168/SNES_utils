@@ -1,8 +1,6 @@
 import tkinter as tk
 from tkinter import colorchooser
 
-VRAM = []
-
 # Save/open as custom format (JSON -> palette info + image info)
 # Export as 2bpp, 4bpp, mode 7 -> warning if two many colors ? strip ?
 # Export as png ?
@@ -46,9 +44,6 @@ class ImageEditor(tk.Frame):
 
         vram_viewer = VRAMViewer(self)
         vram_viewer.place(x=10, y=100)
-
-        edit_zone = EditZone(self)
-        edit_zone.place(x=286, y=100)
 
         self.palette_viewer = PaletteViewer(self)
         self.palette_viewer.place(x=286, y=376)
@@ -151,34 +146,55 @@ class VRAMViewer(tk.Frame):
     # VRAM in 4bpp   -> 128px x 1024px
     # VRAM in mode 7 -> 128px x 256px
 
-    def __init__(self, parent, *args, **kwargs):
-        super().__init__()
+    # 128px x 2048px
+    # a pixel is 2x2 on canvas (2x zoom)
 
-        self.vram_viewer = tk.Canvas(self, width=256, height=256, bg='#000')
-        self.vram_viewer.bind('<Button-1>', self.ronrure)
 
-        self.vram_viewer.pack()
-
-        x = 16
-        y = 16
-
-        self.vram_viewer.create_rectangle(x, y, x+64, y+64, outline='#fff')
-
-    def ronrure(self, x):
-        print(x)
-
-class EditZone(tk.Frame):
     # TODO
-    # clicking on canvas : draw one pixel of selected index in palette viewer
+    # clicking on edit canvas : draw one pixel of selected index in palette viewer
     # EditZone StartX -> top left corner of selection in VRAM viewer
     # EditZone StartY -> top left corner of selection in VRAM viewer
     # edit VRAM according to current BPP settings (2, 4 or mode 7)
 
+    VIEW_CELL_SIZE = 16 # size of one cell in pixel
+    VIEW_WIDTH = 16 # numer of cells in row, 128px (256px on screen)
+
     def __init__(self, parent, *args, **kwargs):
         super().__init__()
 
-        self.edit_zone = tk.Canvas(self, width=256, height=256, bg='#000')
-        self.edit_zone.pack()
+        self.VRAM = []
+
+        self.view_canvas = tk.Canvas(self, width=256, height=256, bg='#000', highlightthickness=0, borderwidth=0)
+        self.view_canvas.bind('<Button-1>', self.select_edit_zone)
+        self.view_canvas.pack(side=tk.LEFT, padx=(0, 10))
+
+        self.edit_canvas = tk.Canvas(self, width=256, height=256, bg='#000', highlightthickness=0, borderwidth=0)
+        self.edit_canvas.pack(side=tk.RIGHT, padx=(10, 0))
+
+        self.edit_zone_top_left = (0, 0)
+
+        x = 0
+        y = 0
+
+        self.select_size_px = 64 # 32px x 32px (64px on canvas)
+        self.select_size = 32 # number of pixels in list
+
+        self.select_box = self.view_canvas.create_rectangle(x, y, x+self.select_size_px, y+self.select_size_px, outline='#fff')
+
+    def select_edit_zone(self, e):
+        x = e.x // self.VIEW_CELL_SIZE * 16
+        y = e.y // self.VIEW_CELL_SIZE * 16
+
+        ix = x // 16
+        iy = y // 16
+        idx = ix + iy * self.VIEW_WIDTH
+
+
+        self.view_canvas.coords(self.select_box, x, y, x + self.select_size_px, y + self.select_size_px)
+
+        print(x, y)
+
+
 
 
 if __name__ == "__main__":
