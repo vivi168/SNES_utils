@@ -1343,15 +1343,19 @@ HdmaTest:
 
                 ; via channel 3
                 lda #^HdmaTable     ; source bank
-                sta 4334
+                sta 4334 ; A1T3B
+
                 ldx #@HdmaTable    ; source address
-                stx 4332
+                stx 4332 ; A1T3L
+
                 lda #00      ; via port 21*00*
-                sta 4331
+                sta 4331 ; BBAD3
+
                 lda #00     ; ch3 properties
-                sta 4330
+                sta 4330 ; DMAP3
+
                 lda #08     ; activate channel 3 (0000 1000)
-                sta 420c
+                sta 420c ; HDMAEN
 
                 plp
                 rts
