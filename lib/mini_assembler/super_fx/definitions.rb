@@ -15,6 +15,8 @@ module SnesUtils
       REL_INSTRUCTIONS = %i[rel].freeze
       BIT_INSTRUCTIONS = %i[].freeze
       ALT_INSTRUCTIONS = %i[adc add and bic cmode cmp div2 getbh getbl getbs ldb ljmp lm lms lmult mult or ramb romb rpix sbc sm sms stb sub umult xor].freeze
+      SGL_INSTRUCTIONS = %i[adc add and bic cmp dec from ibt inc iwt jmp ldb ldw lea link ljmp lm lms mult or sbc sbk sm sms stb stw sub to umult with xor].freeze
+      DBL_INSTRUCTIONS = %i[move moves].freeze
 
       MODES_REGEXES = {
         imp: /^$/,             # nothing
@@ -84,8 +86,8 @@ module SnesUtils
                       { opcode: 0x3c, mnemonic: 'LOOP',  mode: :imp, length: 1, alt: 0 }
                       { opcode: 0x03, mnemonic: 'LSR',   mode: :imp, length: 1, alt: 0 }
                       { opcode: 0x70, mnemonic: 'MERGE', mode: :imp, length: 1, alt: 0 }
-                      { opcode: '0x2?1?', mnemonic: 'MOVE', mode: :rn_rn, length: 2, alt: 0 }
-                      { opcode: '0x2?b?', mnemonic: 'MOVES', mode: :rn_rn, length: 2, alt: 0 }
+                      { opcode: 0x2010, mnemonic: 'MOVE', mode: :rn_rn, length: 2, alt: 0 }
+                      { opcode: 0x20b0, mnemonic: 'MOVES', mode: :rn_rn, length: 2, alt: 0 }
                       { opcode: 0x8,  mnemonic: 'MULT',  mode: :rn, length: 1, alt: 0 }
                       { opcode: 0x8,  mnemonic: 'MULT',  mode: :imm4, length: 2, alt: 0x3e }
                       { opcode: 0x01, mnemonic: 'NOP',   mode: :imp, length: 1, alt: 0 }

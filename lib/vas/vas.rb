@@ -4,9 +4,10 @@ module SnesUtils
   class Vas
     WDC65816 = :wdc65816
     SPC700 = :spc700
+    SUPERFX = :superfx
 
     DIRECTIVE = [
-      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin'
+      '.65816', '.spc700', '.superfx', '.org', '.base', '.db', '.rb', '.incbin'
     ]
 
     LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
@@ -244,6 +245,8 @@ module SnesUtils
         @cpu = WDC65816
       when '.spc700'
         @cpu = SPC700
+      when '.superfx'
+        @cpu = SUPERFX
       when '.org'
         update_origin(directive[1].to_i(16))
       when '.base'
@@ -504,6 +507,18 @@ module SnesUtils
 
     def rel_instruction?
       SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(@mode)
+    end
+
+    def alt_instruction?(mnemonic)
+      SnesUtils.const_get(@cpu.capitalize)::Definitions::ALT_INSTRUCTIONS.include?(mnemonic.downcase.to_sym)
+    end
+
+    def sgl_instruction?(mnemonic)
+      SnesUtils.const_get(@cpu.capitalize)::Definitions::SGL_INSTRUCTIONS.include?(mnemonic.downcase.to_sym)
+    end
+
+    def dbl_instruction?(mnemonic)
+      SnesUtils.const_get(@cpu.capitalize)::Definitions::DBL_INSTRUCTIONS.include?(mnemonic.downcase.to_sym)
     end
   end
 end

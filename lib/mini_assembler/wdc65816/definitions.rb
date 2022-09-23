@@ -13,6 +13,8 @@ module SnesUtils
       REL_INSTRUCTIONS = %i[rel rell].freeze
       BIT_INSTRUCTIONS = [].freeze
       ALT_INSTRUCTIONS = [].freeze
+      SGL_INSTRUCTIONS = [].freeze
+      DBL_INSTRUCTIONS = [].freeze
 
       MODES_REGEXES = {
         acc: /^$/,
