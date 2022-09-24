@@ -370,6 +370,8 @@ module SnesUtils
 
       operand_data = detect_operand(raw_operand)
 
+      return process_fx_instruction(opcode_data, operand_data) if special_fx_instruction?
+
       operand = process_operand(operand_data)
 
       return [opcode, *operand]
@@ -449,6 +451,45 @@ module SnesUtils
       end
     end
 
+    def process_fx_instruction(opcode_data, operand_data)
+      alt = opcode_data[:alt]
+
+      if fx_mov_instruction?
+        reg1 = operand_data[1].to_i(10)
+        raise "Invalid register R#{reg1}" if reg1 > 15
+        reg2 = operand_data[2].to_i(10)
+        raise "Invalid register R#{reg2}" if reg2 > 15
+
+        raw_opcode = opcode_data[:opcode]
+        tmp_opcode = raw_opcode | (reg1 << 8) | reg2
+        opcode = [((tmp_opcode >> 8) & 0xff), ((tmp_opcode >> 0) & 0xff)]
+
+        operand = nil
+      else
+        base = @mode == :imm4 ? 16 : 10
+        index = inverted_dest_instruction? ? 2 : 1
+
+        opcode_suffix = operand_data[index].to_i(base)
+        opcode_prefix = opcode_data[:opcode]
+        opcode = (opcode_prefix << 4) | opcode_suffix
+
+        operand = process_fx_operand(operand_data, alt.nil? ? 0 : 1)
+      end
+
+      [alt, *opcode, *operand].compact
+    end
+
+    def process_fx_operand(operand_data, alt)
+      return unless double_operand_instruction?
+
+      index = inverted_dest_instruction? ? 1 : 2
+      operand = operand_data[index]&.to_i(16)
+
+      operand /= 2 if short_addr_instruction?
+
+      little_endian(operand, @length - 1 - alt)
+    end
+
     def process_double_operand_instruction(operand_data)
       if bit_instruction?
         process_bit_operand(operand_data)
@@ -484,7 +525,6 @@ module SnesUtils
         relative_addr += 0x100 if relative_addr < 0
         relative_addr
       end
-
     end
 
     def little_endian(operand, length)
@@ -509,16 +549,20 @@ module SnesUtils
       SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(@mode)
     end
 
-    def alt_instruction?(mnemonic)
-      SnesUtils.const_get(@cpu.capitalize)::Definitions::ALT_INSTRUCTIONS.include?(mnemonic.downcase.to_sym)
+    def special_fx_instruction?
+      @cpu == Vas::SUPERFX && SnesUtils.const_get(@cpu.capitalize)::Definitions::SFX_INSTRUCTIONS.include?(@mode)
     end
 
-    def sgl_instruction?(mnemonic)
-      SnesUtils.const_get(@cpu.capitalize)::Definitions::SGL_INSTRUCTIONS.include?(mnemonic.downcase.to_sym)
+    def fx_mov_instruction?
+      @cpu == Vas::SUPERFX && SnesUtils.const_get(@cpu.capitalize)::Definitions::MOV_INSTRUCTIONS.include?(@mode)
     end
 
-    def dbl_instruction?(mnemonic)
-      SnesUtils.const_get(@cpu.capitalize)::Definitions::DBL_INSTRUCTIONS.include?(mnemonic.downcase.to_sym)
+    def short_addr_instruction?
+      @cpu == Vas::SUPERFX && SnesUtils.const_get(@cpu.capitalize)::Definitions::SHORT_ADDR_INSTRUCTIONS.include?(@mode)
+    end
+
+    def inverted_dest_instruction?
+      @cpu == Vas::SUPERFX && SnesUtils.const_get(@cpu.capitalize)::Definitions::INV_DEST_INSTRUCTIONS.include?(@mode)
     end
   end
 end

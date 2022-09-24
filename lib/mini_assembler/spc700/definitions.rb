@@ -12,9 +12,6 @@ module SnesUtils
       DOUBLE_OPERAND_INSTRUCTIONS = %i[cnmb cmb dpxrel dpimm dprel dp0rel dp1rel dp2rel dp3rel dp4rel dp5rel dp6rel dp7rel ddds mb mbc].freeze
       REL_INSTRUCTIONS = %i[dpxrel dprel dp0rel dp1rel dp2rel dp3rel dp4rel dp5rel dp6rel dp7rel rel yrel].freeze
       BIT_INSTRUCTIONS = %i[cnmb cmb mb mbc].freeze
-      ALT_INSTRUCTIONS = [].freeze
-      SGL_INSTRUCTIONS = [].freeze
-      DBL_INSTRUCTIONS = [].freeze
 
       MODES_REGEXES = {
         imp: /^$/,
