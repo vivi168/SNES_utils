@@ -485,6 +485,7 @@ module SnesUtils
       index = inverted_dest_instruction? ? 1 : 2
       operand = operand_data[index]&.to_i(16)
 
+      raise 'Invalid address, must be multiple of 2' if short_addr_instruction? && operand.odd?
       operand /= 2 if short_addr_instruction?
 
       little_endian(operand, @length - 1 - alt)
