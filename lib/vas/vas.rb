@@ -370,7 +370,7 @@ module SnesUtils
 
       operand_data = detect_operand(raw_operand)
 
-      return process_fx_instruction(opcode_data, operand_data) if special_fx_instruction?
+      return process_fx_instruction(opcode_data, operand_data) if special_fx_instruction?(opcode_data[:alt])
 
       operand = process_operand(operand_data)
 
@@ -453,6 +453,8 @@ module SnesUtils
 
     def process_fx_instruction(opcode_data, operand_data)
       alt = opcode_data[:alt]
+
+      return [alt, opcode_data[:opcode]].compact if @mode == :imp
 
       if fx_mov_instruction?
         reg1 = operand_data[1].to_i(10)
@@ -550,8 +552,8 @@ module SnesUtils
       SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(@mode)
     end
 
-    def special_fx_instruction?
-      @cpu == Vas::SUPERFX && SnesUtils.const_get(@cpu.capitalize)::Definitions::SFX_INSTRUCTIONS.include?(@mode)
+    def special_fx_instruction?(alt)
+      @cpu == Vas::SUPERFX && (SnesUtils.const_get(@cpu.capitalize)::Definitions::SFX_INSTRUCTIONS.include?(@mode) || !alt.nil?)
     end
 
     def fx_mov_instruction?
