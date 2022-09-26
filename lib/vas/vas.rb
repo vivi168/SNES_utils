@@ -173,7 +173,7 @@ module SnesUtils
           unless /^\w+$/ =~ label
             raise "Invalid label: #{label}"
           end
-          register_label(label) if pass == 0
+          register_label(label, pass) # if pass == 0
           next unless arr[1]
           instruction = arr[1].strip.chomp
         else
@@ -199,9 +199,14 @@ module SnesUtils
       end
     end
 
-    def register_label(label)
-      raise "Label already defined: #{label}" if @label_registry.detect { |l| l[0] == label }
-      @label_registry << [label, @program_counter + @origin]
+    def register_label(label, pass)
+      if pass == 0
+        raise "Label already defined: #{label}" if @label_registry.detect { |l| l[0] == label }
+        @label_registry << [label, @program_counter + @origin]
+      else
+        index = @label_registry.index { |l| l[0] == label }
+        @label_registry[index][1] = @program_counter + @origin
+      end
     end
 
     def insert(bytes, insert_at = insert_index)
