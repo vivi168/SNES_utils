@@ -275,7 +275,7 @@ module SnesUtils
     end
 
     def self.replace_eval_label(registry, arg)
-      return arg unless matches = /({(.*)})/.match(arg)
+      return arg unless matches = /({(.*)})(w)?$/.match(arg)
 
       found = {}
 
@@ -293,10 +293,13 @@ module SnesUtils
         new_arg = new_arg.gsub(/\b#{key}\b/, val.to_s)
       end
 
-      # TODO : rjust to correct value
-      res = eval(new_arg).to_s(16)
-
-      arg.gsub(matches[1], res)
+      if matches[3] == 'w'
+        res = eval(new_arg).to_s(16).rjust(4, '0')[-4..-1]
+        arg[0..-2].gsub(matches[1], res)
+      else
+        res = eval(new_arg).to_s(16).rjust(2, '0')[-2..-1]
+        arg.gsub(matches[1], res)
+      end
     end
 
     def update_origin(param)
