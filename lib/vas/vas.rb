@@ -145,6 +145,8 @@ module SnesUtils
     end
 
     def replace_define(line)
+      # TODO also support multiple define on same line
+      # hint : generalize replace_eval_label ?
       found = nil
 
       @define_registry.keys.each do |key|
@@ -154,12 +156,11 @@ module SnesUtils
         end
       end
 
-
       return line if found.nil?
 
       val = @define_registry[found]
 
-      line.gsub(/\b#{found}/, val)
+      line.gsub(/\b#{found}\b/, val)
     end
 
     def assemble_file(pass)
@@ -261,8 +262,36 @@ module SnesUtils
 
         @program_counter += define_bytes(line, pass)
       when '.rb'
-        @program_counter += directive[1].to_i(16)
+        arg = directive[1..-1].join
+
+        count = self.class.replace_eval_label(@label_registry, arg)
+        @program_counter += count.is_a?(String) ? count.to_i(16) : count
       end
+    end
+
+    def self.replace_eval_label(registry, arg)
+      return arg unless matches = /({(.*)})/.match(arg)
+
+      found = {}
+
+      registry.each do |key, val|
+        if arg.match(/\b#{key}\b/)
+          found[key] = val
+        end
+      end
+
+      return arg.to_i(16) if found.empty?
+
+      new_arg = matches[2]
+
+      found.each do |key, val|
+        new_arg = new_arg.gsub(/\b#{key}\b/, val.to_s)
+      end
+
+      # TODO : rjust to correct value
+      res = eval(new_arg).to_s(16)
+
+      arg.gsub(matches[1], res)
     end
 
     def update_origin(param)
@@ -359,10 +388,11 @@ module SnesUtils
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
 
-      raw_operand = replace_label(raw_operand)
+      raw_operand = Vas.replace_eval_label(@label_registry, raw_operand)
+      raw_operand = replace_label(raw_operand) # TODO -> generalize replace_label_eval
 
       opcode_data = detect_opcode(mnemonic, raw_operand)
-      raise "Invalid syntax" unless opcode_data
+      raise "Invalid syntax #{@line}" unless opcode_data
 
       opcode = opcode_data[:opcode]
       @mode = opcode_data[:mode]

@@ -8,7 +8,7 @@ module SnesUtils
       LNK   = "([1-4])"
       HEX   = "\\$?(#{HEX_DIGIT})"
       HEX8  = "\\$?(#{HEX_DIGIT}{1,2})"
-      HEX16 = "\\$?(#{HEX_DIGIT}{3,4})"
+      HEX16 = "\\$?(#{HEX_DIGIT}{1,4})"
 
       SINGLE_OPERAND_INSTRUCTIONS = %i[imp imm4 rn rm rel lnk].freeze
       DOUBLE_OPERAND_INSTRUCTIONS = %i[rn_rn rn_imm8 rn_imm16 rn_addr rn_addrl addr_rn addrl_rn].freeze
