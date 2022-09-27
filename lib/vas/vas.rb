@@ -501,7 +501,7 @@ module SnesUtils
         raise "Invalid register R#{reg2}" if reg2 > 15
 
         raw_opcode = opcode_data[:opcode]
-        tmp_opcode = raw_opcode | (reg1 << 8) | reg2
+        tmp_opcode = raw_opcode | (reg2 << 8) | reg1
         opcode = [((tmp_opcode >> 8) & 0xff), ((tmp_opcode >> 0) & 0xff)]
 
         operand = nil
