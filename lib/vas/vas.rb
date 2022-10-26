@@ -397,7 +397,7 @@ module SnesUtils
       raw_operand = instruction[1].to_s
 
       raw_operand = Vas.replace_eval_label(@label_registry, raw_operand)
-      raw_operand = replace_label(raw_operand) # TODO -> generalize replace_label_eval
+      raw_operand = replace_label(raw_operand).downcase # TODO -> generalize replace_label_eval
 
       opcode_data = detect_opcode(mnemonic, raw_operand)
       raise "Invalid syntax #{@line}" unless opcode_data
