@@ -1,7 +1,9 @@
-source 'https://rubygems.org' do
-  gem 'sorted_set'
-  gem 'chunky_png'
-  gem 'rb-readline'
+source "https://rubygems.org"
+
+gem 'chunky_png'
+gem 'rb-readline'
+
+group :development, :test do
   gem 'rspec'
-  gem 'byebug'
+  gem 'debug'
 end

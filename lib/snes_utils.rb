@@ -1,8 +1,6 @@
 require 'readline'
 require 'chunky_png'
-require 'matrix'
 require 'csv'
-require 'byebug'
 
 require 'mini_assembler/mini_assembler'
 require 'mini_assembler/definitions'
