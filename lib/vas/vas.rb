@@ -4,9 +4,10 @@ module SnesUtils
   class Vas
     WDC65816 = :wdc65816
     SPC700 = :spc700
+    SUPERFX = :superfx
 
     DIRECTIVE = [
-      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin'
+      '.65816', '.spc700', '.superfx', '.org', '.base', '.db', '.rb', '.incbin'
     ]
 
     LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
@@ -144,6 +145,8 @@ module SnesUtils
     end
 
     def replace_define(line)
+      # TODO also support multiple define on same line
+      # hint : generalize replace_eval_label ?
       found = nil
 
       @define_registry.keys.each do |key|
@@ -153,12 +156,11 @@ module SnesUtils
         end
       end
 
-
       return line if found.nil?
 
       val = @define_registry[found]
 
-      line.gsub(/\b#{found}/, val)
+      line.gsub(/\b#{found}\b/, val)
     end
 
     def assemble_file(pass)
@@ -171,7 +173,7 @@ module SnesUtils
           unless /^\w+$/ =~ label
             raise "Invalid label: #{label}"
           end
-          register_label(label) if pass == 0
+          register_label(label, pass) # if pass == 0
           next unless arr[1]
           instruction = arr[1].strip.chomp
         else
@@ -197,9 +199,14 @@ module SnesUtils
       end
     end
 
-    def register_label(label)
-      raise "Label already defined: #{label}" if @label_registry.detect { |l| l[0] == label }
-      @label_registry << [label, @program_counter + @origin]
+    def register_label(label, pass)
+      if pass == 0
+        raise "Label already defined: #{label}" if @label_registry.detect { |l| l[0] == label }
+        @label_registry << [label, @program_counter + @origin]
+      else
+        index = @label_registry.index { |l| l[0] == label }
+        @label_registry[index][1] = @program_counter + @origin
+      end
     end
 
     def insert(bytes, insert_at = insert_index)
@@ -244,6 +251,8 @@ module SnesUtils
         @cpu = WDC65816
       when '.spc700'
         @cpu = SPC700
+      when '.superfx'
+        @cpu = SUPERFX
       when '.org'
         update_origin(directive[1].to_i(16))
       when '.base'
@@ -258,7 +267,38 @@ module SnesUtils
 
         @program_counter += define_bytes(line, pass)
       when '.rb'
-        @program_counter += directive[1].to_i(16)
+        arg = directive[1..-1].join
+
+        count = self.class.replace_eval_label(@label_registry, arg)
+        @program_counter += count.is_a?(String) ? count.to_i(16) : count
+      end
+    end
+
+    def self.replace_eval_label(registry, arg)
+      return arg unless matches = /({(.*)})(w)?$/.match(arg)
+
+      found = {}
+
+      registry.each do |key, val|
+        if arg.match(/\b#{key}\b/)
+          found[key] = val
+        end
+      end
+
+      return arg.to_i(16) if found.empty?
+
+      new_arg = matches[2]
+
+      found.each do |key, val|
+        new_arg = new_arg.gsub(/\b#{key}\b/, val.to_s)
+      end
+
+      if matches[3] == 'w'
+        res = eval(new_arg).to_s(16).rjust(4, '0')[-4..-1]
+        arg[0..-2].gsub(matches[1], res)
+      else
+        res = eval(new_arg).to_s(16).rjust(2, '0')[-2..-1]
+        arg.gsub(matches[1], res)
       end
     end
 
@@ -356,16 +396,19 @@ module SnesUtils
       mnemonic = instruction[0].upcase
       raw_operand = instruction[1].to_s
 
-      raw_operand = replace_label(raw_operand)
+      raw_operand = Vas.replace_eval_label(@label_registry, raw_operand)
+      raw_operand = replace_label(raw_operand).downcase # TODO -> generalize replace_label_eval
 
       opcode_data = detect_opcode(mnemonic, raw_operand)
-      raise "Invalid syntax" unless opcode_data
+      raise "Invalid syntax #{@line}" unless opcode_data
 
       opcode = opcode_data[:opcode]
       @mode = opcode_data[:mode]
       @length = opcode_data[:length]
 
       operand_data = detect_operand(raw_operand)
+
+      return process_fx_instruction(opcode_data, operand_data) if special_fx_instruction?(opcode_data[:alt])
 
       operand = process_operand(operand_data)
 
@@ -446,6 +489,48 @@ module SnesUtils
       end
     end
 
+    def process_fx_instruction(opcode_data, operand_data)
+      alt = opcode_data[:alt]
+
+      return [alt, opcode_data[:opcode]].compact if @mode == :imp
+
+      if fx_mov_instruction?
+        reg1 = operand_data[1].to_i(10)
+        raise "Invalid register R#{reg1}" if reg1 > 15
+        reg2 = operand_data[2].to_i(10)
+        raise "Invalid register R#{reg2}" if reg2 > 15
+
+        raw_opcode = opcode_data[:opcode]
+        tmp_opcode = raw_opcode | (reg2 << 8) | reg1
+        opcode = [((tmp_opcode >> 8) & 0xff), ((tmp_opcode >> 0) & 0xff)]
+
+        operand = nil
+      else
+        base = @mode == :imm4 ? 16 : 10
+        index = inverted_dest_instruction? ? 2 : 1
+
+        opcode_suffix = operand_data[index].to_i(base)
+        opcode_prefix = opcode_data[:opcode]
+        opcode = (opcode_prefix << 4) | opcode_suffix
+
+        operand = process_fx_operand(operand_data, alt.nil? ? 0 : 1)
+      end
+
+      [alt, *opcode, *operand].compact
+    end
+
+    def process_fx_operand(operand_data, alt)
+      return unless double_operand_instruction?
+
+      index = inverted_dest_instruction? ? 1 : 2
+      operand = operand_data[index]&.to_i(16)
+
+      raise 'Invalid address, must be multiple of 2' if short_addr_instruction? && operand.odd?
+      operand /= 2 if short_addr_instruction?
+
+      little_endian(operand, @length - 1 - alt)
+    end
+
     def process_double_operand_instruction(operand_data)
       if bit_instruction?
         process_bit_operand(operand_data)
@@ -481,7 +566,6 @@ module SnesUtils
         relative_addr += 0x100 if relative_addr < 0
         relative_addr
       end
-
     end
 
     def little_endian(operand, length)
@@ -504,6 +588,22 @@ module SnesUtils
 
     def rel_instruction?
       SnesUtils.const_get(@cpu.capitalize)::Definitions::REL_INSTRUCTIONS.include?(@mode)
+    end
+
+    def special_fx_instruction?(alt)
+      @cpu == Vas::SUPERFX && (SnesUtils.const_get(@cpu.capitalize)::Definitions::SFX_INSTRUCTIONS.include?(@mode) || !alt.nil?)
+    end
+
+    def fx_mov_instruction?
+      @cpu == Vas::SUPERFX && SnesUtils.const_get(@cpu.capitalize)::Definitions::MOV_INSTRUCTIONS.include?(@mode)
+    end
+
+    def short_addr_instruction?
+      @cpu == Vas::SUPERFX && SnesUtils.const_get(@cpu.capitalize)::Definitions::SHORT_ADDR_INSTRUCTIONS.include?(@mode)
+    end
+
+    def inverted_dest_instruction?
+      @cpu == Vas::SUPERFX && SnesUtils.const_get(@cpu.capitalize)::Definitions::INV_DEST_INSTRUCTIONS.include?(@mode)
     end
   end
 end

@@ -18,6 +18,12 @@
 			"include": "#spc700-registers"
 		},
 		{
+			"include": "#superfx-mnemonics"
+		},
+		{
+			"include": "#superfx-registers"
+		},
+		{
 			"include": "#directives"
 		},
 		{
@@ -73,10 +79,22 @@
 				"match": "\\b(a|x|y|ya|s|sp|psw)\\b"
 			}]
 		},
+		"superfx-mnemonics": {
+			"patterns": [{
+				"name": "keyword.control.superfx-mnemonics.sfc-asm",
+				"match": "\\b(getb|getbh|getbl|getbs|getc|ldw|ldb|lm|lms|stw|stb|sm|sms|sbk|move|moves|iwt|ibt|add|add|adc|adc|sub|sub|sbc|cmp|mult|mult|umult|umult|fmult|lmult|div2|inc|dec|and|and|or|or|not|xor|xor|bic|bic|asr|lsr|rol|ror|hib|lob|merge|sex|swap|jmp|ljmp|bra|bge|blt|bne|beq|bpl|bmi|bcc|bcs|bvc|bvs|loop|link|romb|ramb|cmode|color|plot|rpix|alt1|alt2|alt3|from|to|with|cache|nop|stop)\\b"
+			}]
+		},
+		"superfx-registers": {
+			"patterns": [{
+				"name": "keyword.superfx-registers.sfc-asm",
+				"match": "\\b([rR]\\d{1,2})\\b"
+			}]
+		},
 		"directives": {
 			"patterns": [{
 				"name": "keyword.control.directive.sfc-asm",
-				"match": "\\.\\b(65816|spc700|org|base|db|rb|incbin|include|define|macro|endm)\\b"
+				"match": "\\.\\b(65816|spc700|superfx|org|base|db|rb|incbin|include|define|macro|endm)\\b"
 			}]
 		},
 		"comments": {
