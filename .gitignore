@@ -2,8 +2,9 @@
 *.bin
 !snake/assets/random.bin
 *.o
-*.smc
+*.sfc
 *.vra
+*.tiles
 *.pal
 *.map
 *.psd

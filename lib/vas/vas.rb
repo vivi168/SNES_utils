@@ -6,17 +6,21 @@ module SnesUtils
     SPC700 = :spc700
 
     DIRECTIVE = [
-      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin', '.incsrc', '.define'
+      '.65816', '.spc700', '.org', '.base', '.db', '.rb', '.incbin'
     ]
 
     LABEL_OPERATORS = ['@', '!', '<', '>', '\^']
 
-    def initialize(filename)
+    def initialize(filename, outfile)
       raise "File not found: #{filename}" unless File.file?(filename)
 
       @filename = filename
-      @file = {}
+      @outfile = outfile
+      @file = []
       @label_registry = []
+      @reading_macro = false
+      @current_macro = nil
+      @macros_registry = {}
       @define_registry = {}
       @incbin_list = []
       @byte_sequence_list = []
@@ -38,7 +42,7 @@ module SnesUtils
       write_label_registry
       insert_bytes
       incbin
-      write
+      write(@outfile)
     end
 
     def construct_file(filename = @filename)
@@ -47,24 +51,96 @@ module SnesUtils
         next if line.empty?
 
         if line.start_with?('.include')
+          raise "can't include file within macro" if @reading_macro
+
           directive = line.split(' ')
           inc_filename = directive[1].to_s.strip.chomp
+          dir = File.dirname(filename)
 
-          construct_file(inc_filename)
+          construct_file(File.join(dir, inc_filename))
         elsif line.start_with?('.define')
+          raise "can't define variable within macro" if @reading_macro
+
           args = line.split(' ')
           key = "#{args[1]}"
-          val = args[2..-1].join(' ').split(';').first.strip.chomp
+          raw_val = args[2..-1].join(' ').split(';').first
+          raise "Missing value for : #{key}" if raw_val.nil?
+
+          val = raw_val.strip.chomp
 
           raise "Already defined: #{key}" unless @define_registry[key].nil?
           @define_registry[key] = val
+        elsif line.start_with?('.call')
+          raise "can't call macro within macro" if @reading_macro
+
+          args = line.split(' ')
+          macro_name = args[1]
+          macro_args = args[2..-1].join.split(',')
+          call_macro(macro_name, macro_args, line_no + 1)
+        elsif line.start_with?('.macro')
+          raise "can't have nested macro" if @reading_macro
+
+          args = line.split(' ')
+          macro_name = args[1]
+          macro_args = args[2..-1].join.split(',')
+          init_macro(macro_name, macro_args)
         else
           new_line = replace_define(line)
+          line_info = { line: new_line, orig_line: line, line_no: line_no + 1, filename: filename }
 
-          @file[SecureRandom.uuid] = { line: new_line, orig_line: line, line_no: line_no + 1, filename: filename }
+          if @reading_macro
+            line.start_with?('.endm') ? save_macro : @current_macro[:lines] << line_info
+          else
+            @file << line_info
+          end
         end
       end
+    end
 
+    def init_macro(name, args)
+      @current_macro = { name: name, args: args, lines: [] }
+      @reading_macro = true
+    end
+
+    def save_macro
+      name = @current_macro[:name]
+      raise "macro `#{name}` already defined" unless @macros_registry[name].nil?
+      @macros_registry[name] = @current_macro
+      @reading_macro = false
+    end
+
+    def call_macro(name, raw_args, line_no)
+      macro = @macros_registry[name]
+      uuid = SecureRandom.uuid
+      raise "line #{line_no}: call of undefined macro `#{name}`" if macro.nil?
+
+      args_names = @macros_registry[name][:args]
+      if args_names.count != raw_args.count
+        raise "line #{line_no}: wrong number of arguments for macro `#{name}` expected : #{args_names.count}, given: #{raw_args.count}"
+      end
+      args = {}
+      args_names.count.times do |i|
+        args[args_names[i]] = raw_args[i]
+      end
+
+      macro[:lines].each_with_index do |line_info|
+        line = line_info[:line]
+
+        if line.include?('%')
+          # replace variable with arg
+          matches = line.match(/%(\w+)%?/)
+          if matches[1] == 'MACRO_ID'
+            value = uuid.delete('-')
+          else
+            value = args[matches[1]]
+          end
+          raise "line #{line_no}: undefined variable `#{matches[1]}` for macro `#{name}`" if value.nil?
+          replaced_line = line.gsub(/#{matches[0]}/, value)
+          @file << line_info.merge(line: replace_define(replaced_line))
+        else
+          @file << line_info
+        end
+      end
     end
 
     def replace_define(line)
@@ -86,8 +162,8 @@ module SnesUtils
     end
 
     def assemble_file(pass)
-      @file.each do |key, val|
-        @line = val[:line]
+      @file.each do |line|
+        @line = line[:line]
 
         if @line.include?(':')
           arr = @line.split(':')
@@ -105,14 +181,14 @@ module SnesUtils
         next if instruction.empty?
 
         if instruction.start_with?(*DIRECTIVE)
-          process_directive(instruction, pass)
+          process_directive(instruction, pass, line)
           next
         end
 
         begin
           bytes = LineAssembler.new(instruction, **options).assemble
         rescue => e
-          puts "Error at line #{val[:filename]}##{val[:line_no]} - (#{val[:orig_line]}) : #{e}"
+          puts "Error at line #{line[:filename]}##{line[:line_no]} - (#{line[:orig_line]}) : #{e}"
           exit(1)
         end
 
@@ -134,7 +210,12 @@ module SnesUtils
       @program_counter + @base
     end
 
-    def write(filename = 'out.smc')
+    def write(filename)
+      if filename.nil?
+        dir = File.dirname(@filename)
+        filename = File.join(dir, 'out.sfc')
+      end
+
       File.open(filename, 'w+b') do |file|
         file.write([@memory.map { |i| Vas::hex(i) }.join].pack('H*'))
       end
@@ -155,7 +236,7 @@ module SnesUtils
       }
     end
 
-    def process_directive(instruction, pass)
+    def process_directive(instruction, pass, line_info)
       directive = instruction.split(' ')
 
       case directive[0]
@@ -168,7 +249,9 @@ module SnesUtils
       when '.base'
         @base = directive[1].to_i(16)
       when '.incbin'
-        @program_counter += prepare_incbin(directive[1].to_s.strip.chomp, pass)
+        inc_filename = directive[1].to_s.strip.chomp
+        dir = File.dirname(line_info[:filename])
+        @program_counter += prepare_incbin(File.join(dir, inc_filename), pass)
       when '.db'
         raw_line = directive[1..-1].join.to_s.strip.chomp
         line = LineAssembler.new(raw_line, **options).replace_labels(raw_line)
@@ -176,8 +259,6 @@ module SnesUtils
         @program_counter += define_bytes(line, pass)
       when '.rb'
         @program_counter += directive[1].to_i(16)
-      when '.define'
-        # TODO
       end
     end
 
@@ -230,12 +311,33 @@ module SnesUtils
     def write_label_registry
       longest = @label_registry.map{|r| r[0] }.max_by(&:length)
 
-      File.open('labels.txt', 'w+b') do |file|
+      if @outfile.nil?
+        dir = File.dirname(@filename)
+      else
+        dir = File.dirname(@outfile)
+      end
+
+      File.open(File.join(dir, 'labels.txt'), 'w+b') do |file|
         @label_registry.each do |label|
           adjusted_label = label[0].ljust(longest.length, ' ')
           raw_address = Vas::hex(label[1], 6)
           address = "#{raw_address[0..1]}/#{raw_address[2..-1]}"
           file.write "#{adjusted_label} #{address}\n"
+        end
+      end
+      File.open(File.join(dir, 'labels.msl'), 'w+b') do |file|
+        @label_registry.each do |label|
+          if label[1] >= 0x7e0000 && label[1] <= 0x7fffff
+            bank = label[1] & 0xff0000
+            address = "WORK:#{Vas::hex(label[1] - bank)}:#{label[0]}:"
+          else
+            bank = label[1] & 0xff0000
+            bank_i = bank >> 16 & 0xf
+            # low rom only for now
+            prg_addr = label[1] - bank - 0x8000 + bank_i * 0x8000
+            address = "PRG:#{Vas::hex(prg_addr)}:#{label[0]}:"
+          end
+          file.write "#{address}\n"
         end
       end
     end

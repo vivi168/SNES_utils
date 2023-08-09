@@ -1,22 +1,34 @@
 module SnesUtils
   class Png2Snes
-    def initialize(file_path, bpp:4, alpha:nil)
+    CHAR_SIZE = 8
+
+    def initialize(file_path, bpp:4, alpha:nil, mode7: false, m7_palette_offset: nil)
       @file_path = file_path
       @file_dir = File.dirname(@file_path)
       @file_name = File.basename(@file_path, File.extname(@file_path))
       @image = ChunkyPNG::Image.from_file(@file_path)
+
+      @mode7 = mode7
+
+      raise ArgumentError, 'Image width and height must be a multiple of sprite size' if (@image.width % CHAR_SIZE != 0) or (@image.height % CHAR_SIZE != 0)
+
       @pixels = pixels_to_bgr5
-
       @palette = @pixels.uniq
-      @char_size = 8
 
-      raise ArgumentError, 'BPP must be 2, 4, or 8' unless [2, 4, 8].include? bpp
-      @bpp = bpp
+      if @mode7
+        raise ArgumentError, 'mode 7 palette offset must be multiple of 16' if m7_palette_offset % 16 != 0
+        raise ArgumentError, 'mode 7 palette offset must be less than 112' if m7_palette_offset > 112
+        @m7_palette_offset = m7_palette_offset
 
-      raise ArgumentError, 'Image width and height must be a multiple of sprite size' if (@image.width % @char_size != 0) or (@image.height % @char_size != 0)
+        unshift_alpha(alpha) if alpha
+        fill_palette
+      else
+        raise ArgumentError, 'BPP must be 2, 4, or 8' unless [2, 4, 8].include? bpp
+        @bpp = bpp
 
-      unshift_alpha(alpha) if alpha
-      fill_palette
+        unshift_alpha(alpha) if alpha
+        fill_palette
+      end
     end
 
     def pixels_to_bgr5
@@ -34,11 +46,15 @@ module SnesUtils
     end
 
     def fill_palette
-      target_size = 2**@bpp
+      target_size = @mode7 ? mode_7_pal_size : 2**@bpp
       missing_colors = target_size - @palette.count
       raise ArgumentError, "Palette size too large for target BPP (#{@palette.count})" if missing_colors < 0
 
       @palette += [0] * missing_colors
+    end
+
+    def mode_7_pal_size
+      128 - @m7_palette_offset
     end
 
     def write hex, file_path
@@ -49,7 +65,7 @@ module SnesUtils
 
     def write_palette
       palette_hex = @palette.map { |c| ('%04x' % c).scan(/.{2}/).reverse.join }
-      write palette_hex, File.expand_path("#{@file_name}-pal.bin", @file_dir)
+      write palette_hex, File.expand_path("#{@file_name}.pal", @file_dir)
     end
 
     def pixel_indices
@@ -61,16 +77,20 @@ module SnesUtils
     def extract_sprites
       pixel_idx = pixel_indices
 
-      sprite_per_row = @image.width / @char_size
-      sprite_per_col = @image.height / @char_size
+      sprite_per_row = @image.width / CHAR_SIZE
+      sprite_per_col = @image.height / CHAR_SIZE
       sprite_per_sheet =  sprite_per_row * sprite_per_col
 
       sprites = []
       (0..sprite_per_sheet-1).each do |s|
         sprite = []
-        (0..@char_size-1).each do |r|
-          offset = (s/sprite_per_row)*sprite_per_row * @char_size**2 + s % sprite_per_row * @char_size
-          sprite += pixel_idx[offset + r*sprite_per_row*@char_size, @char_size]
+        (0..CHAR_SIZE-1).each do |r|
+          offset = (s/sprite_per_row)*sprite_per_row * CHAR_SIZE**2 + s % sprite_per_row * CHAR_SIZE
+          if @mode7
+            sprite += @pixels[offset + r*sprite_per_row*CHAR_SIZE, CHAR_SIZE]
+          else
+            sprite += pixel_idx[offset + r*sprite_per_row*CHAR_SIZE, CHAR_SIZE]
+          end
         end
         sprites.push(sprite)
       end
@@ -88,7 +108,11 @@ module SnesUtils
     end
 
     def write_image
-      sprite_per_row = @image.width / @char_size
+      @mode7 ? write_image_m7 : write_image_m06
+    end
+
+    def write_image_m06
+      sprite_per_row = @image.width / CHAR_SIZE
       sprites = extract_sprites
       sprites_bitplanes = sprites.map { |s| extract_bitplanes s }
 
@@ -98,9 +122,9 @@ module SnesUtils
 
         bitplane_bits = ""
         sprite_bitplane_pairs.each do |bitplane|
-          (0..@char_size-1).each do |r|
-            offset = r*@char_size
-            bitplane_bits += bitplane[0][offset, @char_size].join + bitplane[1][offset, @char_size].join
+          (0..CHAR_SIZE-1).each do |r|
+            offset = r*CHAR_SIZE
+            bitplane_bits += bitplane[0][offset, CHAR_SIZE].join + bitplane[1][offset, CHAR_SIZE].join
           end
         end
         image_bits += bitplane_bits
@@ -108,8 +132,15 @@ module SnesUtils
       end
 
       image_hex = image_bits.scan(/.{8}/).map { |b| "%02x" % b.to_i(2) }
-      write image_hex, File.expand_path("#{@file_name}.bin", @file_dir)
+      write image_hex, File.expand_path("#{@file_name}.tiles", @file_dir)
     end
 
+    def write_image_m7
+      sprites = extract_sprites
+
+      indices = sprites.flatten.map { |color| "%02x" % (@palette.index(color) + @m7_palette_offset) }
+
+      write indices, File.expand_path("#{@file_name}.tiles", @file_dir)
+    end
   end
 end

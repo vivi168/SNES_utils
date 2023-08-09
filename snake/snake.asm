@@ -10,25 +10,25 @@
 .base 8000
 
 snake_bg:
-    .incbin assets/snake-bg.bin             ; 0x800
+    .incbin assets/snake-bg.tiles             ; 0x800
 snake_sprite:
-    .incbin assets/snake-sprites.bin        ; 0x800
+    .incbin assets/snake-sprites.tiles        ; 0x800
 snake_bg_pal:
-    .incbin assets/snake-bg-pal.bin         ; 0x20
+    .incbin assets/snake-bg.pal               ; 0x20
 snake_sprite_pal:
-    .incbin assets/snake-sprites-pal.bin    ; 0x20
+    .incbin assets/snake-sprites.pal          ; 0x20
 random_bin:
-    .incbin assets/random.bin               ; 0x800
+    .incbin assets/random.bin                 ; 0x800
 title_screen_map:
-    .incbin assets/title-screen.map         ; 0x800
+    .incbin assets/title-screen.map           ; 0x800
 title_screen:
-    .incbin assets/title-screen.bin         ; 0x1800
+    .incbin assets/title-screen.tiles         ; 0x1800
 small_font:
-    .incbin assets/small-font.bin           ; 0x600
+    .incbin assets/small-font.tiles           ; 0x600
 title_screen_pal:
-    .incbin assets/title-screen-pal.bin     ; 0x20
+    .incbin assets/title-screen.pal           ; 0x20
 small_font_pal:
-    .incbin assets/small-font-pal.bin       ; 0x08
+    .incbin assets/small-font.pal             ; 0x08
 
 ;**************************************
 ; WRAM addresses
@@ -270,7 +270,7 @@ timer_done:
                 txs             ; restore stack pointer
 
                 ; HDMA test here
-                ; jsr @HdmaTest
+                jsr @HdmaTest
 
                 jsr @ReadJoyPad1
 
@@ -1346,7 +1346,7 @@ HdmaTest:
                 sta 4334
                 ldx #@HdmaTable    ; source address
                 stx 4332
-                lda #00      ; via port 21*26*
+                lda #00      ; via port 21*00*
                 sta 4331
                 lda #00     ; ch3 properties
                 sta 4330
@@ -1357,7 +1357,7 @@ HdmaTest:
                 rts
 
 HdmaTable:
-    .db 18, 0f
+    .db 18, 0f ; set $2100 value to 0f for 0x18 scanlines
     .db 18, 0e
     .db 18, 0d
     .db 18, 0c
